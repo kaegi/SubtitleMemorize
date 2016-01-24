@@ -772,6 +772,12 @@ namespace subs2srs4linux
 				m_textviewNativeLanguage.Buffer.Text = entryInfo.nativeLanguageString;
 			});
 
+			// wait and see if the selected image is still the same (if user scrolls through list, is highly unperformant to extract all images
+			// that are only selected like 10ms)
+			Thread.Sleep (150);
+			if (selectedIndex != m_selectedPreviewIndex)
+				return;
+
 			UtilsInputFiles.FileDesc videoFilename = m_episodeInfo[entryInfo.episodeNumber].VideoFileDesc;
 			UtilsImage.GetImage(videoFilename.filename, UtilsCommon.GetMiddleTime(entryInfo.startTimestamp, entryInfo.endTimestamp), "/tmp/subs2srs.jpg");
 
