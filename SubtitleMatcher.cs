@@ -1,4 +1,21 @@
-﻿using System;
+﻿// Copyright (C) 2016    Chang Spivey
+//
+// This program is free software; you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation; either version 3 of the License, or
+// (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with this program; if not, write to the Free Software Foundation,
+// Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301  USA
+//
+
+using System;
 using System.Collections.Generic;
 using System.Text;
 
@@ -81,7 +98,7 @@ namespace subs2srs4linux
 				for (int list2Index = 0; list2Index < list2.Count; list2Index++) {
 					LineInfo list2line = list2[list2Index]; 
 
-					if (OverlappingScore(list1line, list2line) < ConstantSettings.overlappingThreshold_InterSub)
+					if (OverlappingScore(list1line, list2line) < InstanceSettings.systemSettings.overlappingThreshold_InterSub)
 						continue;
 					
 					thisLineInfo.matchingLines.Add (list2Index);
@@ -129,7 +146,7 @@ namespace subs2srs4linux
 			bool[] returnArray = null;
 			for (int indexA = 0; indexA < matchingLines.Count; indexA++) {
 				for (int indexB = indexA + 1; indexB < matchingLines.Count; indexB++) {
-					if (OverlappingScore (list [matchingLines [indexA]].lineInfo, list [matchingLines [indexB]].lineInfo) > ConstantSettings.overlappingThreshold_InSub) {
+					if (OverlappingScore (list [matchingLines [indexA]].lineInfo, list [matchingLines [indexB]].lineInfo) > InstanceSettings.systemSettings.overlappingThreshold_InSub) {
 						returnArray = returnArray ?? new bool[matchingLines.Count];
 						returnArray [indexA] = true;
 						returnArray [indexB] = true;

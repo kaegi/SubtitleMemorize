@@ -1,4 +1,21 @@
-﻿using System;
+﻿// Copyright (C) 2016    Chang Spivey
+//
+// This program is free software; you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation; either version 3 of the License, or
+// (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with this program; if not, write to the Free Software Foundation,
+// Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301  USA
+//
+
+using System;
 using System.IO;
 using System.Runtime.Serialization.Formatters.Binary;
 
@@ -9,14 +26,22 @@ namespace subs2srs4linux
 	/// </summary>
 	public static class InstanceSettings {
 		public static String temporaryFilesPath = System.IO.Path.GetTempPath() + "subs2srs4linux/";
-	}
-	
-	public static class ConstantSettings { 
-		public const float overlappingThreshold_InterSub = 0.4f;
-		public const float overlappingThreshold_InSub = 0.01f;
 
-		public const String formatProberCommand = "ffprobe";
-		public const String formatConvertCommand = "ffmpeg";
+		public static SystemSettings systemSettings = new SystemSettings();
+	}
+
+	/// <summary>
+	/// These values will be read from a xml file (through serialization) in the same path as the program.
+	/// </summary>
+	[Serializable]
+	public class SystemSettings { 
+		public float overlappingThreshold_InterSub = 0.4f;
+		public float overlappingThreshold_InSub = 0.01f;
+
+		public String formatProberCommand = "ffprobe";
+		public String formatConvertCommand = "ffmpeg";
+
+		public String preLoadedSettings = null;
 	}
 	
 	[Serializable]

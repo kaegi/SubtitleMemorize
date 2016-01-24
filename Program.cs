@@ -1,4 +1,21 @@
-﻿using System;
+﻿// Copyright (C) 2016    Chang Spivey
+//
+// This program is free software; you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation; either version 3 of the License, or
+// (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with this program; if not, write to the Free Software Foundation,
+// Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301  USA
+//
+
+using System;
 using System.Xml;
 using System.Xml.Serialization;
 using Gtk;
@@ -343,6 +360,8 @@ namespace subs2srs4linux
 			ReadGui (m_defaultSettings);
 			m_subtitleOptionsWindow.HideOnDelete ();
 
+			if (InstanceSettings.systemSettings.preLoadedSettings != null)
+				LoadSaveStateFromFile (InstanceSettings.systemSettings.preLoadedSettings);
 
 			// this has to be after "mainWindow.Show()", because otherwise the width of the window
 			// is determined by the width of this text
@@ -985,7 +1004,28 @@ namespace subs2srs4linux
 			// ensure, the temporary path exists
 			Directory.CreateDirectory(InstanceSettings.temporaryFilesPath);
 
+			// read system settings
+			try {
+				XmlSerializer ser = new XmlSerializer(typeof(SystemSettings));
+				using(TextReader writer = new StreamReader ("settings.s2s4l")) {
+					InstanceSettings.systemSettings = (SystemSettings) ser.Deserialize(writer);
+				}
+			} catch {
+				Console.WriteLine ("WARNING: failed to read \"setttings.s2s4l\" so default settings are used");
+			}
+
+			Console.WriteLine (InstanceSettings.systemSettings.overlappingThreshold_InterSub);
+
 			new MainClass ();
+
+			// write system settings (could be write protected -> ignore)
+			try {
+				XmlSerializer ser = new XmlSerializer (typeof(SystemSettings));
+				using (TextWriter writer = new StreamWriter ("settings.s2s4l", false)) {
+					ser.Serialize (writer, InstanceSettings.systemSettings);
+				}
+			} catch(Exception) {
+			}
 		}
 	}
 }
