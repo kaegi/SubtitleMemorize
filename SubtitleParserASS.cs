@@ -39,7 +39,7 @@ namespace subs2srs4linux
 		/// </summary>
 		/// <param name="settings">Settings.</param>
 		/// <param name="rawLines">Raw lines.</param>
-		public List<LineInfo> parse(Settings settings, List<String> rawLines) {
+		public List<LineInfo> parse(Settings settings, LinkedList<String> rawLines) {
 			List<LineInfo> lines = new List<LineInfo> ();
 
 			string formatRegex = GetFormatRegex (rawLines);
@@ -48,6 +48,8 @@ namespace subs2srs4linux
 			
 			// parse every line with format regex and save lines in LineInfo
 			foreach(string rawLine in rawLines) {
+				if (settings.IgnoreStyledSubLines && rawLine.Contains (",{\\")) // TODO: this is a really big hint for styled subtitles but might create false-negatives
+					continue;
 				Match lineMatch = Regex.Match(rawLine, formatRegex, RegexOptions.IgnoreCase | RegexOptions.Compiled);
 
 				if (!lineMatch.Success)
@@ -110,7 +112,7 @@ namespace subs2srs4linux
 		/// </summary>
 		/// <returns>The format regex.</returns>
 		/// <param name="rawLines">Raw lines.</param>
-		public string GetFormatRegex(List<String> rawLines) {
+		public string GetFormatRegex(LinkedList<String> rawLines) {
 		
 			// find "Format: ..." line in "[Event]" Section
 			bool eventSection = false;
@@ -149,7 +151,7 @@ namespace subs2srs4linux
 					regex += "(?<Text>.*)"; // should be last in format string; no comma or "?" in regex
 				} else {
 					// ignore until next comma
-					regex += "(.*?),";
+					regex += ".*?,";
 				}
 			}
 
@@ -162,11 +164,11 @@ namespace subs2srs4linux
 		/// <param name="settings">Settings.</param>
 		/// <param name="stream">Stream.</param>
 		public List<LineInfo> parse(Settings settings, Stream stream, Encoding encoding) {
-			List<String> rawLines = new List<String> ();
+			LinkedList<String> rawLines = new LinkedList<String> ();
 			using(StreamReader reader = new StreamReader (stream, encoding)) {
 				String line;
 				while((line = reader.ReadLine()) != null) {
-					rawLines.Add(line.Trim());
+					rawLines.AddLast(line.Trim());
 				}
 			}
 
