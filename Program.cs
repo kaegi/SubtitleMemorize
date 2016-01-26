@@ -701,12 +701,34 @@ namespace subs2srs4linux
 
 				if(previewOrGo == PendingOperation.GENERATE_PREVIEW)
 					PopulatePreviewList();
+				else
+					ExportData(settings, progressInfo);
 
 				// close progress window, free pending operation variable
 				CloseProgressWindow ();
 			}));
 			compuationThread.Start();
 
+		}
+
+		private void ExportData(Settings settings, InfoProgress progressInfo) {
+			String tsvFilename = settings.OutputDirectoryPath + Path.DirectorySeparatorChar + settings.DeckName + ".tsv";
+			String audioPath = settings.OutputDirectoryPath + Path.DirectorySeparatorChar + settings.DeckName + "_audio" + Path.DirectorySeparatorChar;
+			String snapshotsPath = settings.OutputDirectoryPath + Path.DirectorySeparatorChar + settings.DeckName + "_snapshots" + Path.DirectorySeparatorChar;
+			Console.WriteLine (tsvFilename);
+
+			// extract images
+			//List<String> snapshotNames = WorkerSnapshot.Extract(settings, snapshotsPath, m_allEntryInfomation);
+
+			// extract audio
+			//List<String> audioNames = WorkerAudio.ExtractAudio(settings, audioPath, m_allEntryInfomation);
+
+			using(var outputStream = new StreamWriter(tsvFilename)) {
+				foreach (UtilsSubtitle.EntryInformation entryInfo in m_allEntryInfomation) {
+					String key = entryInfo.GetKey ();
+					outputStream.WriteLine (key + "\t" + entryInfo.targetLanguageString + "\t" + entryInfo.nativeLanguageString);
+				}
+			}
 		}
 
 		private void PopulatePreviewList() {

@@ -169,6 +169,14 @@ namespace subs2srs4linux
 				this.startTimestamp = startTimestamp;
 				this.endTimestamp = endTimestamp;
 			}
+
+			/// <summary>
+			/// Returns some string that identifies this entry information.
+			/// </summary>
+			/// <returns>The key.</returns>
+			public String GetKey() {
+				return String.Format ("{0:000.}", episodeNumber) + "_" + UtilsCommon.ToTimeArg (startTimestamp) + "_" + UtilsCommon.ToTimeArg (endTimestamp);
+			}
 		}
 	}
 }
