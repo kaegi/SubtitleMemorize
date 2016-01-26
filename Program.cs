@@ -405,7 +405,7 @@ namespace subs2srs4linux
 		/// <returns>Every entry in the outer list refers to exactly one subtitle file and for every file there is a list of all lines in it.</returns>
 		/// <param name="settings">Settings.</param>
 		/// <param name="attributedFilePaths">Attributed file path string.</param>
-		private static List<List<LineInfo>> ReadAllSubtitleFiles (Settings settings, PerSubtitleSettings thisSubtitleSettings, List<EpisodeInfo> episodeInfos, int subtileIndex)
+		private static List<List<LineInfo>> ReadAllSubtitleFiles (Settings settings, PerSubtitleSettings thisSubtitleSettings, List<EpisodeInfo> episodeInfos, int subtileIndex, InfoProgress progressInfo)
 		{
 			// read all lines in every subtitle file
 			List<List<LineInfo>> lineInfosPerEpisode = new List<List<LineInfo>> ();
@@ -415,6 +415,7 @@ namespace subs2srs4linux
 					lineInfosPerEpisode.Add (null);
 				else
 					lineInfosPerEpisode.Add (UtilsSubtitle.ParseSubtitleWithPostProcessing (settings, thisSubtitleSettings, fileDesc.filename, fileDesc.properties));
+				progressInfo.ProcessedSteps (1);
 			}
 
 			return lineInfosPerEpisode;
@@ -536,15 +537,32 @@ namespace subs2srs4linux
 					return;
 
 				Thread compuationThread = new Thread(new ThreadStart(delegate {
-
+					InfoProgress progressInfo = new InfoProgress(ProgressHandler);
 
 					// find sub1, sub2, audio and video file per episode
 					m_episodeInfo.Clear();
 					m_episodeInfo.AddRange(GenerateEpisodeInfos(settings));
 
+					// fill in progress sections
+					for(int i = 0; i < m_episodeInfo.Count; i++)
+						progressInfo.AddSection(String.Format("Episode {0:00.}: Extracting Sub1", i + 1), 1);
+					for(int i = 0; i < m_episodeInfo.Count; i++)
+						progressInfo.AddSection(String.Format("Episode {0:00.}: Extracting Sub2", i + 1), 1);
+					for(int i = 0; i < m_episodeInfo.Count; i++)
+						progressInfo.AddSection(String.Format("Episode {0:00.}: Matching subtitles", i + 1), 1);
+
+					progressInfo.AddSection("Preparing data presenting", 1);
+					progressInfo.StartProgressing();
+
+
 					// read all sub-files, match them and create a list for user that can be presented in preview window
 					m_allEntryInfomation.Clear();
-					m_allEntryInfomation.AddRange(GenerateEntryInformation(settings, m_episodeInfo));
+					m_allEntryInfomation.AddRange(GenerateEntryInformation(settings, m_episodeInfo, progressInfo));
+
+					// finish this last step
+					progressInfo.ProcessedSteps(1);
+
+					//infoProgress.ProcessedSteps(1);
 
 					// choose to show all episodes
 					SelectEpisodeForPreview(-1);
@@ -694,11 +712,11 @@ namespace subs2srs4linux
 		/// This reads all subtitles, matches them and saves them to the "m_allEntryInfomation"
 		/// </summary>
 		/// <param name="settings">Settings.</param>
-		private static List<UtilsSubtitle.EntryInformation> GenerateEntryInformation(Settings settings, List<EpisodeInfo> episodeInfos) {
+		private static List<UtilsSubtitle.EntryInformation> GenerateEntryInformation(Settings settings, List<EpisodeInfo> episodeInfos, InfoProgress progressInfo) {
 			
 			// read subtitles
-			List<List<LineInfo>> lineInfosPerEpisode_TargetLanguage = ReadAllSubtitleFiles(settings, settings.PerSubtitleSettings[0], episodeInfos, 0);
-			List<List<LineInfo>> lineInfosPerEpisode_NativeLanguage = ReadAllSubtitleFiles(settings, settings.PerSubtitleSettings[1], episodeInfos, 1);
+			List<List<LineInfo>> lineInfosPerEpisode_TargetLanguage = ReadAllSubtitleFiles(settings, settings.PerSubtitleSettings[0], episodeInfos, 0, progressInfo);
+			List<List<LineInfo>> lineInfosPerEpisode_NativeLanguage = ReadAllSubtitleFiles(settings, settings.PerSubtitleSettings[1], episodeInfos, 1, progressInfo);
 
 
 			List<UtilsSubtitle.EntryInformation> allEntryInformations = new List<UtilsSubtitle.EntryInformation> ();
@@ -709,6 +727,8 @@ namespace subs2srs4linux
 				List<SubtitleMatcher.BiMatchedLines> matchedLinesList = SubtitleMatcher.MatchSubtitles(list1, list2);
 				List<UtilsSubtitle.EntryInformation> thisEpisodeEntryInfos = SubtitleMatcher.GetEntryInformation(settings.IgnoreSingleSubLines, episodeNumber, matchedLinesList, list1, list2);
 				allEntryInformations.AddRange(thisEpisodeEntryInfos);
+
+				progressInfo.ProcessedSteps (1);
 			}
 
 			return allEntryInformations;
@@ -729,6 +749,13 @@ namespace subs2srs4linux
 
 			m_windowProgressInfo.Show ();
 			return true;
+		}
+
+		private void ProgressHandler(String name, double percentage) {
+			Gtk.Application.Invoke (delegate {
+				m_progressbarProgressInfo.Text = name ?? "No name";
+				m_progressbarProgressInfo.Fraction = percentage;
+			});
 		}
 
 		/// <summary>
