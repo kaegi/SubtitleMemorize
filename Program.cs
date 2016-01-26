@@ -533,78 +533,13 @@ namespace subs2srs4linux
 
 			// ----------------------------------------------------------------------------------------------------
 			m_buttonPreview.Clicked += delegate(object o, EventArgs args) {
-				// because this function/delegate is synchronized in gtk-thread -> guard with simple variable against pressing button two times
-				if (!OpenProgressWindow (PendingOperation.GENERATE_PREVIEW))
-					return;
-
-				// read all required information to class/struct, so that off-gtk-thread computation is possible
-				Settings settings = new Settings ();
-				ReadGui (settings);
-
-				// quickly decide whether these inputs can be used for a run
-				if (!IsSettingsValid (settings))
-					return;
-
-				Thread compuationThread = new Thread(new ThreadStart(delegate {
-					InfoProgress progressInfo = new InfoProgress(ProgressHandler);
-
-					// find sub1, sub2, audio and video file per episode
-					m_episodeInfo.Clear();
-					m_episodeInfo.AddRange(GenerateEpisodeInfos(settings));
-
-					// fill in progress sections
-					for(int i = 0; i < m_episodeInfo.Count; i++)
-						progressInfo.AddSection(String.Format("Episode {0:00.}: Extracting Sub1", i + 1), 1);
-					for(int i = 0; i < m_episodeInfo.Count; i++)
-						progressInfo.AddSection(String.Format("Episode {0:00.}: Extracting Sub2", i + 1), 1);
-					for(int i = 0; i < m_episodeInfo.Count; i++)
-						progressInfo.AddSection(String.Format("Episode {0:00.}: Matching subtitles", i + 1), 1);
-
-					progressInfo.AddSection("Preparing data presenting", 1);
-					progressInfo.StartProgressing();
-
-
-					// read all sub-files, match them and create a list for user that can be presented in preview window
-					m_allEntryInfomation.Clear();
-					m_allEntryInfomation.AddRange(GenerateEntryInformation(settings, m_episodeInfo, progressInfo));
-
-					// finish this last step
-					progressInfo.ProcessedSteps(1);
-
-					//infoProgress.ProcessedSteps(1);
-
-					// choose to show all episodes
-					SelectEpisodeForPreview(-1);
-
-					Gtk.Application.Invoke(delegate {
-
-						// populate subtitle list
-						m_liststoreLines.Clear ();
-						ShowAllSelectedEntryInformations();
-
-
-						// select first entry
-						m_treeviewSelectionLines.UnselectAll();
-						TreeIter firstTreeIter = new TreeIter();
-						m_liststoreLines.GetIterFirst(out firstTreeIter);
-						m_treeviewSelectionLines.SelectIter(firstTreeIter);
-
-						// close progress window, free pending operation variable
-						CloseProgressWindow ();
-
-						m_previewWindow.ShowAll ();
-					});
-				}));
-				compuationThread.Start();
+				GoOrPreviewClicked(PendingOperation.GENERATE_PREVIEW);
 			};
 
 
 			// ----------------------------------------------------------------------------------------------------
 			m_buttonGo.Clicked += delegate(object o, EventArgs args) {
-				Settings settings = new Settings ();
-				ReadGui (settings);
-				if (!IsSettingsValid (settings))
-					return;
+				GoOrPreviewClicked(PendingOperation.GENERATE_OUTPUT);
 			};
 
 			// ----------------------------------------------------------------------------------------------------
@@ -717,6 +652,82 @@ namespace subs2srs4linux
 			return episodeFiles;
 		}
 
+		private void GoOrPreviewClicked(PendingOperation previewOrGo) {
+
+
+			// because this function/delegate is synchronized in gtk-thread -> guard with simple variable against pressing button two times
+			if (!OpenProgressWindow (previewOrGo))
+				return;
+
+			// read all required information to class/struct, so that off-gtk-thread computation is possible
+			Settings settings = new Settings ();
+			ReadGui (settings);
+
+			// quickly decide whether these inputs can be used for a run
+			if (!IsSettingsValid (settings))
+				return;
+
+			Thread compuationThread = new Thread(new ThreadStart(delegate {
+
+				InfoProgress progressInfo = new InfoProgress(ProgressHandler);
+
+				// find sub1, sub2, audio and video file per episode
+				m_episodeInfo.Clear();
+				m_episodeInfo.AddRange(GenerateEpisodeInfos(settings));
+
+				// fill in progress sections
+				for(int i = 0; i < m_episodeInfo.Count; i++)
+					progressInfo.AddSection(String.Format("Episode {0:00.}: Extracting Sub1", i + 1), 1);
+				for(int i = 0; i < m_episodeInfo.Count; i++)
+					progressInfo.AddSection(String.Format("Episode {0:00.}: Extracting Sub2", i + 1), 1);
+				for(int i = 0; i < m_episodeInfo.Count; i++)
+					progressInfo.AddSection(String.Format("Episode {0:00.}: Matching subtitles", i + 1), 1);
+
+				progressInfo.AddSection("Preparing data presentation", 1);
+				progressInfo.StartProgressing();
+
+
+				// read all sub-files, match them and create a list for user that can be presented in preview window
+				m_allEntryInfomation.Clear();
+				m_allEntryInfomation.AddRange(GenerateEntryInformation(settings, m_episodeInfo, progressInfo));
+
+				// finish this last step
+				progressInfo.ProcessedSteps(1);
+
+				//infoProgress.ProcessedSteps(1);
+
+				// choose to show all episodes
+				SelectEpisodeForPreview(-1);
+
+				if(previewOrGo == PendingOperation.GENERATE_PREVIEW)
+					PopulatePreviewList();
+
+				// close progress window, free pending operation variable
+				CloseProgressWindow ();
+			}));
+			compuationThread.Start();
+
+		}
+
+		private void PopulatePreviewList() {
+
+			Gtk.Application.Invoke(delegate {
+
+				// populate subtitle list
+				m_liststoreLines.Clear ();
+				ShowAllSelectedEntryInformations();
+
+
+				// select first entry
+				m_treeviewSelectionLines.UnselectAll();
+				TreeIter firstTreeIter = new TreeIter();
+				m_liststoreLines.GetIterFirst(out firstTreeIter);
+				m_treeviewSelectionLines.SelectIter(firstTreeIter);
+
+				m_previewWindow.ShowAll ();
+			});
+		}
+
 		/// <summary>
 		/// This reads all subtitles, matches them and saves them to the "m_allEntryInfomation"
 		/// </summary>
@@ -771,8 +782,10 @@ namespace subs2srs4linux
 		/// Closes/Hides the progress window.
 		/// </summary>
 		private void CloseProgressWindow() {
-			m_windowProgressInfo.Hide ();
-			m_pendingOperation = PendingOperation.NOTHING;
+			Gtk.Application.Invoke (delegate {
+				m_windowProgressInfo.Hide ();
+				m_pendingOperation = PendingOperation.NOTHING;
+			});
 		}
 
 		private void OpenSubtitleWindow(int subIndex) {
