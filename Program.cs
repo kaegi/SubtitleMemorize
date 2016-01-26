@@ -338,6 +338,11 @@ namespace subs2srs4linux
 		private readonly Gtk.Builder m_builder = new Builder();
 		private int m_numberOfInfobarLabelMarkupChanges = 0;
 
+
+		// ##################################################################33
+		// Variables for main window
+		private String m_currentPath = null; // used for "Add ..."-Dialogs, so the last position gets remembered
+
 		// ##################################################################33
 		// Variables for Preview window
 		private bool m_ignoreLineSelectionChanges = false;
@@ -434,6 +439,7 @@ namespace subs2srs4linux
 						"_Cancel", ResponseType.Cancel,
 						"_Open", ResponseType.Accept);
 					fcd.LocalOnly = false;
+					if(!String.IsNullOrWhiteSpace(m_currentPath)) fcd.SetFilename(m_currentPath);
 					if ((Gtk.ResponseType)fcd.Run() == Gtk.ResponseType.Accept) {
 						LoadSaveStateFromFile (fcd.Filename);
 					}
@@ -449,6 +455,7 @@ namespace subs2srs4linux
 						"_Save", ResponseType.Accept);
 					fcd.DoOverwriteConfirmation = true;
 					fcd.LocalOnly = false;
+					if(!String.IsNullOrWhiteSpace(m_currentPath)) fcd.SetFilename(m_currentPath);
 					if ((Gtk.ResponseType)fcd.Run() == Gtk.ResponseType.Accept) {
 						SaveStateToFile (fcd.Filename);
 					}
@@ -484,8 +491,10 @@ namespace subs2srs4linux
 					"_Choose", ResponseType.Accept);
 				fcd.DoOverwriteConfirmation = true;
 				fcd.SelectMultiple = true;
+				if(!String.IsNullOrWhiteSpace(m_currentPath)) fcd.SelectFilename(m_currentPath);
 				if ((Gtk.ResponseType)fcd.Run () == Gtk.ResponseType.Accept) {
 					m_entryOutputDirectory.Text = fcd.Filename;
+					m_currentPath = fcd.Filename;
 				}
 				fcd.Destroy ();
 			};
@@ -948,8 +957,11 @@ namespace subs2srs4linux
 				"_Open", ResponseType.Accept);
 			fcd.DoOverwriteConfirmation = true;
 			fcd.SelectMultiple = true;
+			if(!String.IsNullOrWhiteSpace(m_currentPath)) fcd.SetFilename (m_currentPath);
 			if ((Gtk.ResponseType)fcd.Run() == Gtk.ResponseType.Accept) {
 				filenames = fcd.Filenames;
+				if(filenames != null && filenames.Length > 0)
+					m_currentPath = filenames[0];
 			}
 			fcd.Destroy ();
 
@@ -970,6 +982,8 @@ namespace subs2srs4linux
 		}
 
 		private void SaveStateToFile(string filename) {
+			m_currentPath = filename;
+
 			Settings settings = new Settings ();
 			ReadGui (settings);
 			using (var fileStream = new FileStream(filename, FileMode.Create)) {
@@ -979,6 +993,8 @@ namespace subs2srs4linux
 		}
 
 		private void LoadSaveStateFromFile(string filename) {
+			m_currentPath = filename;
+
 			using (FileStream fileStream = new FileStream (filename, FileMode.Open)) {
 				BinaryFormatter fmt = new BinaryFormatter ();
 				Settings settings = (Settings) fmt.Deserialize (fileStream);
