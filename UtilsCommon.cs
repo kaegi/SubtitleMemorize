@@ -201,8 +201,8 @@ namespace subs2srs4linux
 			FileInfo fileInfo = new FileInfo (filename);
 			long fileLength = fileInfo.Length;
 			double modificationDate = fileInfo.LastWriteTimeUtc.TimeOfDay.TotalMilliseconds;
-			String fileLengthChecksum = BitConverter.ToString (BitConverter.GetBytes (fileLength));
-			String modificationTimeChecksum = BitConverter.ToString (BitConverter.GetBytes (modificationDate));
+			String fileLengthChecksum = BitConverter.ToString (BitConverter.GetBytes (fileLength)).Replace("-", "");
+			String modificationTimeChecksum = BitConverter.ToString (BitConverter.GetBytes (modificationDate)).Replace("-", "");
 			return fileLengthChecksum + "_" + modificationTimeChecksum;
 		}
 	}
