@@ -88,6 +88,7 @@ namespace subs2srs4linux
 		private Gtk.Label m_label3;
 		private Gtk.Frame m_frame15;
 		private Gtk.ComboBox m_comboboxSubStream;
+		private Gtk.CellRendererText m_cellrendertextSubStreams;
 		private Gtk.Label m_label4;
 		private Gtk.Button m_buttonSubOptionsApply;
 		private Gtk.Adjustment m_numericalAdjustmentSub1;
@@ -173,6 +174,11 @@ namespace subs2srs4linux
 		private Gtk.Button m_buttonPreview;
 		private Gtk.Button m_buttonGo;
 		private Gtk.Label m_label19;
+		private Gtk.Window m_windowProgressInfo;
+		private Gtk.Alignment m_alignment12;
+		private Gtk.Box m_box14;
+		private Gtk.ProgressBar m_progressbarProgressInfo;
+		private Gtk.Button m_buttonCancelOperation;
 
 		private void InitializeGtkObjects(Gtk.Builder b) {
 			m_action1 = (Gtk.Action) b.GetObject("action1");
@@ -231,6 +237,7 @@ namespace subs2srs4linux
 			m_label3 = (Gtk.Label) b.GetObject("label3");
 			m_frame15 = (Gtk.Frame) b.GetObject("frame15");
 			m_comboboxSubStream = (Gtk.ComboBox) b.GetObject("combobox_sub_stream");
+			m_cellrendertextSubStreams = (Gtk.CellRendererText) b.GetObject("cellrendertext_sub_streams");
 			m_label4 = (Gtk.Label) b.GetObject("label4");
 			m_buttonSubOptionsApply = (Gtk.Button) b.GetObject("button_sub_options_apply");
 			m_numericalAdjustmentSub1 = (Gtk.Adjustment) b.GetObject("numerical_adjustment_sub1");
@@ -316,6 +323,11 @@ namespace subs2srs4linux
 			m_buttonPreview = (Gtk.Button) b.GetObject("button_preview");
 			m_buttonGo = (Gtk.Button) b.GetObject("button_go");
 			m_label19 = (Gtk.Label) b.GetObject("label19");
+			m_windowProgressInfo = (Gtk.Window) b.GetObject("window_progress_info");
+			m_alignment12 = (Gtk.Alignment) b.GetObject("alignment12");
+			m_box14 = (Gtk.Box) b.GetObject("box14");
+			m_progressbarProgressInfo = (Gtk.ProgressBar) b.GetObject("progressbar_progress_info");
+			m_buttonCancelOperation = (Gtk.Button) b.GetObject("button_cancel_operation");
 		}
 		#pragma warning restore 0414
 		////////////////// AUTO-GENERATED CODE END //////////////////////
@@ -339,6 +351,16 @@ namespace subs2srs4linux
 		private int m_subOptionsWindow_subIndex = 0;
 		private List<int> m_subOptionsWindowStreamIndices = new List<int>();
 
+
+		// ##################################################################33
+		// Variables for Progress-Window
+		private enum PendingOperation{
+			GENERATE_PREVIEW, // "Preview"/"Refresh"
+			GENERATE_OUTPUT, // "Go"
+			NOTHING
+		}
+		private PendingOperation m_pendingOperation = PendingOperation.NOTHING;
+
 		static private readonly string m_infobarLabelStandardMarkup = "Welcome to subs2srs4linux!" +
 			" To see more information just hover the cursor over a button or field.\n" +
 			"If any questions arise, please visit <span foreground=\"white\"><a href=\"https://www.github.com/\">https://www.github.com/</a></span>.";
@@ -357,8 +379,12 @@ namespace subs2srs4linux
 
 
 			m_mainWindow.ShowAll();
+
+
+
 			ReadGui (m_defaultSettings);
 			m_subtitleOptionsWindow.HideOnDelete ();
+
 
 			if (InstanceSettings.systemSettings.preLoadedSettings != null)
 				LoadSaveStateFromFile (InstanceSettings.systemSettings.preLoadedSettings);
@@ -366,6 +392,7 @@ namespace subs2srs4linux
 			// this has to be after "mainWindow.Show()", because otherwise the width of the window
 			// is determined by the width of this text
 			m_labelInInfobar.Markup = m_infobarLabelStandardMarkup;
+
 
 			//on_button_preview_clicked(null, null);
 
@@ -378,16 +405,17 @@ namespace subs2srs4linux
 		/// <returns>Every entry in the outer list refers to exactly one subtitle file and for every file there is a list of all lines in it.</returns>
 		/// <param name="settings">Settings.</param>
 		/// <param name="attributedFilePaths">Attributed file path string.</param>
-		private List<List<LineInfo>> ReadAllSubtitleFiles (Settings settings, PerSubtitleSettings thisSubtitleSettings, int subtileIndex)
+		private static List<List<LineInfo>> ReadAllSubtitleFiles (Settings settings, PerSubtitleSettings thisSubtitleSettings, List<EpisodeInfo> episodeInfos, int subtileIndex, InfoProgress progressInfo)
 		{
 			// read all lines in every subtitle file
 			List<List<LineInfo>> lineInfosPerEpisode = new List<List<LineInfo>> ();
-			foreach (EpisodeInfo episodeInfo in m_episodeInfo) {
+			foreach (EpisodeInfo episodeInfo in episodeInfos) {
 				UtilsInputFiles.FileDesc fileDesc = episodeInfo.SubsFileDesc [subtileIndex];
 				if (String.IsNullOrWhiteSpace (fileDesc.filename))
 					lineInfosPerEpisode.Add (null);
 				else
 					lineInfosPerEpisode.Add (UtilsSubtitle.ParseSubtitleWithPostProcessing (settings, thisSubtitleSettings, fileDesc.filename, fileDesc.properties));
+				progressInfo.ProcessedSteps (1);
 			}
 
 			return lineInfosPerEpisode;
@@ -496,9 +524,69 @@ namespace subs2srs4linux
 
 			// ----------------------------------------------------------------------------------------------------
 			m_buttonPreview.Clicked += delegate(object o, EventArgs args) {
-				UpdatePreviewWindow();
+				// because this function/delegate is synchronized in gtk-thread -> guard with simple variable against pressing button two times
+				if (!OpenProgressWindow (PendingOperation.GENERATE_PREVIEW))
+					return;
 
-				m_previewWindow.ShowAll ();
+				// read all required information to class/struct, so that off-gtk-thread computation is possible
+				Settings settings = new Settings ();
+				ReadGui (settings);
+
+				// quickly decide whether these inputs can be used for a run
+				if (!IsSettingsValid (settings))
+					return;
+
+				Thread compuationThread = new Thread(new ThreadStart(delegate {
+					InfoProgress progressInfo = new InfoProgress(ProgressHandler);
+
+					// find sub1, sub2, audio and video file per episode
+					m_episodeInfo.Clear();
+					m_episodeInfo.AddRange(GenerateEpisodeInfos(settings));
+
+					// fill in progress sections
+					for(int i = 0; i < m_episodeInfo.Count; i++)
+						progressInfo.AddSection(String.Format("Episode {0:00.}: Extracting Sub1", i + 1), 1);
+					for(int i = 0; i < m_episodeInfo.Count; i++)
+						progressInfo.AddSection(String.Format("Episode {0:00.}: Extracting Sub2", i + 1), 1);
+					for(int i = 0; i < m_episodeInfo.Count; i++)
+						progressInfo.AddSection(String.Format("Episode {0:00.}: Matching subtitles", i + 1), 1);
+
+					progressInfo.AddSection("Preparing data presenting", 1);
+					progressInfo.StartProgressing();
+
+
+					// read all sub-files, match them and create a list for user that can be presented in preview window
+					m_allEntryInfomation.Clear();
+					m_allEntryInfomation.AddRange(GenerateEntryInformation(settings, m_episodeInfo, progressInfo));
+
+					// finish this last step
+					progressInfo.ProcessedSteps(1);
+
+					//infoProgress.ProcessedSteps(1);
+
+					// choose to show all episodes
+					SelectEpisodeForPreview(-1);
+
+					Gtk.Application.Invoke(delegate {
+
+						// populate subtitle list
+						m_liststoreLines.Clear ();
+						ShowAllSelectedEntryInformations();
+
+
+						// select first entry
+						m_treeviewSelectionLines.UnselectAll();
+						TreeIter firstTreeIter = new TreeIter();
+						m_liststoreLines.GetIterFirst(out firstTreeIter);
+						m_treeviewSelectionLines.SelectIter(firstTreeIter);
+
+						// close progress window, free pending operation variable
+						CloseProgressWindow ();
+
+						m_previewWindow.ShowAll ();
+					});
+				}));
+				compuationThread.Start();
 			};
 
 
@@ -595,13 +683,8 @@ namespace subs2srs4linux
 			};
 		}
 
-		private void UpdatePreviewWindow() {
-			Settings settings = new Settings ();
-			ReadGui (settings);
 
-			// quickly decide whether these inputs can be used for a run
-			if (!IsSettingsValid (settings))
-				return;
+		private static List<EpisodeInfo> GenerateEpisodeInfos(Settings settings) {
 
 			// get all filenames
 			UtilsInputFiles sub1Files = new UtilsInputFiles (settings.TargetFilePath);
@@ -618,36 +701,69 @@ namespace subs2srs4linux
 				throw new Exception("Number of files in target languages and number of files in native language does not match.");
 
 			// fill episode info
-			m_episodeInfo.Clear();
+			List<EpisodeInfo> episodeFiles = new List<EpisodeInfo>();
 			for(int episodeIndex = 0; episodeIndex < numberOfEpisodes; episodeIndex++)
-				m_episodeInfo.Add(new EpisodeInfo(videoFileDescs[episodeIndex], null, sub1FileDescs[episodeIndex], sub2FileDescs[episodeIndex]));
+				episodeFiles.Add(new EpisodeInfo(videoFileDescs[episodeIndex], null, sub1FileDescs[episodeIndex], sub2FileDescs[episodeIndex]));
 
+			return episodeFiles;
+		}
 
+		/// <summary>
+		/// This reads all subtitles, matches them and saves them to the "m_allEntryInfomation"
+		/// </summary>
+		/// <param name="settings">Settings.</param>
+		private static List<UtilsSubtitle.EntryInformation> GenerateEntryInformation(Settings settings, List<EpisodeInfo> episodeInfos, InfoProgress progressInfo) {
+			
 			// read subtitles
-			List<List<LineInfo>> lineInfosPerEpisode_TargetLanguage = ReadAllSubtitleFiles(settings, settings.PerSubtitleSettings[0], 0);
-			List<List<LineInfo>> lineInfosPerEpisode_NativeLanguage = ReadAllSubtitleFiles(settings, settings.PerSubtitleSettings[1], 1);
+			List<List<LineInfo>> lineInfosPerEpisode_TargetLanguage = ReadAllSubtitleFiles(settings, settings.PerSubtitleSettings[0], episodeInfos, 0, progressInfo);
+			List<List<LineInfo>> lineInfosPerEpisode_NativeLanguage = ReadAllSubtitleFiles(settings, settings.PerSubtitleSettings[1], episodeInfos, 1, progressInfo);
 
 
-			// populate subtitle list
-			m_liststoreLines.Clear ();
-			m_allEntryInfomation.Clear();
+			List<UtilsSubtitle.EntryInformation> allEntryInformations = new List<UtilsSubtitle.EntryInformation> ();
 			for(int episodeNumber = 0; episodeNumber < lineInfosPerEpisode_TargetLanguage.Count; episodeNumber++) {
 				List<LineInfo> list1 = lineInfosPerEpisode_TargetLanguage[episodeNumber];
 				List<LineInfo> list2 = lineInfosPerEpisode_NativeLanguage[episodeNumber];
 
 				List<SubtitleMatcher.BiMatchedLines> matchedLinesList = SubtitleMatcher.MatchSubtitles(list1, list2);
 				List<UtilsSubtitle.EntryInformation> thisEpisodeEntryInfos = SubtitleMatcher.GetEntryInformation(settings.IgnoreSingleSubLines, episodeNumber, matchedLinesList, list1, list2);
-				m_allEntryInfomation.AddRange(thisEpisodeEntryInfos);
+				allEntryInformations.AddRange(thisEpisodeEntryInfos);
+
+				progressInfo.ProcessedSteps (1);
 			}
 
-			SelectEpisodeForPreview(-1);
-			ShowAllSelectedEntryInformations();
+			return allEntryInformations;
+		}
 
-			// select first entry
-			TreeIter firstTreeIter = new TreeIter();
-			m_liststoreLines.GetIterFirst(out firstTreeIter);
-			m_treeviewSelectionLines.UnselectAll();
-			m_treeviewSelectionLines.SelectIter(firstTreeIter);
+		/// <summary>
+		/// Opens the progress window and sets the current pending operation.
+		/// </summary>
+		/// <returns><c>true</c>, if progress window was opened, <c>false</c>, if there already is an operation pending.</returns>
+		/// <param name="thisOperation">This operation.</param>
+		private bool OpenProgressWindow(PendingOperation thisOperation) {
+			// do not start another operation when there is already one
+			if (m_pendingOperation != PendingOperation.NOTHING)
+				return false;
+			
+
+			m_pendingOperation = thisOperation;
+
+			m_windowProgressInfo.Show ();
+			return true;
+		}
+
+		private void ProgressHandler(String name, double percentage) {
+			Gtk.Application.Invoke (delegate {
+				m_progressbarProgressInfo.Text = name ?? "No name";
+				m_progressbarProgressInfo.Fraction = percentage;
+			});
+		}
+
+		/// <summary>
+		/// Closes/Hides the progress window.
+		/// </summary>
+		private void CloseProgressWindow() {
+			m_windowProgressInfo.Hide ();
+			m_pendingOperation = PendingOperation.NOTHING;
 		}
 
 		private void OpenSubtitleWindow(int subIndex) {
