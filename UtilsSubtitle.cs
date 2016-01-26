@@ -158,14 +158,14 @@ namespace subs2srs4linux
 		public struct EntryInformation {
 			public String targetLanguageString;
 			public String nativeLanguageString;
-			public int episodeNumber;
+			public EpisodeInfo episodeInfo;
 			public DateTime startTimestamp;
 			public DateTime endTimestamp;
 
-			public EntryInformation(String targetLanguageString, String nativeLanguageString, int episodeNumber, DateTime startTimestamp, DateTime endTimestamp) {
+			public EntryInformation(String targetLanguageString, String nativeLanguageString, EpisodeInfo episodeInfo, DateTime startTimestamp, DateTime endTimestamp) {
 				this.targetLanguageString = targetLanguageString;
 				this.nativeLanguageString = nativeLanguageString;
-				this.episodeNumber = episodeNumber;
+				this.episodeInfo = episodeInfo;
 				this.startTimestamp = startTimestamp;
 				this.endTimestamp = endTimestamp;
 			}
@@ -175,7 +175,7 @@ namespace subs2srs4linux
 			/// </summary>
 			/// <returns>The key.</returns>
 			public String GetKey() {
-				return String.Format ("{0:000.}", episodeNumber) + "_" + UtilsCommon.ToTimeArg (startTimestamp) + "_" + UtilsCommon.ToTimeArg (endTimestamp);
+				return String.Format ("{0:000.}", episodeInfo.Number) + "_" + UtilsCommon.ToTimeArg (startTimestamp) + "_" + UtilsCommon.ToTimeArg (endTimestamp);
 			}
 		}
 	}

@@ -616,7 +616,7 @@ namespace subs2srs4linux
 				if(m_selectedPreviewIndex < 0) return;
 
 				UtilsSubtitle.EntryInformation entryInfo = m_previewWindowEntries[m_selectedPreviewIndex];
-				EpisodeInfo episodeInfo = m_episodeInfo[entryInfo.episodeNumber];
+				EpisodeInfo episodeInfo = m_episodeInfo[entryInfo.episodeInfo.Index];
 				String arguments = String.Format("--really-quiet --no-video --start={0} --end={1} \"{2}\"", UtilsCommon.ToTimeArg(entryInfo.startTimestamp), UtilsCommon.ToTimeArg(entryInfo.endTimestamp), episodeInfo.VideoFileDesc.filename);
 
 
@@ -647,7 +647,7 @@ namespace subs2srs4linux
 			// fill episode info
 			List<EpisodeInfo> episodeFiles = new List<EpisodeInfo>();
 			for(int episodeIndex = 0; episodeIndex < numberOfEpisodes; episodeIndex++)
-				episodeFiles.Add(new EpisodeInfo(videoFileDescs[episodeIndex], null, sub1FileDescs[episodeIndex], sub2FileDescs[episodeIndex]));
+				episodeFiles.Add(new EpisodeInfo(episodeIndex, episodeIndex + settings.FirstEpisodeNumber, videoFileDescs[episodeIndex], null, sub1FileDescs[episodeIndex], sub2FileDescs[episodeIndex]));
 
 			return episodeFiles;
 		}
@@ -762,12 +762,12 @@ namespace subs2srs4linux
 
 
 			List<UtilsSubtitle.EntryInformation> allEntryInformations = new List<UtilsSubtitle.EntryInformation> ();
-			for(int episodeNumber = 0; episodeNumber < lineInfosPerEpisode_TargetLanguage.Count; episodeNumber++) {
-				List<LineInfo> list1 = lineInfosPerEpisode_TargetLanguage[episodeNumber];
-				List<LineInfo> list2 = lineInfosPerEpisode_NativeLanguage[episodeNumber];
+			for(int episodeIndex = 0; episodeIndex < lineInfosPerEpisode_TargetLanguage.Count; episodeIndex++) {
+				List<LineInfo> list1 = lineInfosPerEpisode_TargetLanguage[episodeIndex];
+				List<LineInfo> list2 = lineInfosPerEpisode_NativeLanguage[episodeIndex];
 
 				List<SubtitleMatcher.BiMatchedLines> matchedLinesList = SubtitleMatcher.MatchSubtitles(list1, list2);
-				List<UtilsSubtitle.EntryInformation> thisEpisodeEntryInfos = SubtitleMatcher.GetEntryInformation(settings.IgnoreSingleSubLines, episodeNumber, matchedLinesList, list1, list2);
+				List<UtilsSubtitle.EntryInformation> thisEpisodeEntryInfos = SubtitleMatcher.GetEntryInformation(settings.IgnoreSingleSubLines, episodeInfos[episodeIndex], matchedLinesList, list1, list2);
 				allEntryInformations.AddRange(thisEpisodeEntryInfos);
 
 				progressInfo.ProcessedSteps (1);
@@ -938,7 +938,7 @@ namespace subs2srs4linux
 			if (selectedIndex != m_selectedPreviewIndex)
 				return;
 
-			UtilsInputFiles.FileDesc videoFilename = m_episodeInfo[entryInfo.episodeNumber].VideoFileDesc;
+			UtilsInputFiles.FileDesc videoFilename = m_episodeInfo[entryInfo.episodeInfo.Index].VideoFileDesc;
 			UtilsImage.GetImage(videoFilename.filename, UtilsCommon.GetMiddleTime(entryInfo.startTimestamp, entryInfo.endTimestamp), "/tmp/subs2srs.jpg");
 
 			Gtk.Application.Invoke (delegate {
@@ -1058,6 +1058,7 @@ namespace subs2srs4linux
 			m_spinbuttonSub2TimeShift.Text = settings.PerSubtitleSettings [1].SubDelay.ToString();
 
 			m_entryDeckName.Text = settings.DeckName ?? "";
+			m_spinbuttonEpisodeNumber.Text = settings.FirstEpisodeNumber.ToString();
 		}
 
 		/// <summary>
@@ -1069,6 +1070,11 @@ namespace subs2srs4linux
 			settings.NativeFilePath = m_entryNativeLanguage.Text;
 			settings.VideoFilePath = m_entryVideoFile.Text;
 			settings.DeckName = m_entryDeckName.Text;
+
+			// read episode number
+			int firstEpisodeNumber = 1;
+			Int32.TryParse (m_spinbuttonEpisodeNumber.Text, out firstEpisodeNumber);
+			settings.FirstEpisodeNumber = firstEpisodeNumber;
 
 			try { settings.PerSubtitleSettings[0].SubDelay = Int32.Parse(m_spinbuttonSub1TimeShift.Text ?? "0"); } catch {}
 			try { settings.PerSubtitleSettings[1].SubDelay = Int32.Parse(m_spinbuttonSub2TimeShift.Text ?? "0"); } catch {}

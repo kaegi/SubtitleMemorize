@@ -21,9 +21,23 @@ namespace subs2srs4linux
 {
 	public class EpisodeInfo
 	{
+		private readonly int m_index; // ranges from [0..numberOfEpisodes-1]
+		private readonly int m_number; // ranges from [firstEpisodeNumber..firstEpisodeNumber+numberOfEpisode-1]
 		private readonly UtilsInputFiles.FileDesc m_videoFileDesc;
 		private readonly UtilsInputFiles.FileDesc m_audioFileDesc;
 		private readonly UtilsInputFiles.FileDesc[] m_subsFileDesc = new UtilsInputFiles.FileDesc[2];
+
+		public int Index {
+			get { return m_index; }
+		}
+
+		/// <summary>
+		/// An episode number is "index + first episode index (choosen by user)".
+		/// </summary>
+		/// <value>The number.</value>
+		public int Number {
+			get { return m_number; }
+		}
 
 		public UtilsInputFiles.FileDesc VideoFileDesc {
 			get {
@@ -45,8 +59,10 @@ namespace subs2srs4linux
 
 	
 
-		public EpisodeInfo (UtilsInputFiles.FileDesc videoFileDesc, UtilsInputFiles.FileDesc audioFileDesc, UtilsInputFiles.FileDesc sub1FileDesc, UtilsInputFiles.FileDesc sub2FileDesc)
+		public EpisodeInfo (int index, int number, UtilsInputFiles.FileDesc videoFileDesc, UtilsInputFiles.FileDesc audioFileDesc, UtilsInputFiles.FileDesc sub1FileDesc, UtilsInputFiles.FileDesc sub2FileDesc)
 		{
+			m_index = index;
+			m_number = number;
 			m_videoFileDesc = videoFileDesc;
 			m_audioFileDesc = audioFileDesc;
 			m_subsFileDesc[0] = sub1FileDesc;

@@ -5,6 +5,7 @@
   <object class="GtkAction" id="action1"/>
   <object class="GtkAdjustment" id="episode_adjustment">
     <property name="upper">1000000</property>
+    <property name="value">1</property>
     <property name="step_increment">1</property>
     <property name="page_increment">10</property>
   </object>
