@@ -647,7 +647,7 @@ namespace subs2srs4linux
 			// fill episode info
 			List<EpisodeInfo> episodeFiles = new List<EpisodeInfo>();
 			for(int episodeIndex = 0; episodeIndex < numberOfEpisodes; episodeIndex++)
-				episodeFiles.Add(new EpisodeInfo(episodeIndex, episodeIndex + settings.FirstEpisodeNumber, videoFileDescs[episodeIndex], null, sub1FileDescs[episodeIndex], sub2FileDescs[episodeIndex]));
+				episodeFiles.Add(new EpisodeInfo(episodeIndex, episodeIndex + settings.FirstEpisodeNumber, videoFileDescs[episodeIndex], videoFileDescs[episodeIndex], sub1FileDescs[episodeIndex], sub2FileDescs[episodeIndex]));
 
 			return episodeFiles;
 		}
@@ -718,15 +718,25 @@ namespace subs2srs4linux
 			Console.WriteLine (tsvFilename);
 
 			// extract images
+			//Directory.Delete(snapshotsPath, true);
+			//Directory.CreateDirectory(snapshotsPath);
 			//List<String> snapshotNames = WorkerSnapshot.Extract(settings, snapshotsPath, m_allEntryInfomation);
 
 			// extract audio
-			//List<String> audioNames = WorkerAudio.ExtractAudio(settings, audioPath, m_allEntryInfomation);
+			Directory.Delete(audioPath, true);
+			Directory.CreateDirectory(audioPath);
+			List<String> audioFields = WorkerAudio.ExtractAudio(settings, audioPath, m_allEntryInfomation);
+
+
+			// TODO: normalize audio
 
 			using(var outputStream = new StreamWriter(tsvFilename)) {
-				foreach (UtilsSubtitle.EntryInformation entryInfo in m_allEntryInfomation) {
-					String key = entryInfo.GetKey ();
-					outputStream.WriteLine (key + "\t" + entryInfo.targetLanguageString + "\t" + entryInfo.nativeLanguageString);
+				for (int i = 0; i < m_allEntryInfomation.Count; i++) {
+					UtilsSubtitle.EntryInformation entryInfo = m_allEntryInfomation[i];
+
+					String keyField = entryInfo.GetKey ();
+					String audioField = audioFields [i];
+					outputStream.WriteLine (keyField + "\t" + audioField + "\t" + entryInfo.targetLanguageString + "\t" + entryInfo.nativeLanguageString);
 				}
 			}
 		}

@@ -145,7 +145,8 @@ namespace subs2srs4linux
 			/// </summary>
 			/// <returns>The key.</returns>
 			public String GetKey() {
-				return String.Format ("{0:000.}", episodeInfo.Number) + "_" + UtilsCommon.ToTimeArg (startTimestamp) + "_" + UtilsCommon.ToTimeArg (endTimestamp);
+				String str = String.Format ("{0:000.}", episodeInfo.Number) + "__" + UtilsCommon.ToTimeArg (startTimestamp) + "__" + UtilsCommon.ToTimeArg (endTimestamp);
+				return Regex.Replace (str, "[^a-zA-Z0-9]", "_");
 			}
 		}
 	}
