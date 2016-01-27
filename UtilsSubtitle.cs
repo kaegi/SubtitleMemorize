@@ -51,46 +51,16 @@ namespace subs2srs4linux
 		}
 
 		private static List<LineInfo> ParseSubtitleInVideoFile(Settings settings, string filename, Dictionary<String, String> properties) {
-			
-			List<StreamInfo> allStreams = StreamInfo.ReadAllStreams (filename);
-
-			// find first subtitle in stream (we also know then whether the file has any subtitle streams)
-			int firstSubtitleStream = -1;
-			for (int i = 0; i < allStreams.Count; i++) {
-				if (allStreams [i].StreamTypeValue == StreamInfo.StreamType.ST_SUBTITLE) {
-					firstSubtitleStream = i;
-					break;
-				}
-			}
-
-			if (firstSubtitleStream == -1)
-				throw new Exception ("Container file \"" + filename + "\" does not contain any subtitle streams");
-
-
-			int streamIndex = 0;
-			String streamIndexDictionaryString = "";
-			if (properties.TryGetValue ("stream", out streamIndexDictionaryString)) {
-				try {
-					streamIndex = Int32.Parse (streamIndexDictionaryString);
-				} catch (Exception) {
-					throw new Exception ("Stream property is not an integer.");
-				}
-
-				if (streamIndex < 0 || streamIndex >= allStreams.Count || allStreams [streamIndex].StreamTypeValue != StreamInfo.StreamType.ST_SUBTITLE) {
-					throw new Exception ("Stream with index " + streamIndex + " is not a subtitle stream (but stream at index " + firstSubtitleStream + " is).");
-				}
-
-			} else
-				streamIndex = firstSubtitleStream;
+			StreamInfo subtitleStreamInfo = UtilsVideo.ChooseStreamInfo (filename, properties, StreamInfo.StreamType.ST_SUBTITLE);
 
 			// new subtitle file
 			String videoFileHash = UtilsCommon.GetDateSizeChecksum (filename);
-			String newSubtitleFileName = videoFileHash + "_" + allStreams [streamIndex].StreamIndex + GetExtensionByStreamInfo (allStreams [streamIndex]);
+			String newSubtitleFileName = videoFileHash + "_" + subtitleStreamInfo.StreamIndex + GetExtensionByStreamInfo (subtitleStreamInfo);
 			string newSubtitleFilePath = InstanceSettings.temporaryFilesPath + newSubtitleFileName;
 
 			// do not extract again when file was already extracted once
 			if (!File.Exists (newSubtitleFilePath))
-				UtilsVideo.ExtractStream (filename, allStreams [streamIndex], newSubtitleFilePath);
+				UtilsVideo.ExtractStream (filename, subtitleStreamInfo, newSubtitleFilePath);
 			
 			return ParseSubtitle (settings, newSubtitleFilePath, properties);
 		}

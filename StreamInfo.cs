@@ -25,11 +25,28 @@ namespace subs2srs4linux
 	public class StreamInfo
 	{
 		
-		public enum StreamType {
-			ST_SUBTITLE,
-			ST_AUDIO,
-			ST_VIDEO,
-			ST_UNKNOWN, // others streams like fonts
+		public class StreamType {
+
+			public static readonly StreamType ST_SUBTITLE = new StreamType (0, "subtitle");
+			public static readonly StreamType ST_AUDIO = new StreamType (1, "audio");
+			public static readonly StreamType ST_VIDEO = new StreamType (2, "video");
+			public static readonly StreamType ST_UNKNOWN = new StreamType (3, "unknown"); // others streams like fonts
+
+			private readonly int index;
+			private readonly String plainString;
+
+			private StreamType(int index, String plainString) {
+				this.index = index;
+				this.plainString = plainString;
+			}
+
+			/// <summary>
+			/// Returns "audio", "video", "subtitle" or "unknown".
+			/// </summary>
+			/// <returns>The plain string.</returns>
+			public String GetPlainString() {
+				return plainString;
+			}
 		}
 		
 		private StreamType m_streamType;
