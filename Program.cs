@@ -672,13 +672,22 @@ namespace subs2srs4linux
 			if (!OpenProgressWindow (previewOrGo))
 				return;
 
-			// read all required information to class/struct, so that off-gtk-thread computation is possible
+			// read settings while handling errors
 			Settings settings = new Settings ();
-			ReadGui (settings);
+			try {
+				// read all required information to class/struct, so that off-gtk-thread computation is possible
+				settings = new Settings ();
+				ReadGui (settings);
 
-			// quickly decide whether these inputs can be used for a run
-			if (!IsSettingsValid (settings))
+				// quickly decide whether these inputs can be used for a run
+				IsSettingsValid (settings);
+
+			} catch(Exception e) {
+				SetErrorMessage (e.Message);
+				CloseProgressWindow ();
 				return;
+			}
+
 
 			Thread compuationThread = new Thread(new ThreadStart(delegate {
 
@@ -1118,7 +1127,7 @@ namespace subs2srs4linux
 		/// Validates all gui-fields in main window.
 		/// </summary>
 		/// <returns><c>true</c>, if output could be generated with entered information, <c>false</c> otherwise.</returns>
-		private bool IsSettingsValid(Settings settings) {
+		private void IsSettingsValid(Settings settings) {
 
 			// TODO: Parse files with UtilsInputFiles
 
@@ -1127,7 +1136,8 @@ namespace subs2srs4linux
 			}
 
 			// try to parse input file list
-			ParseInputFilesString(settings.TargetFilePath, "Error in target language file entry: ");
+			TryParseInputFilesString(settings.TargetFilePath, "Error in target language file entry: ");
+
 
 			if(String.IsNullOrWhiteSpace(settings.OutputDirectoryPath))
 				throw new Exception ("No output directory selected.");
@@ -1137,24 +1147,33 @@ namespace subs2srs4linux
 			
 
 			if (!String.IsNullOrWhiteSpace (settings.NativeFilePath))
-				ParseInputFilesString (settings.NativeFilePath, "Error in native language file entry: ");
+				TryParseInputFilesString (settings.NativeFilePath, "Error in native language file entry: ");
 
 			if (String.IsNullOrWhiteSpace(settings.DeckName)) {
 				throw new Exception ("No deck name choosen.");
 			}
-
-			return true;
-		
 		}
 
-		private UtilsInputFiles ParseInputFilesString(String str, String errorMessagePrefix) {
-			UtilsInputFiles utilsInputFile;
+		/// <summary>
+		/// Tries to parse and evaluate an attributed file path. If one of the files does not exist, an
+		/// exception will be thrown.
+		/// </summary>
+		/// <returns>The input files string.</returns>
+		/// <param name="str">String.</param>
+		/// <param name="errorMessagePrefix">Prefix for exception.</param>
+		private void TryParseInputFilesString(String str, String errorMessagePrefix) {
 			try {
-				utilsInputFile = new UtilsInputFiles (m_entryTargetLanguage.Text);
+				// parse attributed file string
+				UtilsInputFiles utilsInputFile = new UtilsInputFiles (m_entryTargetLanguage.Text);
+
+				// try to find all files
+				foreach (UtilsInputFiles.FileDesc fileDesc in utilsInputFile.GetFileDescriptions ())
+					if (!File.Exists (fileDesc.filename))
+						throw new Exception("File \"" + fileDesc.filename + "\" does not exist!");
+
 			} catch (Exception ex) {
 				throw new Exception (errorMessagePrefix + ex.Message);
 			}
-			return utilsInputFile;
 		}
 
 		private String AddFilesToEntry(String originalString, String[] filesToAdd, String errorMessagePrefix) {
