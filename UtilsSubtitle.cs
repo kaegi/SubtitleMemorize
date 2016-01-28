@@ -125,12 +125,13 @@ namespace subs2srs4linux
 		/// Every EntryInformation-Instance, that isn't filtered away will be used
 		/// for exactly one card.
 		/// </summary>
-		public struct EntryInformation {
+		public class EntryInformation {
 			public String targetLanguageString;
 			public String nativeLanguageString;
 			public EpisodeInfo episodeInfo;
 			public DateTime startTimestamp;
 			public DateTime endTimestamp;
+			public bool isActive;
 
 			public EntryInformation(String targetLanguageString, String nativeLanguageString, EpisodeInfo episodeInfo, DateTime startTimestamp, DateTime endTimestamp) {
 				this.targetLanguageString = targetLanguageString;
@@ -138,6 +139,7 @@ namespace subs2srs4linux
 				this.episodeInfo = episodeInfo;
 				this.startTimestamp = startTimestamp;
 				this.endTimestamp = endTimestamp;
+				this.isActive = true;
 			}
 
 			/// <summary>

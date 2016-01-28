@@ -345,10 +345,10 @@ namespace subs2srs4linux
 
 		// ##################################################################33
 		// Variables for Preview window
+		private Settings m_previewSettings = null; // this set when preview window is shown and never changed until the preview window closes
 		private bool m_ignoreLineSelectionChanges = false;
 		private List<EpisodeInfo> m_episodeInfo = new List<EpisodeInfo>();
 		private List<UtilsSubtitle.EntryInformation> m_allEntryInfomation = new List<UtilsSubtitle.EntryInformation>(); // all entries from all episodes
-		private List<UtilsSubtitle.EntryInformation> m_previewWindowEntries = new List<UtilsSubtitle.EntryInformation>(); // only entries that are currently shown
 		private int m_selectedPreviewIndex = -1; // index of single selected/focused entry in "m_previewWindowEntries"
 
 		// ##################################################################33
@@ -628,7 +628,7 @@ namespace subs2srs4linux
 			m_buttonPlayContent.Clicked += delegate(object sender, EventArgs e) {
 				if(m_selectedPreviewIndex < 0) return;
 
-				UtilsSubtitle.EntryInformation entryInfo = m_previewWindowEntries[m_selectedPreviewIndex];
+				UtilsSubtitle.EntryInformation entryInfo = m_allEntryInfomation[m_selectedPreviewIndex];
 				EpisodeInfo episodeInfo = m_episodeInfo[entryInfo.episodeInfo.Index];
 				String arguments = String.Format("--really-quiet --no-video --start={0} --end={1} \"{2}\"", UtilsCommon.ToTimeArg(entryInfo.startTimestamp), UtilsCommon.ToTimeArg(entryInfo.endTimestamp), episodeInfo.VideoFileDesc.filename);
 
@@ -637,6 +637,35 @@ namespace subs2srs4linux
 					UtilsCommon.CallExeAndGetStdout("mpv", arguments);
 				}));
 				thr.Start ();
+			};
+
+			m_toolbuttonToggleActivation.Clicked += delegate {
+				TreePath[] selectedTreePaths = m_treeviewSelectionLines.GetSelectedRows();
+				foreach(TreePath treePath in selectedTreePaths) {
+					//ToggleActivationForEntry(treePath.Indices[0]);
+					UtilsSubtitle.EntryInformation entryInformation = m_allEntryInfomation[treePath.Indices[0]];
+					entryInformation.isActive = !entryInformation.isActive;
+					Console.WriteLine(entryInformation.targetLanguageString + " " + m_allEntryInfomation[treePath.Indices[0]].isActive);
+
+					String beginString = entryInformation.isActive ? "" : "<span foreground=\"white\" background=\"grey\">";
+					String endString = entryInformation.isActive ? "" : "</span>";
+
+
+					TreeIter treeIter;
+					m_liststoreLines.GetIter(out treeIter, treePath);
+					m_liststoreLines.SetValue(treeIter, 0, beginString + entryInformation.targetLanguageString + endString);
+					m_liststoreLines.SetValue(treeIter, 1, beginString + entryInformation.nativeLanguageString + endString);
+				}
+			};
+
+			m_toolbuttonGo.Clicked += delegate {
+				new Thread(new ThreadStart(delegate {
+					Console.WriteLine("Start computation");
+					InfoProgress progressInfo = new InfoProgress(ProgressHandler);
+					ExportData(m_previewSettings, progressInfo);
+					Console.WriteLine("End computation");
+				})).Start();
+
 			};
 		}
 
@@ -688,6 +717,8 @@ namespace subs2srs4linux
 				return;
 			}
 
+			m_previewSettings = settings;
+
 
 			Thread compuationThread = new Thread(new ThreadStart(delegate {
 
@@ -721,9 +752,6 @@ namespace subs2srs4linux
 
 					//infoProgress.ProcessedSteps(1);
 
-					// choose to show all episodes
-					SelectEpisodeForPreview(-1);
-
 					if(previewOrGo == PendingOperation.GENERATE_PREVIEW)
 						PopulatePreviewList();
 					else
@@ -743,22 +771,28 @@ namespace subs2srs4linux
 			String audioPath = settings.OutputDirectoryPath + Path.DirectorySeparatorChar + settings.DeckName + "_audio" + Path.DirectorySeparatorChar;
 			Console.WriteLine (tsvFilename);
 
+			// remove all entries that are now deactivated
+			List<UtilsSubtitle.EntryInformation> activeEntryInformations = new List<UtilsSubtitle.EntryInformation>();
+			activeEntryInformations.AddRange (m_allEntryInfomation);
+			activeEntryInformations.RemoveAll ((UtilsSubtitle.EntryInformation entryInfo) => !entryInfo.isActive);
+
 			// extract images
 			if(Directory.Exists(snapshotsPath)) Directory.Delete(snapshotsPath, true);
 		 	Directory.CreateDirectory(snapshotsPath);
-			List<String> snapshotFields = WorkerSnapshot.ExtractSnaphots(settings, snapshotsPath, m_allEntryInfomation);
+			List<String> snapshotFields = WorkerSnapshot.ExtractSnaphots(settings, snapshotsPath, activeEntryInformations);
 
 			// extract audio
 			if(Directory.Exists(audioPath)) Directory.Delete(audioPath, true);
 			Directory.CreateDirectory(audioPath);
-			List<String> audioFields = WorkerAudio.ExtractAudio(settings, audioPath, m_allEntryInfomation);
+			List<String> audioFields = WorkerAudio.ExtractAudio(settings, audioPath, activeEntryInformations);
 
 
 			// TODO: normalize audio
 
 			using(var outputStream = new StreamWriter(tsvFilename)) {
-				for (int i = 0; i < m_allEntryInfomation.Count; i++) {
-					UtilsSubtitle.EntryInformation entryInfo = m_allEntryInfomation[i];
+				for (int i = 0; i < activeEntryInformations.Count; i++) {
+					UtilsSubtitle.EntryInformation entryInfo = activeEntryInformations[i];
+
 
 					String keyField = entryInfo.GetKey ();
 					String audioField = audioFields [i];
@@ -963,11 +997,11 @@ namespace subs2srs4linux
 		private void SelectEntry (int selectedIndex)
 		{
 			// do not select currently selected entry again
-			if (selectedIndex == m_selectedPreviewIndex || selectedIndex < 0 || selectedIndex >= m_previewWindowEntries.Count)
+			if (selectedIndex == m_selectedPreviewIndex || selectedIndex < 0 || selectedIndex >= m_allEntryInfomation.Count)
 				return;
 			
 			m_selectedPreviewIndex = selectedIndex;
-			UtilsSubtitle.EntryInformation entryInfo = m_previewWindowEntries [selectedIndex];
+			UtilsSubtitle.EntryInformation entryInfo = m_allEntryInfomation [selectedIndex];
 
 			Gtk.Application.Invoke (delegate {
 				m_textviewTargetLanguage.Buffer.Text = entryInfo.targetLanguageString;
@@ -989,26 +1023,12 @@ namespace subs2srs4linux
 			});
 		}
 
-		/// <summary>
-		/// Links entries from episode "i" from "m_allEntryInfomation" to "m_previewWindowEntries". In case
-		/// "i == -1", all entries are linked.
-		/// </summary>
-		/// <param name="i">The index.</param>
-		private void SelectEpisodeForPreview (int i)
-		{
-			m_previewWindowEntries.Clear ();
-			if (i == -1) // all episodes
-				m_previewWindowEntries.AddRange (m_allEntryInfomation);
-			else
-				throw new NotImplementedException ();
-		}
-
 		void ShowAllSelectedEntryInformations ()
 		{
 			m_selectedPreviewIndex = -1;
 			m_treeviewSelectionLines.UnselectAll ();
 			m_liststoreLines.Clear ();
-			foreach (UtilsSubtitle.EntryInformation entryInfo in m_previewWindowEntries)
+			foreach (UtilsSubtitle.EntryInformation entryInfo in m_allEntryInfomation)
 				m_liststoreLines.AppendValues (entryInfo.targetLanguageString, entryInfo.nativeLanguageString);
 		}
 	
