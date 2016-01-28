@@ -285,7 +285,7 @@ namespace subs2srs4linux
 		}
 
 
-		public static List<UtilsSubtitle.EntryInformation> GetEntryInformation(Boolean ignoreSingleSubLines, int episodeNumber, List<BiMatchedLines> matchedLinesList, List<LineInfo> list1, List<LineInfo> list2) {
+		public static List<UtilsSubtitle.EntryInformation> GetEntryInformation(Boolean ignoreSingleSubLines, EpisodeInfo episodeInfo, List<BiMatchedLines> matchedLinesList, List<LineInfo> list1, List<LineInfo> list2) {
 			List<UtilsSubtitle.EntryInformation> returnList = new List<UtilsSubtitle.EntryInformation> ();
 
 			foreach (SubtitleMatcher.BiMatchedLines matchedLines in matchedLinesList) {
@@ -315,7 +315,7 @@ namespace subs2srs4linux
 				String sub1string = catenateString (matchedLines.listlines [0], list1);
 				String sub2string = catenateString (matchedLines.listlines [1], list2);
 				
-				returnList.Add (new UtilsSubtitle.EntryInformation (sub1string, sub2string, episodeNumber, startTimestamp.GetValueOrDefault(), endTimestamp.GetValueOrDefault()));
+				returnList.Add (new UtilsSubtitle.EntryInformation (sub1string, sub2string, episodeInfo, startTimestamp.GetValueOrDefault(), endTimestamp.GetValueOrDefault()));
 			}
 
 			return returnList;

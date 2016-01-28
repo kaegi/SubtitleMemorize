@@ -533,78 +533,13 @@ namespace subs2srs4linux
 
 			// ----------------------------------------------------------------------------------------------------
 			m_buttonPreview.Clicked += delegate(object o, EventArgs args) {
-				// because this function/delegate is synchronized in gtk-thread -> guard with simple variable against pressing button two times
-				if (!OpenProgressWindow (PendingOperation.GENERATE_PREVIEW))
-					return;
-
-				// read all required information to class/struct, so that off-gtk-thread computation is possible
-				Settings settings = new Settings ();
-				ReadGui (settings);
-
-				// quickly decide whether these inputs can be used for a run
-				if (!IsSettingsValid (settings))
-					return;
-
-				Thread compuationThread = new Thread(new ThreadStart(delegate {
-					InfoProgress progressInfo = new InfoProgress(ProgressHandler);
-
-					// find sub1, sub2, audio and video file per episode
-					m_episodeInfo.Clear();
-					m_episodeInfo.AddRange(GenerateEpisodeInfos(settings));
-
-					// fill in progress sections
-					for(int i = 0; i < m_episodeInfo.Count; i++)
-						progressInfo.AddSection(String.Format("Episode {0:00.}: Extracting Sub1", i + 1), 1);
-					for(int i = 0; i < m_episodeInfo.Count; i++)
-						progressInfo.AddSection(String.Format("Episode {0:00.}: Extracting Sub2", i + 1), 1);
-					for(int i = 0; i < m_episodeInfo.Count; i++)
-						progressInfo.AddSection(String.Format("Episode {0:00.}: Matching subtitles", i + 1), 1);
-
-					progressInfo.AddSection("Preparing data presenting", 1);
-					progressInfo.StartProgressing();
-
-
-					// read all sub-files, match them and create a list for user that can be presented in preview window
-					m_allEntryInfomation.Clear();
-					m_allEntryInfomation.AddRange(GenerateEntryInformation(settings, m_episodeInfo, progressInfo));
-
-					// finish this last step
-					progressInfo.ProcessedSteps(1);
-
-					//infoProgress.ProcessedSteps(1);
-
-					// choose to show all episodes
-					SelectEpisodeForPreview(-1);
-
-					Gtk.Application.Invoke(delegate {
-
-						// populate subtitle list
-						m_liststoreLines.Clear ();
-						ShowAllSelectedEntryInformations();
-
-
-						// select first entry
-						m_treeviewSelectionLines.UnselectAll();
-						TreeIter firstTreeIter = new TreeIter();
-						m_liststoreLines.GetIterFirst(out firstTreeIter);
-						m_treeviewSelectionLines.SelectIter(firstTreeIter);
-
-						// close progress window, free pending operation variable
-						CloseProgressWindow ();
-
-						m_previewWindow.ShowAll ();
-					});
-				}));
-				compuationThread.Start();
+				GoOrPreviewClicked(PendingOperation.GENERATE_PREVIEW);
 			};
 
 
 			// ----------------------------------------------------------------------------------------------------
 			m_buttonGo.Clicked += delegate(object o, EventArgs args) {
-				Settings settings = new Settings ();
-				ReadGui (settings);
-				if (!IsSettingsValid (settings))
-					return;
+				GoOrPreviewClicked(PendingOperation.GENERATE_OUTPUT);
 			};
 
 			// ----------------------------------------------------------------------------------------------------
@@ -681,7 +616,7 @@ namespace subs2srs4linux
 				if(m_selectedPreviewIndex < 0) return;
 
 				UtilsSubtitle.EntryInformation entryInfo = m_previewWindowEntries[m_selectedPreviewIndex];
-				EpisodeInfo episodeInfo = m_episodeInfo[entryInfo.episodeNumber];
+				EpisodeInfo episodeInfo = m_episodeInfo[entryInfo.episodeInfo.Index];
 				String arguments = String.Format("--really-quiet --no-video --start={0} --end={1} \"{2}\"", UtilsCommon.ToTimeArg(entryInfo.startTimestamp), UtilsCommon.ToTimeArg(entryInfo.endTimestamp), episodeInfo.VideoFileDesc.filename);
 
 
@@ -712,9 +647,118 @@ namespace subs2srs4linux
 			// fill episode info
 			List<EpisodeInfo> episodeFiles = new List<EpisodeInfo>();
 			for(int episodeIndex = 0; episodeIndex < numberOfEpisodes; episodeIndex++)
-				episodeFiles.Add(new EpisodeInfo(videoFileDescs[episodeIndex], null, sub1FileDescs[episodeIndex], sub2FileDescs[episodeIndex]));
+				episodeFiles.Add(new EpisodeInfo(episodeIndex, episodeIndex + settings.FirstEpisodeNumber, videoFileDescs[episodeIndex], videoFileDescs[episodeIndex], sub1FileDescs[episodeIndex], sub2FileDescs[episodeIndex]));
 
 			return episodeFiles;
+		}
+
+		private void GoOrPreviewClicked(PendingOperation previewOrGo) {
+
+
+			// because this function/delegate is synchronized in gtk-thread -> guard with simple variable against pressing button two times
+			if (!OpenProgressWindow (previewOrGo))
+				return;
+
+			// read all required information to class/struct, so that off-gtk-thread computation is possible
+			Settings settings = new Settings ();
+			ReadGui (settings);
+
+			// quickly decide whether these inputs can be used for a run
+			if (!IsSettingsValid (settings))
+				return;
+
+			Thread compuationThread = new Thread(new ThreadStart(delegate {
+
+				InfoProgress progressInfo = new InfoProgress(ProgressHandler);
+
+				// find sub1, sub2, audio and video file per episode
+				m_episodeInfo.Clear();
+				m_episodeInfo.AddRange(GenerateEpisodeInfos(settings));
+
+				// fill in progress sections
+				for(int i = 0; i < m_episodeInfo.Count; i++)
+					progressInfo.AddSection(String.Format("Episode {0:00.}: Extracting Sub1", i + 1), 1);
+				for(int i = 0; i < m_episodeInfo.Count; i++)
+					progressInfo.AddSection(String.Format("Episode {0:00.}: Extracting Sub2", i + 1), 1);
+				for(int i = 0; i < m_episodeInfo.Count; i++)
+					progressInfo.AddSection(String.Format("Episode {0:00.}: Matching subtitles", i + 1), 1);
+
+				progressInfo.AddSection("Preparing data presentation", 1);
+				progressInfo.StartProgressing();
+
+
+				// read all sub-files, match them and create a list for user that can be presented in preview window
+				m_allEntryInfomation.Clear();
+				m_allEntryInfomation.AddRange(GenerateEntryInformation(settings, m_episodeInfo, progressInfo));
+
+				// finish this last step
+				progressInfo.ProcessedSteps(1);
+
+				//infoProgress.ProcessedSteps(1);
+
+				// choose to show all episodes
+				SelectEpisodeForPreview(-1);
+
+				if(previewOrGo == PendingOperation.GENERATE_PREVIEW)
+					PopulatePreviewList();
+				else
+					ExportData(settings, progressInfo);
+
+				// close progress window, free pending operation variable
+				CloseProgressWindow ();
+			}));
+			compuationThread.Start();
+
+		}
+
+		private void ExportData(Settings settings, InfoProgress progressInfo) {
+			String tsvFilename = settings.OutputDirectoryPath + Path.DirectorySeparatorChar + settings.DeckName + ".tsv";
+			String snapshotsPath = settings.OutputDirectoryPath + Path.DirectorySeparatorChar + settings.DeckName + "_snapshots" + Path.DirectorySeparatorChar;
+			String audioPath = settings.OutputDirectoryPath + Path.DirectorySeparatorChar + settings.DeckName + "_audio" + Path.DirectorySeparatorChar;
+			Console.WriteLine (tsvFilename);
+
+			// extract images
+			if(Directory.Exists(snapshotsPath)) Directory.Delete(snapshotsPath, true);
+		 	Directory.CreateDirectory(snapshotsPath);
+			List<String> snapshotFields = WorkerSnapshot.ExtractSnaphots(settings, snapshotsPath, m_allEntryInfomation);
+
+			// extract audio
+			if(Directory.Exists(audioPath)) Directory.Delete(audioPath, true);
+			Directory.CreateDirectory(audioPath);
+			List<String> audioFields = WorkerAudio.ExtractAudio(settings, audioPath, m_allEntryInfomation);
+
+
+			// TODO: normalize audio
+
+			using(var outputStream = new StreamWriter(tsvFilename)) {
+				for (int i = 0; i < m_allEntryInfomation.Count; i++) {
+					UtilsSubtitle.EntryInformation entryInfo = m_allEntryInfomation[i];
+
+					String keyField = entryInfo.GetKey ();
+					String audioField = audioFields [i];
+					String imageField = snapshotFields [i];
+					outputStream.WriteLine (keyField + "\t" + audioField + "\t" + entryInfo.targetLanguageString + "\t" + entryInfo.nativeLanguageString);
+				}
+			}
+		}
+
+		private void PopulatePreviewList() {
+
+			Gtk.Application.Invoke(delegate {
+
+				// populate subtitle list
+				m_liststoreLines.Clear ();
+				ShowAllSelectedEntryInformations();
+
+
+				// select first entry
+				m_treeviewSelectionLines.UnselectAll();
+				TreeIter firstTreeIter = new TreeIter();
+				m_liststoreLines.GetIterFirst(out firstTreeIter);
+				m_treeviewSelectionLines.SelectIter(firstTreeIter);
+
+				m_previewWindow.ShowAll ();
+			});
 		}
 
 		/// <summary>
@@ -729,12 +773,12 @@ namespace subs2srs4linux
 
 
 			List<UtilsSubtitle.EntryInformation> allEntryInformations = new List<UtilsSubtitle.EntryInformation> ();
-			for(int episodeNumber = 0; episodeNumber < lineInfosPerEpisode_TargetLanguage.Count; episodeNumber++) {
-				List<LineInfo> list1 = lineInfosPerEpisode_TargetLanguage[episodeNumber];
-				List<LineInfo> list2 = lineInfosPerEpisode_NativeLanguage[episodeNumber];
+			for(int episodeIndex = 0; episodeIndex < lineInfosPerEpisode_TargetLanguage.Count; episodeIndex++) {
+				List<LineInfo> list1 = lineInfosPerEpisode_TargetLanguage[episodeIndex];
+				List<LineInfo> list2 = lineInfosPerEpisode_NativeLanguage[episodeIndex];
 
 				List<SubtitleMatcher.BiMatchedLines> matchedLinesList = SubtitleMatcher.MatchSubtitles(list1, list2);
-				List<UtilsSubtitle.EntryInformation> thisEpisodeEntryInfos = SubtitleMatcher.GetEntryInformation(settings.IgnoreSingleSubLines, episodeNumber, matchedLinesList, list1, list2);
+				List<UtilsSubtitle.EntryInformation> thisEpisodeEntryInfos = SubtitleMatcher.GetEntryInformation(settings.IgnoreSingleSubLines, episodeInfos[episodeIndex], matchedLinesList, list1, list2);
 				allEntryInformations.AddRange(thisEpisodeEntryInfos);
 
 				progressInfo.ProcessedSteps (1);
@@ -771,8 +815,10 @@ namespace subs2srs4linux
 		/// Closes/Hides the progress window.
 		/// </summary>
 		private void CloseProgressWindow() {
-			m_windowProgressInfo.Hide ();
-			m_pendingOperation = PendingOperation.NOTHING;
+			Gtk.Application.Invoke (delegate {
+				m_windowProgressInfo.Hide ();
+				m_pendingOperation = PendingOperation.NOTHING;
+			});
 		}
 
 		private void OpenSubtitleWindow(int subIndex) {
@@ -903,7 +949,7 @@ namespace subs2srs4linux
 			if (selectedIndex != m_selectedPreviewIndex)
 				return;
 
-			UtilsInputFiles.FileDesc videoFilename = m_episodeInfo[entryInfo.episodeNumber].VideoFileDesc;
+			UtilsInputFiles.FileDesc videoFilename = m_episodeInfo[entryInfo.episodeInfo.Index].VideoFileDesc;
 			UtilsImage.GetImage(videoFilename.filename, UtilsCommon.GetMiddleTime(entryInfo.startTimestamp, entryInfo.endTimestamp), "/tmp/subs2srs.jpg");
 
 			Gtk.Application.Invoke (delegate {
@@ -1023,6 +1069,7 @@ namespace subs2srs4linux
 			m_spinbuttonSub2TimeShift.Text = settings.PerSubtitleSettings [1].SubDelay.ToString();
 
 			m_entryDeckName.Text = settings.DeckName ?? "";
+			m_spinbuttonEpisodeNumber.Text = settings.FirstEpisodeNumber.ToString();
 		}
 
 		/// <summary>
@@ -1034,6 +1081,11 @@ namespace subs2srs4linux
 			settings.NativeFilePath = m_entryNativeLanguage.Text;
 			settings.VideoFilePath = m_entryVideoFile.Text;
 			settings.DeckName = m_entryDeckName.Text;
+
+			// read episode number
+			int firstEpisodeNumber = 1;
+			Int32.TryParse (m_spinbuttonEpisodeNumber.Text, out firstEpisodeNumber);
+			settings.FirstEpisodeNumber = firstEpisodeNumber;
 
 			try { settings.PerSubtitleSettings[0].SubDelay = Int32.Parse(m_spinbuttonSub1TimeShift.Text ?? "0"); } catch {}
 			try { settings.PerSubtitleSettings[1].SubDelay = Int32.Parse(m_spinbuttonSub2TimeShift.Text ?? "0"); } catch {}

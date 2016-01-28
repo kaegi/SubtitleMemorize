@@ -66,6 +66,7 @@ namespace subs2srs4linux
 		private string m_videoFilePath;
 
 		private string m_deckName;
+		private int m_firstEpisodeNumber;
 
 		private PerSubtitleSettings[] m_perSubtitleSettings = { new PerSubtitleSettings(), new PerSubtitleSettings() };
 
@@ -109,6 +110,11 @@ namespace subs2srs4linux
 		public bool IgnoreSingleSubLines {
 			get { return m_ignoreSingleLines; }
 			set { m_ignoreSingleLines = value; }
+		}
+
+		public int FirstEpisodeNumber {
+			get { return m_firstEpisodeNumber; }
+			set { m_firstEpisodeNumber = value; }
 		}
 
 
