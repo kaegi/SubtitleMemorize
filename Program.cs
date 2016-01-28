@@ -713,17 +713,17 @@ namespace subs2srs4linux
 
 		private void ExportData(Settings settings, InfoProgress progressInfo) {
 			String tsvFilename = settings.OutputDirectoryPath + Path.DirectorySeparatorChar + settings.DeckName + ".tsv";
-			String audioPath = settings.OutputDirectoryPath + Path.DirectorySeparatorChar + settings.DeckName + "_audio" + Path.DirectorySeparatorChar;
 			String snapshotsPath = settings.OutputDirectoryPath + Path.DirectorySeparatorChar + settings.DeckName + "_snapshots" + Path.DirectorySeparatorChar;
+			String audioPath = settings.OutputDirectoryPath + Path.DirectorySeparatorChar + settings.DeckName + "_audio" + Path.DirectorySeparatorChar;
 			Console.WriteLine (tsvFilename);
 
 			// extract images
-			//Directory.Delete(snapshotsPath, true);
-			//Directory.CreateDirectory(snapshotsPath);
-			//List<String> snapshotNames = WorkerSnapshot.Extract(settings, snapshotsPath, m_allEntryInfomation);
+			if(Directory.Exists(snapshotsPath)) Directory.Delete(snapshotsPath, true);
+		 	Directory.CreateDirectory(snapshotsPath);
+			List<String> snapshotFields = WorkerSnapshot.ExtractSnaphots(settings, snapshotsPath, m_allEntryInfomation);
 
 			// extract audio
-			Directory.Delete(audioPath, true);
+			if(Directory.Exists(audioPath)) Directory.Delete(audioPath, true);
 			Directory.CreateDirectory(audioPath);
 			List<String> audioFields = WorkerAudio.ExtractAudio(settings, audioPath, m_allEntryInfomation);
 
@@ -736,6 +736,7 @@ namespace subs2srs4linux
 
 					String keyField = entryInfo.GetKey ();
 					String audioField = audioFields [i];
+					String imageField = snapshotFields [i];
 					outputStream.WriteLine (keyField + "\t" + audioField + "\t" + entryInfo.targetLanguageString + "\t" + entryInfo.nativeLanguageString);
 				}
 			}
