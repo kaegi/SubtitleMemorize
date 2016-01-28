@@ -365,6 +365,7 @@ namespace subs2srs4linux
 			NOTHING
 		}
 		private PendingOperation m_pendingOperation = PendingOperation.NOTHING;
+		private InfoProgress m_progressAndCancellable = null;
 
 		static private readonly string m_infobarLabelStandardMarkup = "Welcome to subs2srs4linux!" +
 			" To see more information just hover the cursor over a button or field.\n" +
@@ -381,6 +382,7 @@ namespace subs2srs4linux
 			ConnectEventsMainWindow ();
 			ConnectEventsSubitleWindowOptions ();
 			ConnectEventsPreviewWindowOptions ();
+			ConnectEventsProgressWindow ();
 
 
 			m_mainWindow.ShowAll();
@@ -421,6 +423,9 @@ namespace subs2srs4linux
 				else
 					lineInfosPerEpisode.Add (UtilsSubtitle.ParseSubtitleWithPostProcessing (settings, thisSubtitleSettings, fileDesc.filename, fileDesc.properties));
 				progressInfo.ProcessedSteps (1);
+
+				if (progressInfo.Cancelled)
+					return null;
 			}
 
 			return lineInfosPerEpisode;
@@ -570,6 +575,14 @@ namespace subs2srs4linux
 			};
 		}
 
+		private void ConnectEventsProgressWindow() {
+
+			m_buttonCancelOperation.Clicked += delegate {
+				if(m_progressAndCancellable != null)
+					m_progressAndCancellable.Cancel();
+			};
+		}
+
 		private void ConnectEventsPreviewWindowOptions() {
 
 			// ----------------------------------------------------------------------------------------------------
@@ -670,6 +683,7 @@ namespace subs2srs4linux
 			Thread compuationThread = new Thread(new ThreadStart(delegate {
 
 				InfoProgress progressInfo = new InfoProgress(ProgressHandler);
+				m_progressAndCancellable = progressInfo;
 
 				// find sub1, sub2, audio and video file per episode
 				m_episodeInfo.Clear();
@@ -689,20 +703,23 @@ namespace subs2srs4linux
 
 				// read all sub-files, match them and create a list for user that can be presented in preview window
 				m_allEntryInfomation.Clear();
-				m_allEntryInfomation.AddRange(GenerateEntryInformation(settings, m_episodeInfo, progressInfo));
+				m_allEntryInfomation.AddRange(GenerateEntryInformation(settings, m_episodeInfo, progressInfo) ?? new List<UtilsSubtitle.EntryInformation>());
 
-				// finish this last step
-				progressInfo.ProcessedSteps(1);
+				if(!progressInfo.Cancelled) {
 
-				//infoProgress.ProcessedSteps(1);
+					// finish this last step
+					progressInfo.ProcessedSteps(1);
 
-				// choose to show all episodes
-				SelectEpisodeForPreview(-1);
+					//infoProgress.ProcessedSteps(1);
 
-				if(previewOrGo == PendingOperation.GENERATE_PREVIEW)
-					PopulatePreviewList();
-				else
-					ExportData(settings, progressInfo);
+					// choose to show all episodes
+					SelectEpisodeForPreview(-1);
+
+					if(previewOrGo == PendingOperation.GENERATE_PREVIEW)
+						PopulatePreviewList();
+					else
+						ExportData(settings, progressInfo);
+				}
 
 				// close progress window, free pending operation variable
 				CloseProgressWindow ();
@@ -771,6 +788,8 @@ namespace subs2srs4linux
 			List<List<LineInfo>> lineInfosPerEpisode_TargetLanguage = ReadAllSubtitleFiles(settings, settings.PerSubtitleSettings[0], episodeInfos, 0, progressInfo);
 			List<List<LineInfo>> lineInfosPerEpisode_NativeLanguage = ReadAllSubtitleFiles(settings, settings.PerSubtitleSettings[1], episodeInfos, 1, progressInfo);
 
+			if (progressInfo.Cancelled)
+				return null;
 
 			List<UtilsSubtitle.EntryInformation> allEntryInformations = new List<UtilsSubtitle.EntryInformation> ();
 			for(int episodeIndex = 0; episodeIndex < lineInfosPerEpisode_TargetLanguage.Count; episodeIndex++) {
@@ -782,6 +801,9 @@ namespace subs2srs4linux
 				allEntryInformations.AddRange(thisEpisodeEntryInfos);
 
 				progressInfo.ProcessedSteps (1);
+
+				if (progressInfo.Cancelled)
+					return null;
 			}
 
 			return allEntryInformations;

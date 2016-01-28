@@ -19,7 +19,7 @@ using System.Collections.Generic;
 using System.IO;
 
 namespace subs2srs4linux
-{
+{	
 	public static class WorkerSnapshot
 	{
 		public static List<String> ExtractSnaphots(Settings settings, String path, List<UtilsSubtitle.EntryInformation> allEntries) {

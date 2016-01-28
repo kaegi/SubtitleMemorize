@@ -92,6 +92,11 @@ namespace subs2srs4linux
 		private int m_currentSection = 0;
 		private readonly List<ProgressSection> m_progressSections = new List<ProgressSection>();
 		private readonly Action<String, double> m_setProgressHandler = null;
+		private bool m_cancelled = false;
+
+		public bool Cancelled {
+			get { return m_cancelled; }
+		}
 
 
 		/// <summary>
@@ -151,6 +156,10 @@ namespace subs2srs4linux
 			double totalPercent = sectionPercents * (m_currentSection + inSectionProgress);
 
 			m_setProgressHandler ((int)(totalPercent * 100) + "% - " + currentSec.Name, totalPercent);
+		}
+
+		public void Cancel() {
+			m_cancelled = true;
 		}
 	}
 }
