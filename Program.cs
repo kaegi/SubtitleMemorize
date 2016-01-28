@@ -763,7 +763,7 @@ namespace subs2srs4linux
 					String keyField = entryInfo.GetKey ();
 					String audioField = audioFields [i];
 					String imageField = snapshotFields [i];
-					outputStream.WriteLine (keyField + "\t" + audioField + "\t" + entryInfo.targetLanguageString + "\t" + entryInfo.nativeLanguageString);
+					outputStream.WriteLine (keyField + "\t" + imageField + "\t" + audioField + "\t" + entryInfo.targetLanguageString + "\t" + entryInfo.nativeLanguageString);
 				}
 			}
 		}

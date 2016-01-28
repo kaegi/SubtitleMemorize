@@ -34,7 +34,7 @@ namespace subs2srs4linux
 
 				// value that will be imported into Anki/SRS-Programs-Field
 				// TODO: make this flexible
-				snapshotFieldValues.Add("<img src=\"" + outputSnapshotFilename + "\"]");
+				snapshotFieldValues.Add("<img src=\"" + outputSnapshotFilename + "\"/>");
 
 				// get file with snapshot information -> video
 				UtilsInputFiles.FileDesc videoFileDesc = entryInformation.episodeInfo.VideoFileDesc;
