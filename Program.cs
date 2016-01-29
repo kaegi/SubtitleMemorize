@@ -1232,17 +1232,25 @@ namespace subs2srs4linux
 		
 		public static void Main (string[] args)
 		{
-			// ensure, the temporary path exists
+			// ensure that the temporary path ("/tmp/subs2srs4linux") exists
 			Directory.CreateDirectory(InstanceSettings.temporaryFilesPath);
 
-			// read system settings
+			// find exe path so there we can load settings from there
+			String exeDir = null;
 			try {
-				XmlSerializer ser = new XmlSerializer(typeof(SystemSettings));
-				using(TextReader writer = new StreamReader ("settings.s2s4l")) {
-					InstanceSettings.systemSettings = (SystemSettings) ser.Deserialize(writer);
+				exeDir = (new FileInfo(System.Reflection.Assembly.GetEntryAssembly().Location)).Directory.FullName + Path.DirectorySeparatorChar;
+			} catch {}
+
+			// read system settings
+			if(exeDir != null) {
+				try {
+					XmlSerializer ser = new XmlSerializer(typeof(SystemSettings));
+					using(TextReader writer = new StreamReader (exeDir + "settings.s2s4l")) {
+						InstanceSettings.systemSettings = (SystemSettings) ser.Deserialize(writer);
+					}
+				} catch {
+					Console.WriteLine ("WARNING: failed to read \"setttings.s2s4l\" so default settings are used");
 				}
-			} catch {
-				Console.WriteLine ("WARNING: failed to read \"setttings.s2s4l\" so default settings are used");
 			}
 
 			Console.WriteLine (InstanceSettings.systemSettings.overlappingThreshold_InterSub);
@@ -1250,12 +1258,14 @@ namespace subs2srs4linux
 			new MainClass ();
 
 			// write system settings (could be write protected -> ignore)
-			try {
-				XmlSerializer ser = new XmlSerializer (typeof(SystemSettings));
-				using (TextWriter writer = new StreamWriter ("settings.s2s4l", false)) {
-					ser.Serialize (writer, InstanceSettings.systemSettings);
+			if(exeDir != null) {
+				try {
+					XmlSerializer ser = new XmlSerializer (typeof(SystemSettings));
+					using (TextWriter writer = new StreamWriter (exeDir + "settings.s2s4l", false)) {
+						ser.Serialize (writer, InstanceSettings.systemSettings);
+					}
+				} catch(Exception) {
 				}
-			} catch(Exception) {
 			}
 		}
 	}
