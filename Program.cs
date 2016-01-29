@@ -31,7 +31,7 @@ namespace subs2srs4linux
 	class MainClass
 	{
 		////////////////// AUTO-GENERATED CODE BEGIN //////////////////////
-		#pragma warning disable 0414 // private field assigned but not used
+#pragma warning disable 0414 // private field assigned but not used
 		private Gtk.Action m_action1;
 		private Gtk.Adjustment m_episodeAdjustment;
 		private Gtk.Image m_image1;
@@ -57,10 +57,16 @@ namespace subs2srs4linux
 		private Gtk.CellRendererText m_cellrenderertextNativeLanguage;
 		private Gtk.Frame m_frame10;
 		private Gtk.Alignment m_alignment10;
-		private Gtk.Box m_box6;
-		private Gtk.CheckButton m_checkbutton1;
-		private Gtk.ComboBox m_combobox1;
-		private Gtk.CellRendererText m_cellrenderertextSelectEpisode;
+		private Gtk.Grid m_grid4;
+		private Gtk.Button m_buttonDeselectLinesBySearch;
+		private Gtk.Button m_buttonReplaceInSub2;
+		private Gtk.Button m_buttonSelectLinesBySearch;
+		private Gtk.Button m_buttonReplaceInSub1;
+		private Gtk.Entry m_entryLinesSearch;
+		private Gtk.Entry m_entryReplaceRegexTo;
+		private Gtk.Entry m_entryReplaceRegexFrom;
+		private Gtk.Label m_label5;
+		private Gtk.Label m_label17;
 		private Gtk.Label m_label21;
 		private Gtk.Frame m_frame11;
 		private Gtk.Alignment m_alignment11;
@@ -206,10 +212,16 @@ namespace subs2srs4linux
 			m_cellrenderertextNativeLanguage = (Gtk.CellRendererText) b.GetObject("cellrenderertext_native_language");
 			m_frame10 = (Gtk.Frame) b.GetObject("frame10");
 			m_alignment10 = (Gtk.Alignment) b.GetObject("alignment10");
-			m_box6 = (Gtk.Box) b.GetObject("box6");
-			m_checkbutton1 = (Gtk.CheckButton) b.GetObject("checkbutton1");
-			m_combobox1 = (Gtk.ComboBox) b.GetObject("combobox1");
-			m_cellrenderertextSelectEpisode = (Gtk.CellRendererText) b.GetObject("cellrenderertext_select_episode");
+			m_grid4 = (Gtk.Grid) b.GetObject("grid4");
+			m_buttonDeselectLinesBySearch = (Gtk.Button) b.GetObject("button_deselect_lines_by_search");
+			m_buttonReplaceInSub2 = (Gtk.Button) b.GetObject("button_replace_in_sub2");
+			m_buttonSelectLinesBySearch = (Gtk.Button) b.GetObject("button_select_lines_by_search");
+			m_buttonReplaceInSub1 = (Gtk.Button) b.GetObject("button_replace_in_sub1");
+			m_entryLinesSearch = (Gtk.Entry) b.GetObject("entry_lines_search");
+			m_entryReplaceRegexTo = (Gtk.Entry) b.GetObject("entry_replace_regex_to");
+			m_entryReplaceRegexFrom = (Gtk.Entry) b.GetObject("entry_replace_regex_from");
+			m_label5 = (Gtk.Label) b.GetObject("label5");
+			m_label17 = (Gtk.Label) b.GetObject("label17");
 			m_label21 = (Gtk.Label) b.GetObject("label21");
 			m_frame11 = (Gtk.Frame) b.GetObject("frame11");
 			m_alignment11 = (Gtk.Alignment) b.GetObject("alignment11");
@@ -329,9 +341,8 @@ namespace subs2srs4linux
 			m_progressbarProgressInfo = (Gtk.ProgressBar) b.GetObject("progressbar_progress_info");
 			m_buttonCancelOperation = (Gtk.Button) b.GetObject("button_cancel_operation");
 		}
-		#pragma warning restore 0414
+#pragma warning restore 0414
 		////////////////// AUTO-GENERATED CODE END //////////////////////
-
 
 
 		private readonly Settings m_defaultSettings = new Settings();
