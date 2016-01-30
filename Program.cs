@@ -25,6 +25,7 @@ using System.IO;
 using System.Reflection;
 using System.Text;
 using System.Threading;
+using System.Text.RegularExpressions;
 
 namespace subs2srs4linux
 {
@@ -636,6 +637,14 @@ namespace subs2srs4linux
 				SelectEntry();
 			};
 
+			m_buttonReplaceInSub1.Clicked += delegate(object sender, EventArgs e) {
+				PreviewWindowRegexReplace(true, false, m_entryReplaceRegexFrom.Text, m_entryReplaceRegexTo.Text);
+			};
+
+			m_buttonReplaceInSub2.Clicked += delegate(object sender, EventArgs e) {
+				PreviewWindowRegexReplace(false, true, m_entryReplaceRegexFrom.Text, m_entryReplaceRegexTo.Text);
+			};
+
 			m_buttonPlayContent.Clicked += delegate(object sender, EventArgs e) {
 				if(m_selectedPreviewIndex < 0) return;
 
@@ -651,22 +660,15 @@ namespace subs2srs4linux
 			};
 
 			m_toolbuttonToggleActivation.Clicked += delegate {
+				// switch isActive field for every selected entry
 				TreePath[] selectedTreePaths = m_treeviewSelectionLines.GetSelectedRows();
 				foreach(TreePath treePath in selectedTreePaths) {
-					//ToggleActivationForEntry(treePath.Indices[0]);
 					UtilsSubtitle.EntryInformation entryInformation = m_allEntryInfomation[treePath.Indices[0]];
 					entryInformation.isActive = !entryInformation.isActive;
-					Console.WriteLine(entryInformation.targetLanguageString + " " + m_allEntryInfomation[treePath.Indices[0]].isActive);
-
-					String beginString = entryInformation.isActive ? "" : "<span foreground=\"white\" background=\"grey\">";
-					String endString = entryInformation.isActive ? "" : "</span>";
-
-
-					TreeIter treeIter;
-					m_liststoreLines.GetIter(out treeIter, treePath);
-					m_liststoreLines.SetValue(treeIter, 0, beginString + entryInformation.targetLanguageString + endString);
-					m_liststoreLines.SetValue(treeIter, 1, beginString + entryInformation.nativeLanguageString + endString);
 				}
+
+				// make internal changes visible to user
+				UpdatePreviewList();
 			};
 
 			m_toolbuttonGo.Clicked += delegate {
@@ -680,6 +682,39 @@ namespace subs2srs4linux
 			};
 		}
 
+		/// <summary>
+		/// Replace text in sub1 and/or sub2 by using regexes.
+		/// </summary>
+		private void PreviewWindowRegexReplace(bool inSub1, bool inSub2, String pattern, String replaceTo) {
+			foreach (UtilsSubtitle.EntryInformation entryInfo in m_allEntryInfomation) {
+				if(inSub1) entryInfo.targetLanguageString = Regex.Replace(entryInfo.targetLanguageString, pattern, replaceTo);
+				if(inSub2) entryInfo.nativeLanguageString = Regex.Replace(entryInfo.nativeLanguageString, pattern, replaceTo);
+			}
+			UpdatePreviewList();
+		}
+
+		/// <summary>
+		/// This function sets all lines in the Gtk.TreeView to the values in m_allEntryInfomation.
+		/// The TreeView has to contain exactly the same number of elements as the list.
+		/// </summary>
+		private void UpdatePreviewList() {
+
+			TreeIter treeIter;
+			if(!m_liststoreLines.GetIterFirst(out treeIter)) return;
+			foreach (UtilsSubtitle.EntryInformation entryInfo in m_allEntryInfomation) {
+
+				// if this entry is deactivated the line is colored grey with Pango's markup language
+				String beginString = entryInfo.isActive ? "" : "<span foreground=\"white\" background=\"grey\">";
+				String endString = entryInfo.isActive ? "" : "</span>";
+
+				// set values in list TODO: can there be an index change?
+				m_liststoreLines.SetValue(treeIter, 0, beginString + entryInfo.targetLanguageString + endString);
+				m_liststoreLines.SetValue(treeIter, 1, beginString + entryInfo.nativeLanguageString + endString);
+
+				if(!m_liststoreLines.IterNext(ref treeIter))
+					break; // error: the two list didn't have the same number of elements
+			}
+		}
 
 		private static List<EpisodeInfo> GenerateEpisodeInfos(Settings settings) {
 
