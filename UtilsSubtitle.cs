@@ -133,6 +133,10 @@ namespace subs2srs4linux
 			public DateTime endTimestamp;
 			public bool isActive;
 
+			public DateTime Duration {
+				get { return UtilsCommon.GetTimeDiff(endTimestamp, startTimestamp); }
+			}
+
 			public EntryInformation(String targetLanguageString, String nativeLanguageString, EpisodeInfo episodeInfo, DateTime startTimestamp, DateTime endTimestamp) {
 				this.targetLanguageString = targetLanguageString;
 				this.nativeLanguageString = nativeLanguageString;

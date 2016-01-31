@@ -16,16 +16,15 @@
 //
 
 using System;
-using System.Xml;
-using System.Xml.Serialization;
-using Gtk;
-using System.Runtime.Serialization.Formatters.Binary;
 using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
-using System.Text;
-using System.Threading;
+using System.Runtime.Serialization.Formatters.Binary;
 using System.Text.RegularExpressions;
+using System.Threading;
+using System.Xml.Serialization;
+using Gtk;
+using NCalc;
 
 namespace subs2srs4linux
 {
@@ -645,6 +644,10 @@ namespace subs2srs4linux
 				PreviewWindowRegexReplace(false, true, m_entryReplaceRegexFrom.Text, m_entryReplaceRegexTo.Text);
 			};
 
+			m_buttonSelectLinesBySearch.Clicked += delegate(object sender, EventArgs e) {
+				PreviewWindowSelectLines(m_entryLinesSearch.Text);
+			};
+
 			m_buttonPlayContent.Clicked += delegate(object sender, EventArgs e) {
 				if(m_selectedPreviewIndex < 0) return;
 
@@ -680,6 +683,80 @@ namespace subs2srs4linux
 				})).Start();
 
 			};
+		}
+
+		/// <summary>
+		/// Selects preview lines in Gtk.TreeView based on a condtion like "episode=3 and contains(sub1, 'Bye')".
+		/// </summary>
+		/// <param name="conditionExpr">Condition expr.</param>
+		public void PreviewWindowSelectLines(String conditionExpr) {
+			// select all if expression is null
+			if(String.IsNullOrWhiteSpace(conditionExpr)) {
+				m_treeviewSelectionLines.SelectAll();
+				return;
+			}
+
+			UtilsSubtitle.EntryInformation infoSource_Entry = null; // entry which will be used for evaluation an expression
+			Expression expr = new Expression (conditionExpr);
+
+			// resolve certain parameters in expression
+			expr.EvaluateParameter += delegate(string name, ParameterArgs args) {
+				switch(name) {
+					case "episode": args.Result = infoSource_Entry.episodeInfo.Number; break;
+					case "sub1": args.Result = infoSource_Entry.targetLanguageString; break;
+					case "sub2": args.Result = infoSource_Entry.nativeLanguageString; break;
+					case "start": args.Result = (double)infoSource_Entry.startTimestamp.TimeOfDay.TotalMilliseconds / 1000.0; break;
+					case "end": args.Result = (double)infoSource_Entry.endTimestamp.TimeOfDay.TotalMilliseconds / 1000.0; break;
+					case "duration": args.Result = (double)infoSource_Entry.Duration.TimeOfDay.TotalMilliseconds / 1000.0; break;
+				}
+			};
+			// resolve certain functions in expression
+			expr.EvaluateFunction += delegate(string name, FunctionArgs args) {
+				switch(name) {
+					// an exmple for this function is "contains(sub1, 'some text')" that selects all lines, where sub1 contains 'some text'
+					case "contains": {
+						 // two string parameters are expected
+						 if(args.Parameters.Length != 2) return;
+						 object[] arguments = args.EvaluateParameters();
+						 if(!(arguments[0] is String && arguments[1] is String)) return;
+
+						 // evaluate function
+						 String string0 = (String)arguments[0];
+						 String string1 = (String)arguments[1];
+						 args.Result = string0.Contains(string1);
+						 args.HasResult = true;
+
+					} break;
+
+					// example: time('25:10.50') returns the number of seconds of 25min 10secs 50hsecs
+					case "time": {
+						if(args.Parameters.Length != 1) return;
+						object argumentObject = args.EvaluateParameters()[0];
+						if(!(argumentObject is String)) return;
+						String timeString = (String) argumentObject;
+
+						args.Result = UtilsCommon.ParseTimeString(timeString);
+						args.HasResult = true;
+					} break;
+				}
+			};
+
+			// go through whole list and evaluate the expression for every entry
+			TreeIter treeIter;
+			if(!m_liststoreLines.GetIterFirst(out treeIter)) return;
+			foreach (UtilsSubtitle.EntryInformation entryInfo in m_allEntryInfomation) {
+				// provide info for exrp.Evaluate()
+				infoSource_Entry = entryInfo;
+
+				// select if expression is evaluated positive, deselect if negative
+				object result = expr.Evaluate();
+				if(result is bool && (bool)result == true) m_treeviewSelectionLines.SelectIter(treeIter);
+				else m_treeviewSelectionLines.UnselectIter(treeIter);
+
+				if(!m_liststoreLines.IterNext(ref treeIter))
+					break; // error: the two list didn't have the same number of elements
+			}
+
 		}
 
 		/// <summary>

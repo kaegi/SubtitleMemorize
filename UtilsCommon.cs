@@ -205,6 +205,73 @@ namespace subs2srs4linux
 			String modificationTimeChecksum = BitConverter.ToString (BitConverter.GetBytes (modificationDate)).Replace("-", "");
 			return fileLengthChecksum + "_" + modificationTimeChecksum;
 		}
+
+
+		/// <summary>
+		/// Returns a DateTime-Object that has the time of a - b.
+		/// </summary>
+		public static DateTime GetTimeDiff(DateTime a, DateTime b) {
+			DateTime result = new DateTime();
+			return result.AddMilliseconds(a.TimeOfDay.TotalMilliseconds - b.TimeOfDay.TotalMilliseconds);
+		}
+
+		/// <summary>
+		/// Returns number of seconds for string in following format:
+		/// [sign] [number] [:number]*n [.number]
+		///
+		/// so valid inputs are:
+		///
+		/// [nothing]
+		/// 1
+		/// 1.523454325
+		/// .523
+		/// -10:1.453
+		/// 10:01.453
+		/// -00:00.1
+		/// 00:00
+		/// 10:10:40:10:10
+		/// ...
+		///
+		/// The number behind '.' is in the range of 0-1 seconds. The first number in front of the '.' is the number of seconds.
+		/// Every number to the left is multiplied by 60. Examples:
+		///
+		/// [nothing] -> 0 seconds
+		/// 1 -> 1 second
+		/// -1.5 -> -1.5 seconds
+		/// 1:1.5 -> 61.5 seconds
+		/// </summary>
+		public static double ParseTimeString(String s) {
+			// safty checks
+			if(String.IsNullOrWhiteSpace(s)) return 0;
+			s = s.Trim();
+
+			// only one dot is allowed
+			int numberOfDots = s.Length - s.Replace(".", "").Length;
+			if(numberOfDots > 1) throw new FormatException();
+
+			// split string in two parts: one in front of dot and one behind
+			String[] splitByDot = null;
+			if(numberOfDots == 0) splitByDot = new String[] { s, "" };
+			else splitByDot = (" " + s + " ").Split('.'); // these spaces ensure that there are two Strings in array
+
+			// parse all values in front of dot
+			String[] splitByColon = splitByDot[0].Split(':');
+			int factor = 1;
+			double seconds = 0.0;
+			for(int i = splitByColon.Length - 1; i >= 0; i--) {
+				if(!String.IsNullOrWhiteSpace(splitByColon[i]))
+					seconds += factor * Int32.Parse(splitByColon[i]);
+				factor *= 60;
+			}
+
+			// parse value behind dot
+			String fracSeconds = splitByDot[1];
+			fracSeconds.Trim();
+			if(fracSeconds != "")
+				seconds += Int32.Parse(splitByDot[1]) / Math.Pow(10, fracSeconds.Length);
+
+			return seconds;
+		}
 	}
 }
 
