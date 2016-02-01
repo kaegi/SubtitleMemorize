@@ -244,6 +244,7 @@
                         <property name="visible">True</property>
                         <property name="can_focus">True</property>
                         <property name="receives_default">True</property>
+                        <property name="tooltip_text" translatable="yes">Do a Regex Replace in column "Native Language". Press Ctrl to only replace in selected lines.</property>
                       </object>
                       <packing>
                         <property name="left_attach">4</property>
@@ -256,6 +257,13 @@
                         <property name="visible">True</property>
                         <property name="can_focus">True</property>
                         <property name="receives_default">True</property>
+                        <property name="tooltip_text" translatable="yes">Do actions dependent on the result of the expression in the left field. There are different modes you can use.
+
+Normal selection: select lines where expression is true, deselect others
+Deselect mode (Ctrl): deselect lines where expression is true, select others
+Incremental selection (Shift): only change selection of lines if expression is true, ignore if expression is false
+
+Of course you can press Shift and Control at the same time which will deselect all lines where the expression is true but ignore the other lines.</property>
                       </object>
                       <packing>
                         <property name="left_attach">3</property>
@@ -269,6 +277,7 @@
                         <property name="visible">True</property>
                         <property name="can_focus">True</property>
                         <property name="receives_default">True</property>
+                        <property name="tooltip_text" translatable="yes">Do a Regex Replace in column "Target Language". Press Ctrl to only replace in selected lines.</property>
                       </object>
                       <packing>
                         <property name="left_attach">3</property>
