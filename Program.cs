@@ -596,6 +596,20 @@ namespace subs2srs4linux
 			};
 		}
 
+		/// <summary>
+		/// Changes names of Search&Replace Buttons to "Select", "Deselect", ... dependent on
+		/// Shift and Ctrl.
+		/// </summary>
+		private void UpdatePreviewButtonNames() {
+			if(m_previewWindow_isShiftPressed) {
+				if(m_previewWindow_isControlPressed) m_buttonSelectLinesBySearch.Label = "Deselect (inc)";
+				else m_buttonSelectLinesBySearch.Label = "Select (inc)";
+			} else {
+				if(m_previewWindow_isControlPressed) m_buttonSelectLinesBySearch.Label = "Deselect ";
+				else m_buttonSelectLinesBySearch.Label = "Select";
+			}
+		}
+
 		private void ConnectEventsPreviewWindowOptions() {
 
 			// ----------------------------------------------------------------------------------------------------
@@ -651,6 +665,7 @@ namespace subs2srs4linux
 					m_previewWindow_isShiftPressed = true;
 				if(args.Event.KeyValue == Gdk.Keyval.FromName("Control_R") || args.Event.KeyValue == Gdk.Keyval.FromName("Control_L"))
 					m_previewWindow_isControlPressed = true;
+				UpdatePreviewButtonNames();
 			};
 
 			m_previewWindow.KeyReleaseEvent += delegate(object o, KeyReleaseEventArgs args) {
@@ -658,6 +673,7 @@ namespace subs2srs4linux
 					m_previewWindow_isShiftPressed = false;
 				if(args.Event.KeyValue == Gdk.Keyval.FromName("Control_R") || args.Event.KeyValue == Gdk.Keyval.FromName("Control_L"))
 					m_previewWindow_isControlPressed = false;
+				UpdatePreviewButtonNames();
 			};
 
 			m_buttonSelectLinesBySearch.Clicked += delegate(object sender, EventArgs e) {
