@@ -361,6 +361,8 @@ namespace subs2srs4linux
 		private List<EpisodeInfo> m_episodeInfo = new List<EpisodeInfo>();
 		private List<UtilsSubtitle.EntryInformation> m_allEntryInfomation = new List<UtilsSubtitle.EntryInformation>(); // all entries from all episodes
 		private int m_selectedPreviewIndex = -1; // index of single selected/focused entry in "m_previewWindowEntries"
+        private bool m_previewWindow_isShiftPressed = false;
+        private bool m_previewWindow_isControlPressed = false;
 
 		// ##################################################################33
 		// Variables for Subtitle-Options-Window
@@ -637,15 +639,29 @@ namespace subs2srs4linux
 			};
 
 			m_buttonReplaceInSub1.Clicked += delegate(object sender, EventArgs e) {
-				PreviewWindowRegexReplace(true, false, m_entryReplaceRegexFrom.Text, m_entryReplaceRegexTo.Text);
+				PreviewWindowRegexReplace(true, false, m_previewWindow_isControlPressed, m_entryReplaceRegexFrom.Text, m_entryReplaceRegexTo.Text);
 			};
 
 			m_buttonReplaceInSub2.Clicked += delegate(object sender, EventArgs e) {
-				PreviewWindowRegexReplace(false, true, m_entryReplaceRegexFrom.Text, m_entryReplaceRegexTo.Text);
+				PreviewWindowRegexReplace(false, true, m_previewWindow_isControlPressed, m_entryReplaceRegexFrom.Text, m_entryReplaceRegexTo.Text);
+			};
+
+			m_previewWindow.KeyPressEvent += delegate(object o, KeyPressEventArgs args) {
+				if(args.Event.KeyValue == Gdk.Keyval.FromName("Shift_R") || args.Event.KeyValue == Gdk.Keyval.FromName("Shift_L"))
+					m_previewWindow_isShiftPressed = true;
+				if(args.Event.KeyValue == Gdk.Keyval.FromName("Control_R") || args.Event.KeyValue == Gdk.Keyval.FromName("Control_L"))
+					m_previewWindow_isControlPressed = true;
+			};
+
+			m_previewWindow.KeyReleaseEvent += delegate(object o, KeyReleaseEventArgs args) {
+				if(args.Event.KeyValue == Gdk.Keyval.FromName("Shift_R") || args.Event.KeyValue == Gdk.Keyval.FromName("Shift_L"))
+					m_previewWindow_isShiftPressed = false;
+				if(args.Event.KeyValue == Gdk.Keyval.FromName("Control_R") || args.Event.KeyValue == Gdk.Keyval.FromName("Control_L"))
+					m_previewWindow_isControlPressed = false;
 			};
 
 			m_buttonSelectLinesBySearch.Clicked += delegate(object sender, EventArgs e) {
-				PreviewWindowSelectLines(m_entryLinesSearch.Text);
+				PreviewWindowSelectLines(m_entryLinesSearch.Text, m_previewWindow_isShiftPressed, !m_previewWindow_isControlPressed);
 			};
 
 			m_buttonPlayContent.Clicked += delegate(object sender, EventArgs e) {
@@ -689,10 +705,13 @@ namespace subs2srs4linux
 		/// Selects preview lines in Gtk.TreeView based on a condtion like "episode=3 and contains(sub1, 'Bye')".
 		/// </summary>
 		/// <param name="conditionExpr">Condition expr.</param>
-		public void PreviewWindowSelectLines(String conditionExpr) {
+		/// <param name="isIncrementalSearch">Only change selection state for lines with matching expressions.</param>
+		/// <param name="selectAction">true -> select matching lines, false -> deselect matching lines</param>
+		public void PreviewWindowSelectLines(String conditionExpr, bool isIncrementalSearch, bool selectAction) {
 			// select all if expression is null
 			if(String.IsNullOrWhiteSpace(conditionExpr)) {
-				m_treeviewSelectionLines.SelectAll();
+				if(selectAction) m_treeviewSelectionLines.SelectAll();
+				else m_treeviewSelectionLines.UnselectAll();
 				return;
 			}
 
@@ -703,8 +722,12 @@ namespace subs2srs4linux
 			expr.EvaluateParameter += delegate(string name, ParameterArgs args) {
 				switch(name) {
 					case "episode": args.Result = infoSource_Entry.episodeInfo.Number; break;
+					case "sub": args.Result = infoSource_Entry.targetLanguageString + " " + infoSource_Entry.nativeLanguageString; break;
 					case "sub1": args.Result = infoSource_Entry.targetLanguageString; break;
 					case "sub2": args.Result = infoSource_Entry.nativeLanguageString; break;
+					case "text": args.Result = infoSource_Entry.targetLanguageString + " " + infoSource_Entry.nativeLanguageString; break;
+					case "text1": args.Result = infoSource_Entry.targetLanguageString; break;
+					case "text2": args.Result = infoSource_Entry.nativeLanguageString; break;
 					case "start": args.Result = (double)infoSource_Entry.startTimestamp.TimeOfDay.TotalMilliseconds / 1000.0; break;
 					case "end": args.Result = (double)infoSource_Entry.endTimestamp.TimeOfDay.TotalMilliseconds / 1000.0; break;
 					case "duration": args.Result = (double)infoSource_Entry.Duration.TimeOfDay.TotalMilliseconds / 1000.0; break;
@@ -750,8 +773,17 @@ namespace subs2srs4linux
 
 				// select if expression is evaluated positive, deselect if negative
 				object result = expr.Evaluate();
-				if(result is bool && (bool)result == true) m_treeviewSelectionLines.SelectIter(treeIter);
-				else m_treeviewSelectionLines.UnselectIter(treeIter);
+				if(result is bool) {
+					if(selectAction) {
+						// standard action: select
+						if((bool)result == true) m_treeviewSelectionLines.SelectIter(treeIter);
+						else if(!isIncrementalSearch) m_treeviewSelectionLines.UnselectIter(treeIter);
+					} else {
+						// standard action: deselect
+						if((bool)result == true) m_treeviewSelectionLines.UnselectIter(treeIter);
+						else if(!isIncrementalSearch) m_treeviewSelectionLines.SelectIter(treeIter);
+					}
+				}
 
 				if(!m_liststoreLines.IterNext(ref treeIter))
 					break; // error: the two list didn't have the same number of elements
@@ -762,10 +794,20 @@ namespace subs2srs4linux
 		/// <summary>
 		/// Replace text in sub1 and/or sub2 by using regexes.
 		/// </summary>
-		private void PreviewWindowRegexReplace(bool inSub1, bool inSub2, String pattern, String replaceTo) {
-			foreach (UtilsSubtitle.EntryInformation entryInfo in m_allEntryInfomation) {
-				if(inSub1) entryInfo.targetLanguageString = Regex.Replace(entryInfo.targetLanguageString, pattern, replaceTo);
-				if(inSub2) entryInfo.nativeLanguageString = Regex.Replace(entryInfo.nativeLanguageString, pattern, replaceTo);
+		private void PreviewWindowRegexReplace(bool inSub1, bool inSub2, bool onlyInSelected, String pattern, String replaceTo) {
+			if(onlyInSelected) {
+				TreePath[] selectedTreePaths = m_treeviewSelectionLines.GetSelectedRows();
+				foreach(TreePath treePath in selectedTreePaths) {
+					// replace in this entry
+					UtilsSubtitle.EntryInformation entryInfo = m_allEntryInfomation[treePath.Indices[0]];
+					if(inSub1) entryInfo.targetLanguageString = Regex.Replace(entryInfo.targetLanguageString, pattern, replaceTo);
+					if(inSub2) entryInfo.nativeLanguageString = Regex.Replace(entryInfo.nativeLanguageString, pattern, replaceTo);
+				}
+			} else {
+				foreach (UtilsSubtitle.EntryInformation entryInfo in m_allEntryInfomation) {
+					if(inSub1) entryInfo.targetLanguageString = Regex.Replace(entryInfo.targetLanguageString, pattern, replaceTo);
+					if(inSub2) entryInfo.nativeLanguageString = Regex.Replace(entryInfo.nativeLanguageString, pattern, replaceTo);
+				}
 			}
 			UpdatePreviewList();
 		}
