@@ -721,6 +721,10 @@ namespace subs2srs4linux
 			// resolve certain parameters in expression
 			expr.EvaluateParameter += delegate(string name, ParameterArgs args) {
 				switch(name) {
+					case "isActive": // fallthrough
+					case "active": args.Result= infoSource_Entry.isActive; break;
+					case "number":
+					case "episodeNumber":
 					case "episode": args.Result = infoSource_Entry.episodeInfo.Number; break;
 					case "sub": args.Result = infoSource_Entry.targetLanguageString + " " + infoSource_Entry.nativeLanguageString; break;
 					case "sub1": args.Result = infoSource_Entry.targetLanguageString; break;
