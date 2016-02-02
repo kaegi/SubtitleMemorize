@@ -16,22 +16,22 @@
 //
 
 using System;
-using System.Xml;
-using System.Xml.Serialization;
-using Gtk;
-using System.Runtime.Serialization.Formatters.Binary;
 using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
-using System.Text;
+using System.Runtime.Serialization.Formatters.Binary;
+using System.Text.RegularExpressions;
 using System.Threading;
+using System.Xml.Serialization;
+using Gtk;
+using NCalc;
 
 namespace subs2srs4linux
 {
 	class MainClass
 	{
 		////////////////// AUTO-GENERATED CODE BEGIN //////////////////////
-		#pragma warning disable 0414 // private field assigned but not used
+#pragma warning disable 0414 // private field assigned but not used
 		private Gtk.Action m_action1;
 		private Gtk.Adjustment m_episodeAdjustment;
 		private Gtk.Image m_image1;
@@ -57,10 +57,16 @@ namespace subs2srs4linux
 		private Gtk.CellRendererText m_cellrenderertextNativeLanguage;
 		private Gtk.Frame m_frame10;
 		private Gtk.Alignment m_alignment10;
-		private Gtk.Box m_box6;
-		private Gtk.CheckButton m_checkbutton1;
-		private Gtk.ComboBox m_combobox1;
-		private Gtk.CellRendererText m_cellrenderertextSelectEpisode;
+		private Gtk.Grid m_grid4;
+		private Gtk.Button m_buttonDeselectLinesBySearch;
+		private Gtk.Button m_buttonReplaceInSub2;
+		private Gtk.Button m_buttonSelectLinesBySearch;
+		private Gtk.Button m_buttonReplaceInSub1;
+		private Gtk.Entry m_entryLinesSearch;
+		private Gtk.Entry m_entryReplaceRegexTo;
+		private Gtk.Entry m_entryReplaceRegexFrom;
+		private Gtk.Label m_label5;
+		private Gtk.Label m_label17;
 		private Gtk.Label m_label21;
 		private Gtk.Frame m_frame11;
 		private Gtk.Alignment m_alignment11;
@@ -206,10 +212,16 @@ namespace subs2srs4linux
 			m_cellrenderertextNativeLanguage = (Gtk.CellRendererText) b.GetObject("cellrenderertext_native_language");
 			m_frame10 = (Gtk.Frame) b.GetObject("frame10");
 			m_alignment10 = (Gtk.Alignment) b.GetObject("alignment10");
-			m_box6 = (Gtk.Box) b.GetObject("box6");
-			m_checkbutton1 = (Gtk.CheckButton) b.GetObject("checkbutton1");
-			m_combobox1 = (Gtk.ComboBox) b.GetObject("combobox1");
-			m_cellrenderertextSelectEpisode = (Gtk.CellRendererText) b.GetObject("cellrenderertext_select_episode");
+			m_grid4 = (Gtk.Grid) b.GetObject("grid4");
+			m_buttonDeselectLinesBySearch = (Gtk.Button) b.GetObject("button_deselect_lines_by_search");
+			m_buttonReplaceInSub2 = (Gtk.Button) b.GetObject("button_replace_in_sub2");
+			m_buttonSelectLinesBySearch = (Gtk.Button) b.GetObject("button_select_lines_by_search");
+			m_buttonReplaceInSub1 = (Gtk.Button) b.GetObject("button_replace_in_sub1");
+			m_entryLinesSearch = (Gtk.Entry) b.GetObject("entry_lines_search");
+			m_entryReplaceRegexTo = (Gtk.Entry) b.GetObject("entry_replace_regex_to");
+			m_entryReplaceRegexFrom = (Gtk.Entry) b.GetObject("entry_replace_regex_from");
+			m_label5 = (Gtk.Label) b.GetObject("label5");
+			m_label17 = (Gtk.Label) b.GetObject("label17");
 			m_label21 = (Gtk.Label) b.GetObject("label21");
 			m_frame11 = (Gtk.Frame) b.GetObject("frame11");
 			m_alignment11 = (Gtk.Alignment) b.GetObject("alignment11");
@@ -329,9 +341,8 @@ namespace subs2srs4linux
 			m_progressbarProgressInfo = (Gtk.ProgressBar) b.GetObject("progressbar_progress_info");
 			m_buttonCancelOperation = (Gtk.Button) b.GetObject("button_cancel_operation");
 		}
-		#pragma warning restore 0414
+#pragma warning restore 0414
 		////////////////// AUTO-GENERATED CODE END //////////////////////
-
 
 
 		private readonly Settings m_defaultSettings = new Settings();
@@ -345,11 +356,13 @@ namespace subs2srs4linux
 
 		// ##################################################################33
 		// Variables for Preview window
+		private Settings m_previewSettings = null; // this set when preview window is shown and never changed until the preview window closes
 		private bool m_ignoreLineSelectionChanges = false;
 		private List<EpisodeInfo> m_episodeInfo = new List<EpisodeInfo>();
 		private List<UtilsSubtitle.EntryInformation> m_allEntryInfomation = new List<UtilsSubtitle.EntryInformation>(); // all entries from all episodes
-		private List<UtilsSubtitle.EntryInformation> m_previewWindowEntries = new List<UtilsSubtitle.EntryInformation>(); // only entries that are currently shown
 		private int m_selectedPreviewIndex = -1; // index of single selected/focused entry in "m_previewWindowEntries"
+        private bool m_previewWindow_isShiftPressed = false;
+        private bool m_previewWindow_isControlPressed = false;
 
 		// ##################################################################33
 		// Variables for Subtitle-Options-Window
@@ -464,7 +477,7 @@ namespace subs2srs4linux
 					if ((Gtk.ResponseType)fcd.Run() == Gtk.ResponseType.Accept) {
 						SaveStateToFile (fcd.Filename);
 					}
-					fcd.Destroy ();	 
+					fcd.Destroy ();
 				});
 			};
 
@@ -490,7 +503,7 @@ namespace subs2srs4linux
 
 			// ----------------------------------------------------------------------------------------------------
 			m_buttonDirectoryChoose.Clicked += delegate(object o, EventArgs e) {
-				
+
 				Gtk.FileChooserDialog fcd = new Gtk.FileChooserDialog ("Select output folder", m_mainWindow, FileChooserAction.SelectFolder,
 					"_Cancel", ResponseType.Cancel,
 					"_Choose", ResponseType.Accept);
@@ -510,7 +523,7 @@ namespace subs2srs4linux
 				String[] filenames = OpenFileChooser ("Select subtitles file in native language");
 				if (filenames == null)
 					return;
-				
+
 				m_entryNativeLanguage.Text = AddFilesToEntry(m_entryNativeLanguage.Text, filenames, "Error in native language file entry field: ");
 			};
 
@@ -561,7 +574,7 @@ namespace subs2srs4linux
 			};
 
 			m_buttonSubOptionsApply.Clicked += delegate(object sender, EventArgs e) {
-				
+
 				Gtk.Entry currentEntry = m_subOptionsWindow_subIndex == 0 ? m_entryTargetLanguage : m_entryNativeLanguage;
 				UtilsInputFiles allFiles = new UtilsInputFiles(currentEntry.Text);
 				allFiles.SetPropertiesOfFirstFile("enc", InfoEncoding.getEncodings()[m_comboboxSubEncoding.Active].ShortName);
@@ -581,6 +594,20 @@ namespace subs2srs4linux
 				if(m_progressAndCancellable != null)
 					m_progressAndCancellable.Cancel();
 			};
+		}
+
+		/// <summary>
+		/// Changes names of Search&Replace Buttons to "Select", "Deselect", ... dependent on
+		/// Shift and Ctrl.
+		/// </summary>
+		private void UpdatePreviewButtonNames() {
+			if(m_previewWindow_isShiftPressed) {
+				if(m_previewWindow_isControlPressed) m_buttonSelectLinesBySearch.Label = "Deselect (inc)";
+				else m_buttonSelectLinesBySearch.Label = "Select (inc)";
+			} else {
+				if(m_previewWindow_isControlPressed) m_buttonSelectLinesBySearch.Label = "Deselect ";
+				else m_buttonSelectLinesBySearch.Label = "Select";
+			}
 		}
 
 		private void ConnectEventsPreviewWindowOptions() {
@@ -617,18 +644,46 @@ namespace subs2srs4linux
 					if(!wasLineSelected[index])
 						m_treeviewSelectionLines.SelectPath(new TreePath(new int[]{index}));
 				m_ignoreLineSelectionChanges = false;
-			
+
 				SelectEntry();
 			};
-				
+
 			m_treeviewSelectionLines.Changed += delegate(object sender, EventArgs e) {
 				SelectEntry();
+			};
+
+			m_buttonReplaceInSub1.Clicked += delegate(object sender, EventArgs e) {
+				PreviewWindowRegexReplace(true, false, m_previewWindow_isControlPressed, m_entryReplaceRegexFrom.Text, m_entryReplaceRegexTo.Text);
+			};
+
+			m_buttonReplaceInSub2.Clicked += delegate(object sender, EventArgs e) {
+				PreviewWindowRegexReplace(false, true, m_previewWindow_isControlPressed, m_entryReplaceRegexFrom.Text, m_entryReplaceRegexTo.Text);
+			};
+
+			m_previewWindow.KeyPressEvent += delegate(object o, KeyPressEventArgs args) {
+				if(args.Event.KeyValue == Gdk.Keyval.FromName("Shift_R") || args.Event.KeyValue == Gdk.Keyval.FromName("Shift_L"))
+					m_previewWindow_isShiftPressed = true;
+				if(args.Event.KeyValue == Gdk.Keyval.FromName("Control_R") || args.Event.KeyValue == Gdk.Keyval.FromName("Control_L"))
+					m_previewWindow_isControlPressed = true;
+				UpdatePreviewButtonNames();
+			};
+
+			m_previewWindow.KeyReleaseEvent += delegate(object o, KeyReleaseEventArgs args) {
+				if(args.Event.KeyValue == Gdk.Keyval.FromName("Shift_R") || args.Event.KeyValue == Gdk.Keyval.FromName("Shift_L"))
+					m_previewWindow_isShiftPressed = false;
+				if(args.Event.KeyValue == Gdk.Keyval.FromName("Control_R") || args.Event.KeyValue == Gdk.Keyval.FromName("Control_L"))
+					m_previewWindow_isControlPressed = false;
+				UpdatePreviewButtonNames();
+			};
+
+			m_buttonSelectLinesBySearch.Clicked += delegate(object sender, EventArgs e) {
+				PreviewWindowSelectLines(m_entryLinesSearch.Text, m_previewWindow_isShiftPressed, !m_previewWindow_isControlPressed);
 			};
 
 			m_buttonPlayContent.Clicked += delegate(object sender, EventArgs e) {
 				if(m_selectedPreviewIndex < 0) return;
 
-				UtilsSubtitle.EntryInformation entryInfo = m_previewWindowEntries[m_selectedPreviewIndex];
+				UtilsSubtitle.EntryInformation entryInfo = m_allEntryInfomation[m_selectedPreviewIndex];
 				EpisodeInfo episodeInfo = m_episodeInfo[entryInfo.episodeInfo.Index];
 				String arguments = String.Format("--really-quiet --no-video --start={0} --end={1} \"{2}\"", UtilsCommon.ToTimeArg(entryInfo.startTimestamp), UtilsCommon.ToTimeArg(entryInfo.endTimestamp), episodeInfo.VideoFileDesc.filename);
 
@@ -638,8 +693,208 @@ namespace subs2srs4linux
 				}));
 				thr.Start ();
 			};
+
+			m_toolbuttonToggleActivation.Clicked += delegate {
+				// switch isActive field for every selected entry
+				TreePath[] selectedTreePaths = m_treeviewSelectionLines.GetSelectedRows();
+				foreach(TreePath treePath in selectedTreePaths) {
+					UtilsSubtitle.EntryInformation entryInformation = m_allEntryInfomation[treePath.Indices[0]];
+					entryInformation.isActive = !entryInformation.isActive;
+				}
+
+				// make internal changes visible to user
+				UpdatePreviewList();
+			};
+
+			m_toolbuttonGo.Clicked += delegate {
+				new Thread(new ThreadStart(delegate {
+					Console.WriteLine("Start computation");
+					InfoProgress progressInfo = new InfoProgress(ProgressHandler);
+					ExportData(m_previewSettings, progressInfo);
+					Console.WriteLine("End computation");
+				})).Start();
+
+			};
+
+			// ----------------------------------------------------------------------
+			// change entries when text in preview textviews is changed
+			m_textviewTargetLanguage.Buffer.Changed += delegate(object sender, EventArgs e) {
+				m_allEntryInfomation[m_selectedPreviewIndex].targetLanguageString = m_textviewTargetLanguage.Buffer.Text;
+				UpdatePreviewListEntry(m_selectedPreviewIndex);
+			};
+
+			// ----------------------------------------------------------------------
+			// change entries when text in preview textviews is changed
+			m_textviewNativeLanguage.Buffer.Changed += delegate(object sender, EventArgs e) {
+				m_allEntryInfomation[m_selectedPreviewIndex].nativeLanguageString = m_textviewNativeLanguage.Buffer.Text;
+				UpdatePreviewListEntry(m_selectedPreviewIndex);
+			};
+
 		}
 
+		/// <summary>
+		/// Selects preview lines in Gtk.TreeView based on a condtion like "episode=3 and contains(sub1, 'Bye')".
+		/// </summary>
+		/// <param name="conditionExpr">Condition expr.</param>
+		/// <param name="isIncrementalSearch">Only change selection state for lines with matching expressions.</param>
+		/// <param name="selectAction">true -> select matching lines, false -> deselect matching lines</param>
+		public void PreviewWindowSelectLines(String conditionExpr, bool isIncrementalSearch, bool selectAction) {
+			// select all if expression is null
+			if(String.IsNullOrWhiteSpace(conditionExpr)) {
+				if(selectAction) m_treeviewSelectionLines.SelectAll();
+				else m_treeviewSelectionLines.UnselectAll();
+				return;
+			}
+
+			UtilsSubtitle.EntryInformation infoSource_Entry = null; // entry which will be used for evaluation an expression
+			Expression expr = new Expression (conditionExpr);
+
+			// resolve certain parameters in expression
+			expr.EvaluateParameter += delegate(string name, ParameterArgs args) {
+				switch(name) {
+					case "isActive": // fallthrough
+					case "active": args.Result= infoSource_Entry.isActive; break;
+					case "number":
+					case "episodeNumber":
+					case "episode": args.Result = infoSource_Entry.episodeInfo.Number; break;
+					case "sub": args.Result = infoSource_Entry.targetLanguageString + " " + infoSource_Entry.nativeLanguageString; break;
+					case "sub1": args.Result = infoSource_Entry.targetLanguageString; break;
+					case "sub2": args.Result = infoSource_Entry.nativeLanguageString; break;
+					case "text": args.Result = infoSource_Entry.targetLanguageString + " " + infoSource_Entry.nativeLanguageString; break;
+					case "text1": args.Result = infoSource_Entry.targetLanguageString; break;
+					case "text2": args.Result = infoSource_Entry.nativeLanguageString; break;
+					case "start": args.Result = (double)infoSource_Entry.startTimestamp.TimeOfDay.TotalMilliseconds / 1000.0; break;
+					case "end": args.Result = (double)infoSource_Entry.endTimestamp.TimeOfDay.TotalMilliseconds / 1000.0; break;
+					case "duration": args.Result = (double)infoSource_Entry.Duration.TimeOfDay.TotalMilliseconds / 1000.0; break;
+				}
+			};
+			// resolve certain functions in expression
+			expr.EvaluateFunction += delegate(string name, FunctionArgs args) {
+				switch(name) {
+					// an exmple for this function is "contains(sub1, 'some text')" that selects all lines, where sub1 contains 'some text'
+					case "contains": {
+						 // two string parameters are expected
+						 if(args.Parameters.Length != 2) return;
+						 object[] arguments = args.EvaluateParameters();
+						 if(!(arguments[0] is String && arguments[1] is String)) return;
+
+						 // evaluate function
+						 String string0 = (String)arguments[0];
+						 String string1 = (String)arguments[1];
+						 args.Result = string0.Contains(string1);
+						 args.HasResult = true;
+
+					} break;
+
+					// example: time('25:10.50') returns the number of seconds of 25min 10secs 50hsecs
+					case "time": {
+						if(args.Parameters.Length != 1) return;
+						object argumentObject = args.EvaluateParameters()[0];
+						if(!(argumentObject is String)) return;
+						String timeString = (String) argumentObject;
+
+						args.Result = UtilsCommon.ParseTimeString(timeString);
+						args.HasResult = true;
+					} break;
+				}
+			};
+
+			// go through whole list and evaluate the expression for every entry
+			TreeIter treeIter;
+			if(!m_liststoreLines.GetIterFirst(out treeIter)) return;
+			foreach (UtilsSubtitle.EntryInformation entryInfo in m_allEntryInfomation) {
+				// provide info for exrp.Evaluate()
+				infoSource_Entry = entryInfo;
+
+				// select if expression is evaluated positive, deselect if negative
+				object result = expr.Evaluate();
+				if(result is bool) {
+					if(selectAction) {
+						// standard action: select
+						if((bool)result == true) m_treeviewSelectionLines.SelectIter(treeIter);
+						else if(!isIncrementalSearch) m_treeviewSelectionLines.UnselectIter(treeIter);
+					} else {
+						// standard action: deselect
+						if((bool)result == true) m_treeviewSelectionLines.UnselectIter(treeIter);
+						else if(!isIncrementalSearch) m_treeviewSelectionLines.SelectIter(treeIter);
+					}
+				}
+
+				if(!m_liststoreLines.IterNext(ref treeIter))
+					break; // error: the two list didn't have the same number of elements
+			}
+
+		}
+
+		/// <summary>
+		/// Replace text in sub1 and/or sub2 by using regexes.
+		/// </summary>
+		private void PreviewWindowRegexReplace(bool inSub1, bool inSub2, bool onlyInSelected, String pattern, String replaceTo) {
+			if(onlyInSelected) {
+				TreePath[] selectedTreePaths = m_treeviewSelectionLines.GetSelectedRows();
+				foreach(TreePath treePath in selectedTreePaths) {
+					// replace in this entry
+					UtilsSubtitle.EntryInformation entryInfo = m_allEntryInfomation[treePath.Indices[0]];
+					if(inSub1) entryInfo.targetLanguageString = Regex.Replace(entryInfo.targetLanguageString, pattern, replaceTo);
+					if(inSub2) entryInfo.nativeLanguageString = Regex.Replace(entryInfo.nativeLanguageString, pattern, replaceTo);
+				}
+			} else {
+				foreach (UtilsSubtitle.EntryInformation entryInfo in m_allEntryInfomation) {
+					if(inSub1) entryInfo.targetLanguageString = Regex.Replace(entryInfo.targetLanguageString, pattern, replaceTo);
+					if(inSub2) entryInfo.nativeLanguageString = Regex.Replace(entryInfo.nativeLanguageString, pattern, replaceTo);
+				}
+			}
+			UpdatePreviewList();
+		}
+
+		/// <summary>
+		/// XXX: documentation missing
+		/// </summary>
+		private TreeIter GetTreeIterByIndex(int index) {
+			TreeIter treeIter;
+			if(!m_liststoreLines.GetIterFirst(out treeIter)) throw new Exception("No entry in list");
+			do {
+				if(index == 0) return treeIter;
+				index--;
+			} while(m_liststoreLines.IterNext(ref treeIter));
+
+			// index is not in list
+			throw new ArgumentOutOfRangeException();
+		}
+
+		/// <summary>
+		/// XXX: documentation missing
+		/// </summary>
+		private void UpdatePreviewListEntry(int index, TreeIter? treeIter = null) {
+			if(index < 0 || index >= m_allEntryInfomation.Count) throw new ArgumentOutOfRangeException(); // nothing to update
+			if(treeIter == null)
+				treeIter = GetTreeIterByIndex(index);  // TODO: cache this value
+
+			UtilsSubtitle.EntryInformation entryInfo = m_allEntryInfomation[index];
+
+			// if this entry is deactivated the line is colored grey with Pango's markup language
+			String beginString = entryInfo.isActive ? "" : "<span foreground=\"white\" background=\"grey\">";
+			String endString = entryInfo.isActive ? "" : "</span>";
+
+			// set values in list TODO: can there be an index change?
+			m_liststoreLines.SetValue(treeIter.Value, 0, beginString + entryInfo.targetLanguageString + endString);
+			m_liststoreLines.SetValue(treeIter.Value, 1, beginString + entryInfo.nativeLanguageString + endString);
+		}
+
+		/// <summary>
+		/// This function sets all lines in the Gtk.TreeView to the values in m_allEntryInfomation.
+		/// The TreeView has to contain exactly the same number of elements as the list.
+		/// </summary>
+		private void UpdatePreviewList() {
+
+			TreeIter treeIter;
+			if(!m_liststoreLines.GetIterFirst(out treeIter)) return;
+			for(int i = 0; i < m_allEntryInfomation.Count; i++) {
+				UpdatePreviewListEntry(i, treeIter);
+				if(!m_liststoreLines.IterNext(ref treeIter))
+					break; // error: the two list didn't have the same number of elements
+			}
+		}
 
 		private static List<EpisodeInfo> GenerateEpisodeInfos(Settings settings) {
 
@@ -688,6 +943,8 @@ namespace subs2srs4linux
 				return;
 			}
 
+			m_previewSettings = settings;
+
 
 			Thread compuationThread = new Thread(new ThreadStart(delegate {
 
@@ -721,9 +978,6 @@ namespace subs2srs4linux
 
 					//infoProgress.ProcessedSteps(1);
 
-					// choose to show all episodes
-					SelectEpisodeForPreview(-1);
-
 					if(previewOrGo == PendingOperation.GENERATE_PREVIEW)
 						PopulatePreviewList();
 					else
@@ -743,22 +997,28 @@ namespace subs2srs4linux
 			String audioPath = settings.OutputDirectoryPath + Path.DirectorySeparatorChar + settings.DeckName + "_audio" + Path.DirectorySeparatorChar;
 			Console.WriteLine (tsvFilename);
 
+			// remove all entries that are now deactivated
+			List<UtilsSubtitle.EntryInformation> activeEntryInformations = new List<UtilsSubtitle.EntryInformation>();
+			activeEntryInformations.AddRange (m_allEntryInfomation);
+			activeEntryInformations.RemoveAll ((UtilsSubtitle.EntryInformation entryInfo) => !entryInfo.isActive);
+
 			// extract images
 			if(Directory.Exists(snapshotsPath)) Directory.Delete(snapshotsPath, true);
 		 	Directory.CreateDirectory(snapshotsPath);
-			List<String> snapshotFields = WorkerSnapshot.ExtractSnaphots(settings, snapshotsPath, m_allEntryInfomation);
+			List<String> snapshotFields = WorkerSnapshot.ExtractSnaphots(settings, snapshotsPath, activeEntryInformations);
 
 			// extract audio
 			if(Directory.Exists(audioPath)) Directory.Delete(audioPath, true);
 			Directory.CreateDirectory(audioPath);
-			List<String> audioFields = WorkerAudio.ExtractAudio(settings, audioPath, m_allEntryInfomation);
+			List<String> audioFields = WorkerAudio.ExtractAudio(settings, audioPath, activeEntryInformations);
 
 
 			// TODO: normalize audio
 
 			using(var outputStream = new StreamWriter(tsvFilename)) {
-				for (int i = 0; i < m_allEntryInfomation.Count; i++) {
-					UtilsSubtitle.EntryInformation entryInfo = m_allEntryInfomation[i];
+				for (int i = 0; i < activeEntryInformations.Count; i++) {
+					UtilsSubtitle.EntryInformation entryInfo = activeEntryInformations[i];
+
 
 					String keyField = entryInfo.GetKey ();
 					String audioField = audioFields [i];
@@ -792,7 +1052,7 @@ namespace subs2srs4linux
 		/// </summary>
 		/// <param name="settings">Settings.</param>
 		private static List<UtilsSubtitle.EntryInformation> GenerateEntryInformation(Settings settings, List<EpisodeInfo> episodeInfos, InfoProgress progressInfo) {
-			
+
 			// read subtitles
 			List<List<LineInfo>> lineInfosPerEpisode_TargetLanguage = ReadAllSubtitleFiles(settings, settings.PerSubtitleSettings[0], episodeInfos, 0, progressInfo);
 			List<List<LineInfo>> lineInfosPerEpisode_NativeLanguage = ReadAllSubtitleFiles(settings, settings.PerSubtitleSettings[1], episodeInfos, 1, progressInfo);
@@ -827,7 +1087,7 @@ namespace subs2srs4linux
 			// do not start another operation when there is already one
 			if (m_pendingOperation != PendingOperation.NOTHING)
 				return false;
-			
+
 
 			m_pendingOperation = thisOperation;
 
@@ -858,7 +1118,7 @@ namespace subs2srs4linux
 			Gtk.Entry currentEntry = subIndex == 0 ? m_entryTargetLanguage : m_entryNativeLanguage;
 			m_subOptionsWindow_subIndex = subIndex;
 
-			// read properties of first file to get selected stream and 
+			// read properties of first file to get selected stream and show them in combobox
 			UtilsInputFiles uif = new UtilsInputFiles(currentEntry.Text);
 			List<UtilsInputFiles.FileDesc> fileDescs = uif.GetFileDescriptions ();
 
@@ -907,7 +1167,7 @@ namespace subs2srs4linux
 			}
 			if(selectedEntry_SubStreams >= 0)
 				m_comboboxSubStream.Active = selectedEntry_SubStreams;
-				
+
 
 			// fill encodings in subtitle options
 			m_liststoreSubEncoding.Clear();
@@ -928,8 +1188,8 @@ namespace subs2srs4linux
 				m_comboboxSubEncoding.Active = utf8index;
 			else
 				m_comboboxSubEncoding.Active = 0;
-			
-			
+
+
 			m_subtitleOptionsWindow.ShowAll ();
 		}
 
@@ -956,18 +1216,18 @@ namespace subs2srs4linux
 		}
 
 		/// <summary>
-		/// Update image and text view to match "selectedIndex". Can be in a different thread then Gtk-Thread. It will extract the image, so 
+		/// Update image and text view to match "selectedIndex". Can be in a different thread then Gtk-Thread. It will extract the image, so
 		/// it can take 1-2 seconds.
 		/// </summary>
 		/// <param name="selectedIndex">Selected index.</param>
 		private void SelectEntry (int selectedIndex)
 		{
 			// do not select currently selected entry again
-			if (selectedIndex == m_selectedPreviewIndex || selectedIndex < 0 || selectedIndex >= m_previewWindowEntries.Count)
+			if (selectedIndex == m_selectedPreviewIndex || selectedIndex < 0 || selectedIndex >= m_allEntryInfomation.Count)
 				return;
-			
+
 			m_selectedPreviewIndex = selectedIndex;
-			UtilsSubtitle.EntryInformation entryInfo = m_previewWindowEntries [selectedIndex];
+			UtilsSubtitle.EntryInformation entryInfo = m_allEntryInfomation [selectedIndex];
 
 			Gtk.Application.Invoke (delegate {
 				m_textviewTargetLanguage.Buffer.Text = entryInfo.targetLanguageString;
@@ -989,29 +1249,15 @@ namespace subs2srs4linux
 			});
 		}
 
-		/// <summary>
-		/// Links entries from episode "i" from "m_allEntryInfomation" to "m_previewWindowEntries". In case
-		/// "i == -1", all entries are linked.
-		/// </summary>
-		/// <param name="i">The index.</param>
-		private void SelectEpisodeForPreview (int i)
-		{
-			m_previewWindowEntries.Clear ();
-			if (i == -1) // all episodes
-				m_previewWindowEntries.AddRange (m_allEntryInfomation);
-			else
-				throw new NotImplementedException ();
-		}
-
 		void ShowAllSelectedEntryInformations ()
 		{
 			m_selectedPreviewIndex = -1;
 			m_treeviewSelectionLines.UnselectAll ();
 			m_liststoreLines.Clear ();
-			foreach (UtilsSubtitle.EntryInformation entryInfo in m_previewWindowEntries)
+			foreach (UtilsSubtitle.EntryInformation entryInfo in m_allEntryInfomation)
 				m_liststoreLines.AppendValues (entryInfo.targetLanguageString, entryInfo.nativeLanguageString);
 		}
-	
+
 
 		private string ReadResourceString(String resourceName) {
 			var assembly = Assembly.GetExecutingAssembly ();
@@ -1142,9 +1388,9 @@ namespace subs2srs4linux
 			if(String.IsNullOrWhiteSpace(settings.OutputDirectoryPath))
 				throw new Exception ("No output directory selected.");
 
-			if(!Directory.Exists(settings.OutputDirectoryPath)) 
+			if(!Directory.Exists(settings.OutputDirectoryPath))
 				throw new Exception ("Selected output directory does not exist.");
-			
+
 
 			if (!String.IsNullOrWhiteSpace (settings.NativeFilePath))
 				TryParseInputFilesString (settings.NativeFilePath, "Error in native language file entry: ");
@@ -1215,7 +1461,7 @@ namespace subs2srs4linux
 		}
 
 		private void ClearErrorMessages() {
-			
+
 		}
 
 
@@ -1229,7 +1475,7 @@ namespace subs2srs4linux
 			}
 			Console.WriteLine (args.ExceptionObject.ToString ());
 		}
-		
+
 		public static void Main (string[] args)
 		{
 			// ensure that the temporary path ("/tmp/subs2srs4linux") exists
@@ -1270,4 +1516,4 @@ namespace subs2srs4linux
 		}
 	}
 }
-	
+
