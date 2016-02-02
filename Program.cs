@@ -477,7 +477,7 @@ namespace subs2srs4linux
 					if ((Gtk.ResponseType)fcd.Run() == Gtk.ResponseType.Accept) {
 						SaveStateToFile (fcd.Filename);
 					}
-					fcd.Destroy ();	 
+					fcd.Destroy ();
 				});
 			};
 
@@ -503,7 +503,7 @@ namespace subs2srs4linux
 
 			// ----------------------------------------------------------------------------------------------------
 			m_buttonDirectoryChoose.Clicked += delegate(object o, EventArgs e) {
-				
+
 				Gtk.FileChooserDialog fcd = new Gtk.FileChooserDialog ("Select output folder", m_mainWindow, FileChooserAction.SelectFolder,
 					"_Cancel", ResponseType.Cancel,
 					"_Choose", ResponseType.Accept);
@@ -523,7 +523,7 @@ namespace subs2srs4linux
 				String[] filenames = OpenFileChooser ("Select subtitles file in native language");
 				if (filenames == null)
 					return;
-				
+
 				m_entryNativeLanguage.Text = AddFilesToEntry(m_entryNativeLanguage.Text, filenames, "Error in native language file entry field: ");
 			};
 
@@ -574,7 +574,7 @@ namespace subs2srs4linux
 			};
 
 			m_buttonSubOptionsApply.Clicked += delegate(object sender, EventArgs e) {
-				
+
 				Gtk.Entry currentEntry = m_subOptionsWindow_subIndex == 0 ? m_entryTargetLanguage : m_entryNativeLanguage;
 				UtilsInputFiles allFiles = new UtilsInputFiles(currentEntry.Text);
 				allFiles.SetPropertiesOfFirstFile("enc", InfoEncoding.getEncodings()[m_comboboxSubEncoding.Active].ShortName);
@@ -644,10 +644,10 @@ namespace subs2srs4linux
 					if(!wasLineSelected[index])
 						m_treeviewSelectionLines.SelectPath(new TreePath(new int[]{index}));
 				m_ignoreLineSelectionChanges = false;
-			
+
 				SelectEntry();
 			};
-				
+
 			m_treeviewSelectionLines.Changed += delegate(object sender, EventArgs e) {
 				SelectEntry();
 			};
@@ -715,6 +715,21 @@ namespace subs2srs4linux
 				})).Start();
 
 			};
+
+			// ----------------------------------------------------------------------
+			// change entries when text in preview textviews is changed
+			m_textviewTargetLanguage.Buffer.Changed += delegate(object sender, EventArgs e) {
+				m_allEntryInfomation[m_selectedPreviewIndex].targetLanguageString = m_textviewTargetLanguage.Buffer.Text;
+				UpdatePreviewListEntry(m_selectedPreviewIndex);
+			};
+
+			// ----------------------------------------------------------------------
+			// change entries when text in preview textviews is changed
+			m_textviewNativeLanguage.Buffer.Changed += delegate(object sender, EventArgs e) {
+				m_allEntryInfomation[m_selectedPreviewIndex].nativeLanguageString = m_textviewNativeLanguage.Buffer.Text;
+				UpdatePreviewListEntry(m_selectedPreviewIndex);
+			};
+
 		}
 
 		/// <summary>
@@ -833,6 +848,40 @@ namespace subs2srs4linux
 		}
 
 		/// <summary>
+		/// XXX: documentation missing
+		/// </summary>
+		private TreeIter GetTreeIterByIndex(int index) {
+			TreeIter treeIter;
+			if(!m_liststoreLines.GetIterFirst(out treeIter)) throw new Exception("No entry in list");
+			do {
+				if(index == 0) return treeIter;
+				index--;
+			} while(m_liststoreLines.IterNext(ref treeIter));
+
+			// index is not in list
+			throw new ArgumentOutOfRangeException();
+		}
+
+		/// <summary>
+		/// XXX: documentation missing
+		/// </summary>
+		private void UpdatePreviewListEntry(int index, TreeIter? treeIter = null) {
+			if(index < 0 || index >= m_allEntryInfomation.Count) throw new ArgumentOutOfRangeException(); // nothing to update
+			if(treeIter == null)
+				treeIter = GetTreeIterByIndex(index);  // TODO: cache this value
+
+			UtilsSubtitle.EntryInformation entryInfo = m_allEntryInfomation[index];
+
+			// if this entry is deactivated the line is colored grey with Pango's markup language
+			String beginString = entryInfo.isActive ? "" : "<span foreground=\"white\" background=\"grey\">";
+			String endString = entryInfo.isActive ? "" : "</span>";
+
+			// set values in list TODO: can there be an index change?
+			m_liststoreLines.SetValue(treeIter.Value, 0, beginString + entryInfo.targetLanguageString + endString);
+			m_liststoreLines.SetValue(treeIter.Value, 1, beginString + entryInfo.nativeLanguageString + endString);
+		}
+
+		/// <summary>
 		/// This function sets all lines in the Gtk.TreeView to the values in m_allEntryInfomation.
 		/// The TreeView has to contain exactly the same number of elements as the list.
 		/// </summary>
@@ -840,16 +889,8 @@ namespace subs2srs4linux
 
 			TreeIter treeIter;
 			if(!m_liststoreLines.GetIterFirst(out treeIter)) return;
-			foreach (UtilsSubtitle.EntryInformation entryInfo in m_allEntryInfomation) {
-
-				// if this entry is deactivated the line is colored grey with Pango's markup language
-				String beginString = entryInfo.isActive ? "" : "<span foreground=\"white\" background=\"grey\">";
-				String endString = entryInfo.isActive ? "" : "</span>";
-
-				// set values in list TODO: can there be an index change?
-				m_liststoreLines.SetValue(treeIter, 0, beginString + entryInfo.targetLanguageString + endString);
-				m_liststoreLines.SetValue(treeIter, 1, beginString + entryInfo.nativeLanguageString + endString);
-
+			for(int i = 0; i < m_allEntryInfomation.Count; i++) {
+				UpdatePreviewListEntry(i, treeIter);
 				if(!m_liststoreLines.IterNext(ref treeIter))
 					break; // error: the two list didn't have the same number of elements
 			}
@@ -1011,7 +1052,7 @@ namespace subs2srs4linux
 		/// </summary>
 		/// <param name="settings">Settings.</param>
 		private static List<UtilsSubtitle.EntryInformation> GenerateEntryInformation(Settings settings, List<EpisodeInfo> episodeInfos, InfoProgress progressInfo) {
-			
+
 			// read subtitles
 			List<List<LineInfo>> lineInfosPerEpisode_TargetLanguage = ReadAllSubtitleFiles(settings, settings.PerSubtitleSettings[0], episodeInfos, 0, progressInfo);
 			List<List<LineInfo>> lineInfosPerEpisode_NativeLanguage = ReadAllSubtitleFiles(settings, settings.PerSubtitleSettings[1], episodeInfos, 1, progressInfo);
@@ -1046,7 +1087,7 @@ namespace subs2srs4linux
 			// do not start another operation when there is already one
 			if (m_pendingOperation != PendingOperation.NOTHING)
 				return false;
-			
+
 
 			m_pendingOperation = thisOperation;
 
@@ -1077,7 +1118,7 @@ namespace subs2srs4linux
 			Gtk.Entry currentEntry = subIndex == 0 ? m_entryTargetLanguage : m_entryNativeLanguage;
 			m_subOptionsWindow_subIndex = subIndex;
 
-			// read properties of first file to get selected stream and 
+			// read properties of first file to get selected stream and show them in combobox
 			UtilsInputFiles uif = new UtilsInputFiles(currentEntry.Text);
 			List<UtilsInputFiles.FileDesc> fileDescs = uif.GetFileDescriptions ();
 
@@ -1126,7 +1167,7 @@ namespace subs2srs4linux
 			}
 			if(selectedEntry_SubStreams >= 0)
 				m_comboboxSubStream.Active = selectedEntry_SubStreams;
-				
+
 
 			// fill encodings in subtitle options
 			m_liststoreSubEncoding.Clear();
@@ -1147,8 +1188,8 @@ namespace subs2srs4linux
 				m_comboboxSubEncoding.Active = utf8index;
 			else
 				m_comboboxSubEncoding.Active = 0;
-			
-			
+
+
 			m_subtitleOptionsWindow.ShowAll ();
 		}
 
@@ -1175,7 +1216,7 @@ namespace subs2srs4linux
 		}
 
 		/// <summary>
-		/// Update image and text view to match "selectedIndex". Can be in a different thread then Gtk-Thread. It will extract the image, so 
+		/// Update image and text view to match "selectedIndex". Can be in a different thread then Gtk-Thread. It will extract the image, so
 		/// it can take 1-2 seconds.
 		/// </summary>
 		/// <param name="selectedIndex">Selected index.</param>
@@ -1184,7 +1225,7 @@ namespace subs2srs4linux
 			// do not select currently selected entry again
 			if (selectedIndex == m_selectedPreviewIndex || selectedIndex < 0 || selectedIndex >= m_allEntryInfomation.Count)
 				return;
-			
+
 			m_selectedPreviewIndex = selectedIndex;
 			UtilsSubtitle.EntryInformation entryInfo = m_allEntryInfomation [selectedIndex];
 
@@ -1216,7 +1257,7 @@ namespace subs2srs4linux
 			foreach (UtilsSubtitle.EntryInformation entryInfo in m_allEntryInfomation)
 				m_liststoreLines.AppendValues (entryInfo.targetLanguageString, entryInfo.nativeLanguageString);
 		}
-	
+
 
 		private string ReadResourceString(String resourceName) {
 			var assembly = Assembly.GetExecutingAssembly ();
@@ -1347,9 +1388,9 @@ namespace subs2srs4linux
 			if(String.IsNullOrWhiteSpace(settings.OutputDirectoryPath))
 				throw new Exception ("No output directory selected.");
 
-			if(!Directory.Exists(settings.OutputDirectoryPath)) 
+			if(!Directory.Exists(settings.OutputDirectoryPath))
 				throw new Exception ("Selected output directory does not exist.");
-			
+
 
 			if (!String.IsNullOrWhiteSpace (settings.NativeFilePath))
 				TryParseInputFilesString (settings.NativeFilePath, "Error in native language file entry: ");
@@ -1420,7 +1461,7 @@ namespace subs2srs4linux
 		}
 
 		private void ClearErrorMessages() {
-			
+
 		}
 
 
@@ -1434,7 +1475,7 @@ namespace subs2srs4linux
 			}
 			Console.WriteLine (args.ExceptionObject.ToString ());
 		}
-		
+
 		public static void Main (string[] args)
 		{
 			// ensure that the temporary path ("/tmp/subs2srs4linux") exists
@@ -1475,4 +1516,4 @@ namespace subs2srs4linux
 		}
 	}
 }
-	
+
