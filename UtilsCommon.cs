@@ -33,7 +33,8 @@ namespace subs2srs4linux
 
 		}
 
-		public static string CallExeAndGetStdout(string exePath, string args) {
+		// TODO: Rename
+		public static string CallExeAndGetStdout(string exePath, string args, bool stdout=true) {
 			Process process = new Process();
 
 			try {
@@ -42,9 +43,13 @@ namespace subs2srs4linux
 				process.StartInfo.UseShellExecute = false;
 				process.StartInfo.CreateNoWindow = true;
 				process.StartInfo.RedirectStandardOutput = true;
+				process.StartInfo.RedirectStandardError = true;
 				process.Start();
 
-				return process.StandardOutput.ReadToEnd();
+				if(stdout)
+					return process.StandardOutput.ReadToEnd();
+				else
+					return process.StandardError.ReadToEnd();
 			} catch {
 				try {
 					process.Kill();
@@ -170,6 +175,24 @@ namespace subs2srs4linux
 			return middleTime.AddMilliseconds (startTimestamp.TimeOfDay.TotalMilliseconds / 2 + endTimestamp.TimeOfDay.TotalMilliseconds / 2);
 		}
 
+		public static String ToTimeArg (double seconds)
+		{
+			String sign = seconds < 0 ? "-" : "";
+			int milliseconds 	= (int)(seconds * 1000.0) % 1000;
+			int iseconds 		= (int)(seconds * 1.0) % 60;
+			int minutes 		= (int)(seconds / 60.0) % 60;
+			int totalHours 		= (int)(seconds / (60.0  * 60.0));
+
+			// Example: 00:00:07.920
+			return String.Format("{0}{1:00.}:{2:00.}:{3:00.}.{4:000.}",
+				sign,			 // {0}
+				totalHours,      // {1}
+				minutes,         // {2}
+				iseconds,        // {3}
+				milliseconds);   // {4}
+		}
+
+
 		public static String ToTimeArg (DateTime time)
 		{
 			// Example: 00:00:07.920
@@ -214,6 +237,31 @@ namespace subs2srs4linux
 			DateTime result = new DateTime();
 			return result.AddMilliseconds(a.TimeOfDay.TotalMilliseconds - b.TimeOfDay.TotalMilliseconds);
 		}
+
+		/// <summary>
+		/// Returns true if "a" and "b" overlap, false otherwise. For both
+		/// time spans the basic assumption is "start less or equal end".
+		/// </summary>
+		public static bool IsOverlapping(ITimeSpan a, ITimeSpan b) {
+			return a.EndTime >= b.StartTime && a.StartTime <= b.EndTime;
+		}
+
+		public static void AlignSub (List<LineInfo> lineList, EpisodeInfo epInfo, Settings settings, PerSubtitleSettings perSubSettings)
+		{
+			switch(perSubSettings.AlignMode) {
+			case PerSubtitleSettings.AlignModes.ByConstantValue:
+				UtilsSubtitle.ShiftByTime (lineList, perSubSettings.SubDelay);
+				break;
+			case PerSubtitleSettings.AlignModes.ToAudio:
+				UtilsAlignSubToAudio alignToAudio = new UtilsAlignSubToAudio (lineList, epInfo.AudioFileDesc);
+				UtilsSubtitle.ShiftByTime (lineList, alignToAudio.GetBestShiftValue());
+				break;
+			case PerSubtitleSettings.AlignModes.ToSubtitle:
+				throw new NotImplementedException ();
+				break;
+			}
+		}
+
 
 		/// <summary>
 		/// Returns number of seconds for string in following format:

@@ -55,13 +55,13 @@ namespace subs2srs4linux
 
 		private AlignModes m_alignMode = AlignModes.ByConstantValue;
 		private bool m_useTmingsOfThisSub;
-		private int m_subDelay = 0; // in ms
+		private double m_subDelay = 0; // in seconds 
 
 		public bool UseTimingsOfThisSub {
 			get { return m_useTmingsOfThisSub; }
 			set { m_useTmingsOfThisSub = value; }
 		}
-		public int SubDelay {
+		public double SubDelay {
 			get { return m_subDelay; }
 			set { m_subDelay = value; }
 		}

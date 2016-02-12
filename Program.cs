@@ -1106,6 +1106,9 @@ namespace subs2srs4linux
 				List<LineInfo> list1 = lineInfosPerEpisode_TargetLanguage[episodeIndex];
 				List<LineInfo> list2 = lineInfosPerEpisode_NativeLanguage[episodeIndex];
 
+				UtilsCommon.AlignSub(list1, episodeInfos[episodeIndex], settings, settings.PerSubtitleSettings[0]);
+				UtilsCommon.AlignSub(list2, episodeInfos[episodeIndex], settings, settings.PerSubtitleSettings[1]);
+
 				List<SubtitleMatcher.BiMatchedLines> matchedLinesList = SubtitleMatcher.MatchSubtitles(list1, list2);
 				List<UtilsSubtitle.EntryInformation> thisEpisodeEntryInfos = SubtitleMatcher.GetEntryInformation(settings.IgnoreSingleSubLines, episodeInfos[episodeIndex], matchedLinesList, list1, list2);
 				allEntryInformations.AddRange(thisEpisodeEntryInfos);
@@ -1383,8 +1386,8 @@ namespace subs2srs4linux
 			setEntryPath (m_entryNativeLanguage, settings.NativeFilePath);
 			setEntryPath (m_entryVideoFile, settings.VideoFilePath);
 
-			m_spinbuttonSub1TimeShift.Text = settings.PerSubtitleSettings [0].SubDelay.ToString();
-			m_spinbuttonSub2TimeShift.Text = settings.PerSubtitleSettings [1].SubDelay.ToString();
+			m_spinbuttonSub1TimeShift.Text = ((int)(settings.PerSubtitleSettings [0].SubDelay * 1000)).ToString();
+			m_spinbuttonSub2TimeShift.Text = ((int)(settings.PerSubtitleSettings [1].SubDelay * 1000)).ToString();
 
 			m_entryDeckName.Text = settings.DeckName ?? "";
 			m_spinbuttonEpisodeNumber.Text = settings.FirstEpisodeNumber.ToString();
@@ -1410,12 +1413,11 @@ namespace subs2srs4linux
 
 			settings.PerSubtitleSettings[0].AlignMode = (PerSubtitleSettings.AlignModes) m_comboboxtextCorrectTimingsModeSub1.Active;
 			settings.PerSubtitleSettings[0].UseTimingsOfThisSub = m_checkbuttonUseSub1Timings.Active;
-			try { settings.PerSubtitleSettings[0].SubDelay = Int32.Parse(m_spinbuttonSub1TimeShift.Text ?? "0"); } catch {}
+			try { settings.PerSubtitleSettings[0].SubDelay = Int32.Parse(m_spinbuttonSub1TimeShift.Text ?? "0") / 1000.0; } catch {}
 
 			settings.PerSubtitleSettings[1].AlignMode = (PerSubtitleSettings.AlignModes) m_comboboxtextCorrectTimingsModeSub2.Active;
 			settings.PerSubtitleSettings[1].UseTimingsOfThisSub = m_checkbuttonUseSub2Timings.Active;
-			try { settings.PerSubtitleSettings[0].SubDelay = Int32.Parse(m_spinbuttonSub1TimeShift.Text ?? "0"); } catch {}
-			try { settings.PerSubtitleSettings[1].SubDelay = Int32.Parse(m_spinbuttonSub2TimeShift.Text ?? "0"); } catch {}
+			try { settings.PerSubtitleSettings[1].SubDelay = Int32.Parse(m_spinbuttonSub2TimeShift.Text ?? "0") / 1000.0; } catch {}
 		}
 
 

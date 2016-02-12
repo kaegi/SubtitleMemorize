@@ -17,9 +17,9 @@
 
 using System;
 using System.Collections.Generic;
-using System.Text.RegularExpressions;
 using System.IO;
 using System.Text;
+using System.Text.RegularExpressions;
 
 namespace subs2srs4linux
 {
@@ -43,7 +43,8 @@ namespace subs2srs4linux
 		/// <summary>
 		/// Shifts all lines/timestamps by a given time.
 		/// </summary>
-		static public void ShiftByTime(List<LineInfo> lines, TimeSpan shiftValue) {
+		static public void ShiftByTime(List<LineInfo> lines, double shiftValueInSecs) {
+			TimeSpan shiftValue = TimeSpan.FromSeconds(shiftValueInSecs);
 			foreach (LineInfo line in lines) {
 				line.startTime += shiftValue;
 				line.endTime += shiftValue;
@@ -103,12 +104,6 @@ namespace subs2srs4linux
 			// TODO: remove lines with filler characters like notes etc.
 			// TODO: unify lines with "->", etc. character
 
-			// shift subtitle
-			TimeSpan timeShift = new TimeSpan(0, 0, 0, 0, perSubtitleSettings.SubDelay);
-			foreach (LineInfo li in lines) {
-				li.startTime += timeShift;
-				li.endTime += timeShift;
-			}
 			return lines;
 		}
 
@@ -118,6 +113,85 @@ namespace subs2srs4linux
 		/// <returns>The full filename by stream info.</returns>
 		public static String GetExtensionByStreamInfo(StreamInfo streamInfo) {
 			return "." + streamInfo.StreamName;
+		}
+
+
+		/// <summary>
+		/// This class provides an easy way to "group" lines and still have
+		/// an time span for these lines. For example you could create
+		/// "LineContainer"s for a subtitle file where each container
+		/// does not overlap with another (one container then contains lines
+		/// that overlap).
+		/// </summary>
+		public class LineContainer : ITimeSpan, IComparable<ITimeSpan> {
+			private double m_startTime;
+			private double m_endTime;
+			private List<int> m_lineIndices = new List<int>();
+
+			public LineContainer() { }
+
+			/// <summary>
+			/// Adds a line. The index is relative to a bigger list (for example to all
+			/// lines of one subtitle file).
+			/// </summary>
+			public void AddLine(int index, double startTime, double endTime) {
+				m_lineIndices.Add(index);
+				m_startTime = Math.Min(startTime, m_startTime);
+				m_endTime = Math.Max(endTime, m_endTime);
+			}
+
+			public List<int> LineIndices {
+				get { return m_lineIndices; }
+			}
+
+			public double StartTime {
+				get { return m_startTime; }
+			}
+
+			public double EndTime {
+				get { return m_endTime; }
+			}
+
+			/// <summary>
+			/// Compare lines based on their Start Times.
+			/// </summary>
+			public int CompareTo(ITimeSpan other) {
+				if(StartTime == other.StartTime) return 0;
+				return StartTime < other.StartTime ? -1 : 1;
+			}
+		}
+
+		/// <summary>
+		/// Returns the longest list of line containers, for which no line containers overlap. Addtionaly
+		/// these containers are sorted by start time.
+		/// </summary>
+		public static List<LineContainer> GetNonOverlappingTimeSpans(List<LineInfo> lines) {
+			var containers = new List<LineContainer>(new LineContainer[lines.Count]);
+			var lineAlreadyAdded = new List<bool>(new bool[lines.Count]);
+			for(int i = 0; i < lines.Count; i++) {
+				if(lineAlreadyAdded[i]) continue;
+
+				// create new container for this line
+				LineContainer lineContainer = new LineContainer();
+				lineContainer.AddLine(i, lines[i].StartTime, lines[i].EndTime);
+				lineAlreadyAdded[i] = true;
+				containers.Add(lineContainer);
+
+restartLoop:
+				for(int k = i + 1; k < lines.Count; k++) {
+					if(lineAlreadyAdded[k]) continue;
+
+					if(UtilsCommon.IsOverlapping(lines[k], lineContainer)) {
+						lineContainer.AddLine(k, lines[k].StartTime, lines[k].EndTime);
+						lineAlreadyAdded[k] = true;
+						goto restartLoop;
+					}
+				}
+			}
+
+			containers.Sort();
+
+			return containers;
 		}
 
 		/// <summary>
@@ -157,4 +231,3 @@ namespace subs2srs4linux
 		}
 	}
 }
-

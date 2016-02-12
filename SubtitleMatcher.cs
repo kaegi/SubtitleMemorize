@@ -180,11 +180,6 @@ namespace subs2srs4linux
 			matchingLines.RemoveAt (leastFittingIndex);
 		}
 
-		private static bool IsOverlapping(LineInfo a, LineInfo b) {
-			return a.endTime >= b.startTime && a.startTime <= b.endTime;
-		}
-
-
 		/// <summary>
 		/// Score for overlapping of two subtitles between 0 and 1.
 		/// 
@@ -208,7 +203,7 @@ namespace subs2srs4linux
 		}
 
 		private static TimeSpan OverlappingTimeSpan(LineInfo a, LineInfo b) {
-			if (!IsOverlapping (a, b))
+			if (!UtilsCommon.IsOverlapping (a, b))
 				return new TimeSpan();
 
 			//  |-----------------------|  a
