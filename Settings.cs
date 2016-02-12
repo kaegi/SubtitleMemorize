@@ -34,7 +34,7 @@ namespace subs2srs4linux
 	/// These values will be read from a xml file (through serialization) in the same path as the program.
 	/// </summary>
 	[Serializable]
-	public class SystemSettings { 
+	public class SystemSettings {
 		public float overlappingThreshold_InterSub = 0.4f;
 		public float overlappingThreshold_InSub = 0.01f;
 
@@ -43,20 +43,38 @@ namespace subs2srs4linux
 
 		public String preLoadedSettings = null;
 	}
-	
+
 	[Serializable]
 	public class PerSubtitleSettings {
-		private int m_subDelay = 100; // in ms
+		/// for automatic subtitle timing correction
+		public enum AlignModes {
+			ByConstantValue,
+			ToSubtitle,
+			ToAudio,
+		}
 
+		private AlignModes m_alignMode = AlignModes.ByConstantValue;
+		private bool m_useTmingsOfThisSub;
+		private int m_subDelay = 0; // in ms
+
+		public bool UseTimingsOfThisSub {
+			get { return m_useTmingsOfThisSub; }
+			set { m_useTmingsOfThisSub = value; }
+		}
 		public int SubDelay {
 			get { return m_subDelay; }
 			set { m_subDelay = value; }
 		}
 
+		public AlignModes AlignMode {
+			get { return m_alignMode; }
+			set { m_alignMode = value; }
+		}
+
 		public PerSubtitleSettings() {
 		}
 	}
-	
+
 	[Serializable]
 	public class Settings
 	{
@@ -72,6 +90,39 @@ namespace subs2srs4linux
 
 		private bool m_ignoreStyledSubLines = true;
 		private bool m_ignoreSingleLines = true; // single = lines without an obvious counterpart
+
+		private bool m_normalizeAudio = true;
+
+		private bool m_exportAudio = true;
+		private bool m_exportImages = true;
+
+		private int m_imageMaxWidth = 800;
+		private int m_imageMaxHeight = 600;
+
+		public int ImageMaxHeight {
+			get { return m_imageMaxHeight;  }
+			set { m_imageMaxHeight = value; }
+		}
+
+		public int ImageMaxWidth {
+			get { return m_imageMaxWidth;  }
+			set { m_imageMaxWidth = value; }
+		}
+
+		public bool NormalizeAudio {
+			get { return m_normalizeAudio;  }
+			set { m_normalizeAudio = value; }
+		}
+
+		public bool ExportImages {
+			get { return m_exportImages;  }
+			set { m_exportImages = value; }
+		}
+
+		public bool ExportAudio {
+			get { return m_exportAudio;  }
+			set { m_exportAudio = value; }
+		}
 
 		public string TargetFilePath {
 			get { return m_targetFilePath;  }

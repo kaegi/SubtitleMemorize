@@ -33,6 +33,7 @@ namespace subs2srs4linux
 		////////////////// AUTO-GENERATED CODE BEGIN //////////////////////
 #pragma warning disable 0414 // private field assigned but not used
 		private Gtk.Action m_action1;
+		private Gtk.Adjustment m_adjustmentImageSizePercentage;
 		private Gtk.Adjustment m_episodeAdjustment;
 		private Gtk.Image m_image1;
 		private Gtk.ListStore m_liststoreLines;
@@ -136,13 +137,9 @@ namespace subs2srs4linux
 		private Gtk.Label m_label1;
 		private Gtk.Frame m_frame2;
 		private Gtk.Alignment m_alignment2;
+		private Gtk.Grid m_grid5;
+		private Gtk.Expander m_expanderSubtitleOptions;
 		private Gtk.Box m_box9;
-		private Gtk.Frame m_frame3;
-		private Gtk.Alignment m_alignment3;
-		private Gtk.Box m_box3;
-		private Gtk.RadioButton m_radiobutton1;
-		private Gtk.RadioButton m_radiobutton2;
-		private Gtk.Label m_label7;
 		private Gtk.Frame m_frame4;
 		private Gtk.Alignment m_alignment4;
 		private Gtk.Grid m_grid2;
@@ -150,19 +147,41 @@ namespace subs2srs4linux
 		private Gtk.Label m_label9;
 		private Gtk.ComboBoxText m_comboboxtextCorrectTimingsModeSub1;
 		private Gtk.SpinButton m_spinbuttonSub1TimeShift;
-		private Gtk.Label m_label2;
+		private Gtk.Label m_label6;
 		private Gtk.Frame m_frame5;
 		private Gtk.Alignment m_alignment5;
 		private Gtk.Grid m_grid3;
-		private Gtk.Label m_label6;
+		private Gtk.Label m_label7;
 		private Gtk.Label m_label10;
 		private Gtk.ComboBoxText m_comboboxtextCorrectTimingsModeSub2;
 		private Gtk.SpinButton m_spinbuttonSub2TimeShift;
 		private Gtk.Label m_label12;
+		private Gtk.Frame m_frame3;
+		private Gtk.Alignment m_alignment3;
+		private Gtk.Box m_box3;
+		private Gtk.CheckButton m_checkbuttonUseSub1Timings;
+		private Gtk.CheckButton m_checkbuttonUseSub2Timings;
 		private Gtk.Label m_label11;
-		private Gtk.Frame m_frame16;
-		private Gtk.Alignment m_alignment13;
-		private Gtk.Label m_label29;
+		private Gtk.Label m_label20;
+		private Gtk.Expander m_expanderAudioOptions;
+		private Gtk.Box m_box15;
+		private Gtk.Frame m_frame17;
+		private Gtk.Alignment m_alignment14;
+		private Gtk.Box m_box16;
+		private Gtk.CheckButton m_checkbuttonNormalizeAudio;
+		private Gtk.CheckButton m_checkbuttonDeactivateAudioClips;
+		private Gtk.Label m_label26;
+		private Gtk.Label m_label53;
+		private Gtk.Expander m_expanderImageOptions;
+		private Gtk.Box m_box17;
+		private Gtk.Frame m_frame19;
+		private Gtk.Alignment m_alignment16;
+		private Gtk.Box m_box18;
+		private Gtk.SpinButton m_spinbutton1;
+		private Gtk.Label m_label25;
+		private Gtk.Label m_label18;
+		private Gtk.Label m_label13;
+		private Gtk.Label m_label2;
 		private Gtk.Box m_box4;
 		private Gtk.Frame m_frame7;
 		private Gtk.Alignment m_alignment7;
@@ -190,6 +209,7 @@ namespace subs2srs4linux
 
 		private void InitializeGtkObjects(Gtk.Builder b) {
 			m_action1 = (Gtk.Action) b.GetObject("action1");
+			m_adjustmentImageSizePercentage = (Gtk.Adjustment) b.GetObject("adjustment_image_size_percentage");
 			m_episodeAdjustment = (Gtk.Adjustment) b.GetObject("episode_adjustment");
 			m_image1 = (Gtk.Image) b.GetObject("image1");
 			m_liststoreLines = (Gtk.ListStore) b.GetObject("liststore_lines");
@@ -293,13 +313,9 @@ namespace subs2srs4linux
 			m_label1 = (Gtk.Label) b.GetObject("label1");
 			m_frame2 = (Gtk.Frame) b.GetObject("frame2");
 			m_alignment2 = (Gtk.Alignment) b.GetObject("alignment2");
+			m_grid5 = (Gtk.Grid) b.GetObject("grid5");
+			m_expanderSubtitleOptions = (Gtk.Expander) b.GetObject("expander_subtitle_options");
 			m_box9 = (Gtk.Box) b.GetObject("box9");
-			m_frame3 = (Gtk.Frame) b.GetObject("frame3");
-			m_alignment3 = (Gtk.Alignment) b.GetObject("alignment3");
-			m_box3 = (Gtk.Box) b.GetObject("box3");
-			m_radiobutton1 = (Gtk.RadioButton) b.GetObject("radiobutton1");
-			m_radiobutton2 = (Gtk.RadioButton) b.GetObject("radiobutton2");
-			m_label7 = (Gtk.Label) b.GetObject("label7");
 			m_frame4 = (Gtk.Frame) b.GetObject("frame4");
 			m_alignment4 = (Gtk.Alignment) b.GetObject("alignment4");
 			m_grid2 = (Gtk.Grid) b.GetObject("grid2");
@@ -307,19 +323,41 @@ namespace subs2srs4linux
 			m_label9 = (Gtk.Label) b.GetObject("label9");
 			m_comboboxtextCorrectTimingsModeSub1 = (Gtk.ComboBoxText) b.GetObject("comboboxtext_correct_timings_mode_sub1");
 			m_spinbuttonSub1TimeShift = (Gtk.SpinButton) b.GetObject("spinbutton_sub1_time_shift");
-			m_label2 = (Gtk.Label) b.GetObject("label2");
+			m_label6 = (Gtk.Label) b.GetObject("label6");
 			m_frame5 = (Gtk.Frame) b.GetObject("frame5");
 			m_alignment5 = (Gtk.Alignment) b.GetObject("alignment5");
 			m_grid3 = (Gtk.Grid) b.GetObject("grid3");
-			m_label6 = (Gtk.Label) b.GetObject("label6");
+			m_label7 = (Gtk.Label) b.GetObject("label7");
 			m_label10 = (Gtk.Label) b.GetObject("label10");
 			m_comboboxtextCorrectTimingsModeSub2 = (Gtk.ComboBoxText) b.GetObject("comboboxtext_correct_timings_mode_sub2");
 			m_spinbuttonSub2TimeShift = (Gtk.SpinButton) b.GetObject("spinbutton_sub2_time_shift");
 			m_label12 = (Gtk.Label) b.GetObject("label12");
+			m_frame3 = (Gtk.Frame) b.GetObject("frame3");
+			m_alignment3 = (Gtk.Alignment) b.GetObject("alignment3");
+			m_box3 = (Gtk.Box) b.GetObject("box3");
+			m_checkbuttonUseSub1Timings = (Gtk.CheckButton) b.GetObject("checkbutton_use_sub1_timings");
+			m_checkbuttonUseSub2Timings = (Gtk.CheckButton) b.GetObject("checkbutton_use_sub2_timings");
 			m_label11 = (Gtk.Label) b.GetObject("label11");
-			m_frame16 = (Gtk.Frame) b.GetObject("frame16");
-			m_alignment13 = (Gtk.Alignment) b.GetObject("alignment13");
-			m_label29 = (Gtk.Label) b.GetObject("label29");
+			m_label20 = (Gtk.Label) b.GetObject("label20");
+			m_expanderAudioOptions = (Gtk.Expander) b.GetObject("expander_audio_options");
+			m_box15 = (Gtk.Box) b.GetObject("box15");
+			m_frame17 = (Gtk.Frame) b.GetObject("frame17");
+			m_alignment14 = (Gtk.Alignment) b.GetObject("alignment14");
+			m_box16 = (Gtk.Box) b.GetObject("box16");
+			m_checkbuttonNormalizeAudio = (Gtk.CheckButton) b.GetObject("checkbutton_normalize_audio");
+			m_checkbuttonDeactivateAudioClips = (Gtk.CheckButton) b.GetObject("checkbutton_deactivate_audio_clips");
+			m_label26 = (Gtk.Label) b.GetObject("label26");
+			m_label53 = (Gtk.Label) b.GetObject("label53");
+			m_expanderImageOptions = (Gtk.Expander) b.GetObject("expander_image_options");
+			m_box17 = (Gtk.Box) b.GetObject("box17");
+			m_frame19 = (Gtk.Frame) b.GetObject("frame19");
+			m_alignment16 = (Gtk.Alignment) b.GetObject("alignment16");
+			m_box18 = (Gtk.Box) b.GetObject("box18");
+			m_spinbutton1 = (Gtk.SpinButton) b.GetObject("spinbutton1");
+			m_label25 = (Gtk.Label) b.GetObject("label25");
+			m_label18 = (Gtk.Label) b.GetObject("label18");
+			m_label13 = (Gtk.Label) b.GetObject("label13");
+			m_label2 = (Gtk.Label) b.GetObject("label2");
 			m_box4 = (Gtk.Box) b.GetObject("box4");
 			m_frame7 = (Gtk.Frame) b.GetObject("frame7");
 			m_alignment7 = (Gtk.Alignment) b.GetObject("alignment7");
@@ -346,8 +384,8 @@ namespace subs2srs4linux
 			m_buttonCancelOperation = (Gtk.Button) b.GetObject("button_cancel_operation");
 		}
 #pragma warning restore 0414
-
 		////////////////// AUTO-GENERATED CODE END //////////////////////
+
 		private readonly Settings m_defaultSettings = new Settings();
 		private readonly Gtk.Builder m_builder = new Builder();
 		private int m_numberOfInfobarLabelMarkupChanges = 0;
@@ -1362,11 +1400,20 @@ namespace subs2srs4linux
 			settings.VideoFilePath = m_entryVideoFile.Text;
 			settings.DeckName = m_entryDeckName.Text;
 
+			settings.NormalizeAudio = m_checkbuttonNormalizeAudio.Active;
+			settings.ExportAudio = !m_checkbuttonDeactivateAudioClips.Active;
+
 			// read episode number
 			int firstEpisodeNumber = 1;
 			Int32.TryParse (m_spinbuttonEpisodeNumber.Text, out firstEpisodeNumber);
 			settings.FirstEpisodeNumber = firstEpisodeNumber;
 
+			settings.PerSubtitleSettings[0].AlignMode = (PerSubtitleSettings.AlignModes) m_comboboxtextCorrectTimingsModeSub1.Active;
+			settings.PerSubtitleSettings[0].UseTimingsOfThisSub = m_checkbuttonUseSub1Timings.Active;
+			try { settings.PerSubtitleSettings[0].SubDelay = Int32.Parse(m_spinbuttonSub1TimeShift.Text ?? "0"); } catch {}
+
+			settings.PerSubtitleSettings[1].AlignMode = (PerSubtitleSettings.AlignModes) m_comboboxtextCorrectTimingsModeSub2.Active;
+			settings.PerSubtitleSettings[1].UseTimingsOfThisSub = m_checkbuttonUseSub2Timings.Active;
 			try { settings.PerSubtitleSettings[0].SubDelay = Int32.Parse(m_spinbuttonSub1TimeShift.Text ?? "0"); } catch {}
 			try { settings.PerSubtitleSettings[1].SubDelay = Int32.Parse(m_spinbuttonSub2TimeShift.Text ?? "0"); } catch {}
 		}
@@ -1501,8 +1548,6 @@ namespace subs2srs4linux
 					Console.WriteLine ("WARNING: failed to read \"setttings.s2s4l\" so default settings are used");
 				}
 			}
-
-			Console.WriteLine (InstanceSettings.systemSettings.overlappingThreshold_InterSub);
 
 			new MainClass ();
 
