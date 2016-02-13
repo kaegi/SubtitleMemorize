@@ -1387,7 +1387,12 @@ namespace subs2srs4linux
 			setEntryPath (m_entryVideoFile, settings.VideoFilePath);
 
 			m_spinbuttonSub1TimeShift.Text = ((int)(settings.PerSubtitleSettings [0].SubDelay * 1000)).ToString();
+			m_comboboxtextCorrectTimingsModeSub1.Active = (int)settings.PerSubtitleSettings [0].AlignMode;
+			m_checkbuttonUseSub1Timings.Active = settings.PerSubtitleSettings [0].UseTimingsOfThisSub;
+
 			m_spinbuttonSub2TimeShift.Text = ((int)(settings.PerSubtitleSettings [1].SubDelay * 1000)).ToString();
+			m_comboboxtextCorrectTimingsModeSub2.Active = (int)settings.PerSubtitleSettings [1].AlignMode;
+			m_checkbuttonUseSub2Timings.Active = settings.PerSubtitleSettings [1].UseTimingsOfThisSub;
 
 			m_entryDeckName.Text = settings.DeckName ?? "";
 			m_spinbuttonEpisodeNumber.Text = settings.FirstEpisodeNumber.ToString();
