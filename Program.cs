@@ -1106,8 +1106,8 @@ namespace subs2srs4linux
 				List<LineInfo> list1 = lineInfosPerEpisode_TargetLanguage[episodeIndex];
 				List<LineInfo> list2 = lineInfosPerEpisode_NativeLanguage[episodeIndex];
 
-				UtilsCommon.AlignSub(list1, episodeInfos[episodeIndex], settings, settings.PerSubtitleSettings[0]);
-				UtilsCommon.AlignSub(list2, episodeInfos[episodeIndex], settings, settings.PerSubtitleSettings[1]);
+				UtilsCommon.AlignSub(list1, list2, episodeInfos[episodeIndex], settings, settings.PerSubtitleSettings[0]);
+				UtilsCommon.AlignSub(list2, list1, episodeInfos[episodeIndex], settings, settings.PerSubtitleSettings[1]);
 
 				List<SubtitleMatcher.BiMatchedLines> matchedLinesList = SubtitleMatcher.MatchSubtitles(list1, list2);
 				List<UtilsSubtitle.EntryInformation> thisEpisodeEntryInfos = SubtitleMatcher.GetEntryInformation(settings.IgnoreSingleSubLines, episodeInfos[episodeIndex], matchedLinesList, list1, list2);

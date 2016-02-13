@@ -246,7 +246,11 @@ namespace subs2srs4linux
 			return a.EndTime >= b.StartTime && a.StartTime <= b.EndTime;
 		}
 
-		public static void AlignSub (List<LineInfo> lineList, EpisodeInfo epInfo, Settings settings, PerSubtitleSettings perSubSettings)
+
+		/// <summary>
+		/// Align subtitle line by constant value, to audio or to other subtitle based on settings in "perSubSettings".
+		/// </summary>
+		public static void AlignSub (List<LineInfo> lineList, List<LineInfo> referenceList, EpisodeInfo epInfo, Settings settings, PerSubtitleSettings perSubSettings)
 		{
 			switch(perSubSettings.AlignMode) {
 			case PerSubtitleSettings.AlignModes.ByConstantValue:
@@ -257,7 +261,8 @@ namespace subs2srs4linux
 				UtilsSubtitle.ShiftByTime (lineList, alignToAudio.GetBestShiftValue());
 				break;
 			case PerSubtitleSettings.AlignModes.ToSubtitle:
-				throw new NotImplementedException ();
+				UtilsAlignSubToSub alignToSub = new UtilsAlignSubToSub(lineList, referenceList);
+				alignToSub.Retime();
 				break;
 			}
 		}
