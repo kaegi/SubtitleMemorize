@@ -40,7 +40,83 @@ namespace subs2srs4linux
 		public void Retime() {
 			List<UtilsSubtitle.LineContainer> lineContainer1 = UtilsSubtitle.GetNonOverlappingTimeSpans(m_listToChange);
 			List<UtilsSubtitle.LineContainer> lineContainer2 = UtilsSubtitle.GetNonOverlappingTimeSpans(m_referenceList);
+
+			double bestOffset = 0;
+			double bestOffsetRating = 0;
+
+			const double offsetPerIteration = 0.05;
+			int sign = 1; // will alternate every iteration
+			for(int iteration = 0; iteration < 80; iteration++) {
+				double offset = sign * (offsetPerIteration * iteration);
+				sign *= -1;
+
+				double averageRating = GetRatingOfOffset(offset);
+
+				// is this offset better than the last?
+				if(averageRating > bestOffsetRating) {
+					bestOffset = offset;
+					bestOffsetRating = averageRating;
+					Console.WriteLine(offset + ", " + averageRating);
+				}
+			}
+
+			UtilsSubtitle.ShiftByTime(m_listToChange, bestOffset);
 		}
+
+
+		/// <summary>
+		/// Shift all lines in "list to change" by "offset", create a matching, rate the matching and shift lines back.
+		/// </summary>
+		public double GetRatingOfOffset(double offset) {
+
+			// move timings of every line
+			UtilsSubtitle.ShiftByTime(m_listToChange, offset);
+
+			// match lines
+			var bothLists = new List<LineInfo>[]{ m_referenceList, m_listToChange };
+			var biMatchedLinesList = SubtitleMatcher.MatchSubtitles(m_referenceList, m_listToChange);
+			double averageRating = 0;
+			foreach(var biMatchedLines in biMatchedLinesList) {
+				averageRating += RateBiMatchedLines(biMatchedLines, bothLists);
+			}
+			averageRating /= biMatchedLinesList.Count;
+
+			// shift timings back
+			UtilsSubtitle.ShiftByTime(m_listToChange, -offset);
+
+			return averageRating;
+		}
+
+		/// <summary>
+		/// Returns a value between 0 and 1 how good the matching is.
+		/// </summary>
+		public double RateBiMatchedLines(SubtitleMatcher.BiMatchedLines biMatchedLines, List<LineInfo>[] lists) {
+			// [shared times between lines from list1 and list2] divided by [whole time]
+			// ...because this value is between 0 and 0.5 we have to multiply it with 2
+
+			// calculate "all time"
+			double sharedTime = 0;
+			double allTimeSpanTime = 0;
+			for(int listIndex = 0; listIndex < 2; listIndex++) {
+				List<LineInfo> currentList = lists[listIndex];
+				for(int i = 0; i < biMatchedLines.listlines[listIndex].Count; i++) {
+					int currentLineIndex = biMatchedLines.listlines[listIndex][i];
+					allTimeSpanTime += UtilsCommon.GetTimeSpanLength(currentList[currentLineIndex]);
+				}
+			}
+
+			// calculate "shared time"
+			for(int i = 0; i < biMatchedLines.listlines[0].Count; i++) {
+				for(int j = 0; j < biMatchedLines.listlines[1].Count; j++) {
+					LineInfo lineInfoA = lists[0][biMatchedLines.listlines[0][i]];
+					LineInfo lineInfoB = lists[1][biMatchedLines.listlines[1][j]];
+					sharedTime += UtilsCommon.OverlappingTimeSpan(lineInfoA, lineInfoB);
+				}
+			}
+
+			return (sharedTime * 2) / allTimeSpanTime;
+		}
+
 	}
 }
 

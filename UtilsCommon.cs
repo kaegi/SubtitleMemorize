@@ -267,6 +267,36 @@ namespace subs2srs4linux
 			}
 		}
 
+		/// <summary>
+		/// Returns the length of a ITimeSpan, which is "End - Start".
+		/// </summary>
+		public static double GetTimeSpanLength(ITimeSpan timeSpan) {
+			return timeSpan.EndTime - timeSpan.StartTime;
+		}
+
+		public static double OverlappingTimeSpan(ITimeSpan a, ITimeSpan b) {
+			if (!UtilsCommon.IsOverlapping (a, b))
+				return 0;
+
+			//  |-----------------------|  a
+			//    |-------------------|    b
+			if(a.StartTime <= b.StartTime && a.EndTime >= b.EndTime) return b.EndTime - b.StartTime;
+
+
+			//    |-------------------|    a
+			//  |-----------------------|  b
+			if(a.StartTime >= b.StartTime && a.EndTime <= b.EndTime) return a.EndTime - a.StartTime;
+
+			// |-------------------|    	a
+			//   |-----------------------|  b
+			if(a.StartTime <= b.StartTime && a.EndTime <= b.EndTime) return a.EndTime - b.StartTime;
+
+			//   |-----------------------|  a
+			// |-------------------|    	b
+			return b.EndTime - a.StartTime;
+		}
+
+
 
 		/// <summary>
 		/// Returns number of seconds for string in following format:

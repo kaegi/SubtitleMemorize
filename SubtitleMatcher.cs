@@ -191,37 +191,15 @@ namespace subs2srs4linux
 		/// <param name="a">The alpha component.</param>
 		/// <param name="b">The blue component.</param>
 		private static float OverlappingScore(LineInfo a, LineInfo b) {
-			TimeSpan overlappingSpan = OverlappingTimeSpan (a, b);
-			TimeSpan line1timeSpan = a.endTime - a.startTime;
-			TimeSpan line2timeSpan = b.endTime - b.startTime;
+			double overlappingSpan = UtilsCommon.OverlappingTimeSpan (a, b);
+			double line1timeSpan = a.EndTime - a.StartTime;
+			double line2timeSpan = b.EndTime - b.StartTime;
 
 			// ignore matchings if there is next to no overlapping 
-			float line1score = (float)overlappingSpan.Ticks / line1timeSpan.Ticks;
-			float line2score = (float)overlappingSpan.Ticks / line2timeSpan.Ticks;
+			float line1score = (float)overlappingSpan / (float)line1timeSpan;
+			float line2score = (float)overlappingSpan / (float)line2timeSpan;
 
 			return (line1score + line2score) * 0.5f;
-		}
-
-		private static TimeSpan OverlappingTimeSpan(LineInfo a, LineInfo b) {
-			if (!UtilsCommon.IsOverlapping (a, b))
-				return new TimeSpan();
-
-			//  |-----------------------|  a
-			//    |-------------------|    b
-			if(a.startTime <= b.startTime && a.endTime >= b.endTime) return b.endTime - b.startTime;
-
-
-			//    |-------------------|    a
-			//  |-----------------------|  b
-			if(a.startTime >= b.startTime && a.endTime <= b.endTime) return a.endTime - a.startTime;
-
-			// |-------------------|    	a
-			//   |-----------------------|  b
-			if(a.startTime <= b.startTime && a.endTime <= b.endTime) return a.endTime - b.startTime;
-
-			//   |-----------------------|  a
-			// |-------------------|    	b
-			return b.endTime - a.startTime;
 		}
 
 		private static List<BiMatchedLines> FindBidirectionalMapping (List<ExtendedLineInfo> mappingForLines1, List<ExtendedLineInfo> mappingForLines2)
