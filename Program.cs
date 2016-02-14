@@ -804,9 +804,9 @@ namespace subs2srs4linux
 					case "text": args.Result = infoSource_Entry.targetLanguageString + " " + infoSource_Entry.nativeLanguageString; break;
 					case "text1": args.Result = infoSource_Entry.targetLanguageString; break;
 					case "text2": args.Result = infoSource_Entry.nativeLanguageString; break;
-					case "start": args.Result = (double)infoSource_Entry.startTimestamp.TimeOfDay.TotalMilliseconds / 1000.0; break;
-					case "end": args.Result = (double)infoSource_Entry.endTimestamp.TimeOfDay.TotalMilliseconds / 1000.0; break;
-					case "duration": args.Result = (double)infoSource_Entry.Duration.TimeOfDay.TotalMilliseconds / 1000.0; break;
+					case "start": args.Result = infoSource_Entry.startTimestamp; break;
+					case "end": args.Result = infoSource_Entry.endTimestamp; break;
+					case "duration": args.Result = infoSource_Entry.Duration; break;
 				}
 			};
 			// resolve certain functions in expression
@@ -1285,7 +1285,7 @@ namespace subs2srs4linux
 				return;
 
 			UtilsInputFiles.FileDesc videoFilename = m_episodeInfo[entryInfo.episodeInfo.Index].VideoFileDesc;
-			UtilsImage.GetImage(videoFilename.filename, UtilsCommon.GetMiddleTime(entryInfo.startTimestamp, entryInfo.endTimestamp), "/tmp/subs2srs.jpg");
+			UtilsImage.GetImage(videoFilename.filename, UtilsCommon.GetMiddleTime(entryInfo), "/tmp/subs2srs.jpg");
 
 			Gtk.Application.Invoke (delegate {
 				if(selectedIndex == m_selectedPreviewIndex) // selection could have changed during the creation of the snapshot

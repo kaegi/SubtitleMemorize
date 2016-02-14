@@ -49,7 +49,7 @@ namespace subs2srs4linux
 				}
 
 				// extract image
-				DateTime timeStamp = UtilsCommon.GetMiddleTime (entryInformation.startTimestamp, entryInformation.endTimestamp);
+				double timeStamp = UtilsCommon.GetMiddleTime (entryInformation);
 				UtilsImage.GetImage (videoFileDesc.filename, timeStamp, outputSnapshotFilepath);
 			}
 			return snapshotFieldValues;

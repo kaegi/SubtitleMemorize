@@ -21,12 +21,12 @@ namespace subs2srs4linux
 {
 	public class LineInfo : IComparable<ITimeSpan>, ITimeSpan
 	{
-		public DateTime endTime;
-		public DateTime startTime;
+		public double startTime;
+		public double endTime;
 		public String name;
 		public String text;
 
-		public LineInfo (DateTime startTime, DateTime endTime, String name, String text)
+		public LineInfo (double startTime, double endTime, String name, String text)
 		{
 			this.startTime = startTime;
 			this.endTime = endTime;
@@ -43,11 +43,11 @@ namespace subs2srs4linux
 		}
 
 		public double StartTime {
-			get { return (double) startTime.TimeOfDay.TotalMilliseconds / 1000.0; }
+			get { return startTime; }
 		}
 
 		public double EndTime {
-			get { return (double) endTime.TimeOfDay.TotalMilliseconds / 1000.0; }
+			get { return endTime; }
 		}
 	}
 }

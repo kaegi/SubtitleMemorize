@@ -169,10 +169,9 @@ namespace subs2srs4linux
 		/// <returns>The middle time.</returns>
 		/// <param name="startTimestamp">Start timestamp.</param>
 		/// <param name="endTimestamp">End timestamp.</param>
-		public static DateTime GetMiddleTime (DateTime startTimestamp, DateTime endTimestamp)
+		public static double GetMiddleTime (ITimeSpan timeSpan)
 		{
-			DateTime middleTime = new DateTime ();
-			return middleTime.AddMilliseconds (startTimestamp.TimeOfDay.TotalMilliseconds / 2 + endTimestamp.TimeOfDay.TotalMilliseconds / 2);
+			return timeSpan.StartTime * 0.5 + timeSpan.EndTime * 0.5;
 		}
 
 		public static String ToTimeArg (double seconds)
@@ -190,17 +189,6 @@ namespace subs2srs4linux
 				minutes,         // {2}
 				iseconds,        // {3}
 				milliseconds);   // {4}
-		}
-
-
-		public static String ToTimeArg (DateTime time)
-		{
-			// Example: 00:00:07.920
-			return String.Format("{0:00.}:{1:00.}:{2:00.}.{3:000.}",
-				(int)time.TimeOfDay.TotalHours,      // {0}
-				(int)time.TimeOfDay.Minutes,         // {1}
-				(int)time.TimeOfDay.Seconds,         // {2}
-				(int)time.TimeOfDay.Milliseconds);   // {3}
 		}
 
 		/// <summary>
@@ -229,14 +217,6 @@ namespace subs2srs4linux
 			return fileLengthChecksum + "_" + modificationTimeChecksum;
 		}
 
-
-		/// <summary>
-		/// Returns a DateTime-Object that has the time of a - b.
-		/// </summary>
-		public static DateTime GetTimeDiff(DateTime a, DateTime b) {
-			DateTime result = new DateTime();
-			return result.AddMilliseconds(a.TimeOfDay.TotalMilliseconds - b.TimeOfDay.TotalMilliseconds);
-		}
 
 		/// <summary>
 		/// Returns true if "a" and "b" overlap, false otherwise. For both

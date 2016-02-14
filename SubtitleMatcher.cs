@@ -266,9 +266,10 @@ namespace subs2srs4linux
 				// ignore line when no counterpart was found
 				if (ignoreSingleSubLines && (matchedLines.listlines [0].Count == 0 || matchedLines.listlines [1].Count == 0))
 					continue;
-				
-				DateTime? startTimestamp = null;
-				DateTime? endTimestamp = null;
+
+				bool timestamspUninitialized = true;
+				double startTimestamp = 0;
+				double endTimestamp = 0;
 
 
 				Func<List<Int32>, List<LineInfo>, String> catenateString = delegate(List<int> lineIndexList, List<LineInfo> lineInfoList) {
@@ -278,8 +279,15 @@ namespace subs2srs4linux
 					lineIndexEnum = lineIndexList.GetEnumerator ();
 					while (lineIndexEnum.MoveNext ()) {
 						thisLineInfo = lineInfoList [lineIndexEnum.Current];
-						startTimestamp = (startTimestamp == null || thisLineInfo.startTime < startTimestamp ? thisLineInfo.startTime : startTimestamp);
-						endTimestamp = (endTimestamp == null || thisLineInfo.endTime > endTimestamp ? thisLineInfo.endTime : endTimestamp);
+						if(timestamspUninitialized) {
+							// initialize timestamps
+							startTimestamp = thisLineInfo.StartTime;
+							endTimestamp = thisLineInfo.EndTime;
+							timestamspUninitialized = false;
+						} else {
+							startTimestamp = Math.Min(startTimestamp, thisLineInfo.StartTime);
+							endTimestamp = Math.Max(endTimestamp, thisLineInfo.EndTime);
+						}
 						thisStringBuilder.Append (thisLineInfo.text + " | ");
 					}
 					return thisStringBuilder.ToString();
@@ -288,7 +296,7 @@ namespace subs2srs4linux
 				String sub1string = catenateString (matchedLines.listlines [0], list1);
 				String sub2string = catenateString (matchedLines.listlines [1], list2);
 				
-				returnList.Add (new UtilsSubtitle.EntryInformation (sub1string, sub2string, episodeInfo, startTimestamp.GetValueOrDefault(), endTimestamp.GetValueOrDefault()));
+				returnList.Add (new UtilsSubtitle.EntryInformation (sub1string, sub2string, episodeInfo, startTimestamp, endTimestamp));
 			}
 
 			return returnList;

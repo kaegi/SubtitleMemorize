@@ -44,10 +44,9 @@ namespace subs2srs4linux
 		/// Shifts all lines/timestamps by a given time.
 		/// </summary>
 		static public void ShiftByTime(List<LineInfo> lines, double shiftValueInSecs) {
-			TimeSpan shiftValue = TimeSpan.FromSeconds(shiftValueInSecs);
 			foreach (LineInfo line in lines) {
-				line.startTime += shiftValue;
-				line.endTime += shiftValue;
+				line.startTime += shiftValueInSecs;
+				line.endTime += shiftValueInSecs;
 			}
 		}
 
@@ -199,19 +198,19 @@ restartLoop:
 		/// Every EntryInformation-Instance, that isn't filtered away will be used
 		/// for exactly one card.
 		/// </summary>
-		public class EntryInformation {
+		public class EntryInformation : ITimeSpan {
 			public String targetLanguageString;
 			public String nativeLanguageString;
 			public EpisodeInfo episodeInfo;
-			public DateTime startTimestamp;
-			public DateTime endTimestamp;
+			public double startTimestamp;
+			public double endTimestamp;
 			public bool isActive;
 
-			public DateTime Duration {
-				get { return UtilsCommon.GetTimeDiff(endTimestamp, startTimestamp); }
+			public double Duration {
+				get { return UtilsCommon.GetTimeSpanLength(this); }
 			}
 
-			public EntryInformation(String targetLanguageString, String nativeLanguageString, EpisodeInfo episodeInfo, DateTime startTimestamp, DateTime endTimestamp) {
+			public EntryInformation(String targetLanguageString, String nativeLanguageString, EpisodeInfo episodeInfo, double startTimestamp, double endTimestamp) {
 				this.targetLanguageString = targetLanguageString;
 				this.nativeLanguageString = nativeLanguageString;
 				this.episodeInfo = episodeInfo;
@@ -227,6 +226,14 @@ restartLoop:
 			public String GetKey() {
 				String str = String.Format ("{0:000.}", episodeInfo.Number) + "__" + UtilsCommon.ToTimeArg (startTimestamp) + "__" + UtilsCommon.ToTimeArg (endTimestamp);
 				return Regex.Replace (str, "[^a-zA-Z0-9]", "_");
+			}
+
+			public double StartTime {
+				get { return startTimestamp; }
+			}
+
+			public double EndTime {
+				get { return endTimestamp; }
 			}
 		}
 	}

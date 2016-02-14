@@ -83,10 +83,10 @@ namespace subs2srs4linux
 		}
 
 		/// <summary>
-		/// Parse SSA timestamps like "0:19:30.25" to C#'s DateTime format
+		/// Parse SSA timestamps like "0:19:30.25" to seconds
 		/// </summary>
-		/// <returns>The DateTime-Object.</returns>
-		public DateTime parseTime(String timeString) {
+		/// <returns>number of seconds in comparision to start of file</returns>
+		public double parseTime(String timeString) {
 			// Format: "0:00:00.00"
 			// Format: "Hours:Minutes:Seconds.HSecs
 			Match match = Regex.Match (timeString, @"^(?<Hours>\d):(?<Mins>\d\d):(?<Secs>\d\d).(?<HSecs>\d\d)$", RegexOptions.IgnoreCase | RegexOptions.Compiled);
@@ -104,7 +104,7 @@ namespace subs2srs4linux
 				throw new Exception ("Incorrect time format: \"" + timeString + "\"");
 			}
 
-			return time;
+			return time.TimeOfDay.TotalMilliseconds / 1000.0;
 		}
 
 		/// <summary>
