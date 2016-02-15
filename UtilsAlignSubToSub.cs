@@ -48,7 +48,7 @@ namespace subs2srs4linux
 
 			public RemainingSlice(IEnumerable<LineInfo> referenceListData, IEnumerable<LineInfo> listToChangeData) {
 				referenceListLines = new LinkedList<LineInfo>(referenceListData);
-				listToChangeData = new LinkedList<LineInfo>(listToChangeData);
+				listToChangeLines = new LinkedList<LineInfo>(listToChangeData);
 			}
 		}
 
@@ -64,12 +64,6 @@ namespace subs2srs4linux
 				RemainingSlice slice = new RemainingSlice(m_referenceList, m_listToChange);
 				stackOfSubtitleListParts.Enqueue(slice);
 			}
-
-			while(stackOfSubtitleListParts.Count > 0) {
-				RemainingSlice slice = stackOfSubtitleListParts.Dequeue();
-
-			}
-
 
 			const double offsetPerIteration = 0.05;
 			int sign = 1; // will alternate every iteration
@@ -125,8 +119,6 @@ namespace subs2srs4linux
 			double sharedTime = 0;
 			double allTimeSpanTime = 0;
 			for(int listIndex = 0; listIndex < 2; listIndex++) {
-				List<LineInfo> currentList = lists[listIndex];
-
 				foreach (var currentLine in biMatchedLines.listlines[listIndex]) {
 					allTimeSpanTime += UtilsCommon.GetTimeSpanLength(currentLine);
 				}

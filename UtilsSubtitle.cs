@@ -122,10 +122,10 @@ namespace subs2srs4linux
 		/// does not overlap with another (one container then contains lines
 		/// that overlap).
 		/// </summary>
-		public class LineContainer : ITimeSpan, IComparable<ITimeSpan> {
+		public class LineContainer<T> : ITimeSpan, IComparable<ITimeSpan> where T : ITimeSpan {
 			private double m_startTime;
 			private double m_endTime;
-			private List<int> m_lineIndices = new List<int>();
+			private LinkedList<T> m_timeSpans = new LinkedList<T>();
 
 			public LineContainer() { }
 
@@ -133,14 +133,14 @@ namespace subs2srs4linux
 			/// Adds a line. The index is relative to a bigger list (for example to all
 			/// lines of one subtitle file).
 			/// </summary>
-			public void AddLine(int index, double startTime, double endTime) {
-				m_lineIndices.Add(index);
-				m_startTime = Math.Min(startTime, m_startTime);
-				m_endTime = Math.Max(endTime, m_endTime);
+			public void AddLine(T timeSpan) {
+				m_timeSpans.AddLast(timeSpan);
+				m_startTime = Math.Min(timeSpan.StartTime, m_startTime);
+				m_endTime = Math.Max(timeSpan.EndTime, m_endTime);
 			}
 
-			public List<int> LineIndices {
-				get { return m_lineIndices; }
+			public LinkedList<T> TimeSpans {
+				get { return m_timeSpans; }
 			}
 
 			public double StartTime {
@@ -164,31 +164,51 @@ namespace subs2srs4linux
 		/// Returns the longest list of line containers, for which no line containers overlap. Addtionaly
 		/// these containers are sorted by start time.
 		/// </summary>
-		public static List<LineContainer> GetNonOverlappingTimeSpans(List<LineInfo> lines) {
-			var containers = new List<LineContainer>(new LineContainer[lines.Count]);
-			var lineAlreadyAdded = new List<bool>(new bool[lines.Count]);
-			for(int i = 0; i < lines.Count; i++) {
-				if(lineAlreadyAdded[i]) continue;
+		public static LinkedList<LineContainer<T>> GetNonOverlappingTimeSpans<T>(LinkedList<T> lines) where T : ITimeSpan {
+			var containers = new LinkedList<LineContainer<T>>();
+			var lineAlreadyAdded = new bool[lines.Count];
+			var lineANode = lines.First;
+			var lineBNode = lines.First;
+			int lineAindex = 0;
+			int lineBindex = 0;
+			while(lineANode != null) {
+				if (lineAlreadyAdded [lineAindex]) {
+					lineAindex++;
+					lineANode = lineANode.Next;
+					continue;
+				}
 
 				// create new container for this line
-				LineContainer lineContainer = new LineContainer();
-				lineContainer.AddLine(i, lines[i].StartTime, lines[i].EndTime);
-				lineAlreadyAdded[i] = true;
-				containers.Add(lineContainer);
+				var lineContainer = new LineContainer<T>();
+				lineContainer.AddLine(lineANode.Value);
+				lineAlreadyAdded[lineAindex] = true;
+				containers.AddLast(lineContainer);
 
 restartLoop:
-				for(int k = i + 1; k < lines.Count; k++) {
-					if(lineAlreadyAdded[k]) continue;
+				lineBNode = lineANode.Next;
+				lineBindex = lineAindex + 1;
+				while(lineBNode != null) {
+					if (lineAlreadyAdded [lineBindex]) {
+						lineBindex++;
+						lineBNode = lineBNode.Next;
+						continue;
+					}
 
-					if(UtilsCommon.IsOverlapping(lines[k], lineContainer)) {
-						lineContainer.AddLine(k, lines[k].StartTime, lines[k].EndTime);
-						lineAlreadyAdded[k] = true;
+					if(UtilsCommon.IsOverlapping(lineBNode.Value, lineContainer)) {
+						lineContainer.AddLine(lineBNode.Value);
+						lineAlreadyAdded[lineBindex] = true;
 						goto restartLoop;
 					}
+
+					lineBindex++;
+					lineBNode = lineBNode.Next;
 				}
+
+				lineAindex++;
+				lineANode = lineANode.Next;
 			}
 
-			containers.Sort();
+			// TODO sort
 
 			return containers;
 		}

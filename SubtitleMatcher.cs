@@ -23,15 +23,25 @@ namespace subs2srs4linux
 {
 	public static class SubtitleMatcher
 	{
-		private class ExtendedLineInfo
+		private class ExtendedLineInfo : ITimeSpan
 		{
 			public readonly LineInfo lineInfo;
-			public readonly List<Int32> matchingLines = new List<Int32>(); // matching lines in subtitle of 
+			public readonly LinkedList<ExtendedLineInfo> matchingLines = new LinkedList<ExtendedLineInfo>(); // matching lines in other language
 			public bool alreadyUsedInBidirectionalSearch = false;
 
 			public ExtendedLineInfo(LineInfo li) {
 				lineInfo = li;
 			}
+
+
+			public double StartTime {
+				get { return lineInfo.StartTime; }
+			}
+
+			public double EndTime {
+				get { return lineInfo.EndTime; }
+			}
+
 		}
 
 		/// <summary>
@@ -51,131 +61,118 @@ namespace subs2srs4linux
 		/// <summary>
 		/// Matches the two subtitles. The problem is that no two subtiles have the same timestamps or the same number of lines (they can be split, omitted, ...).
 		/// This algotithm tries to find matching lines nontheless. The general algorithm works as following:
-		/// 
+		///
 		/// Compare every "line1" in list1 with every "line2" in list2. Generate a score (between 0 and 1) how good they overlap. If the score is above a certain threshold, there
 		/// will be an edge (as in graph theory) beween line1 and line2. There result is a bipartite graph that has many connected compontens. Every connected component is then a
 		/// mached line.
-		/// 
+		///
 		/// There is another step that removes matchings where two lines in same list overlap. See documentation of "RemoveOverlappings()" for more information.
-		/// 
+		///
 		/// </summary>
 		/// <returns>The subtitles.</returns>
 		/// <param name="lines1">Lines1.</param>
 		/// <param name="lines2">Lines2.</param>
-		public static List<BiMatchedLines> MatchSubtitles(List<LineInfo> lines1, List<LineInfo> lines2) {
+		public static LinkedList<BiMatchedLines> MatchSubtitles(IEnumerable<LineInfo> lines1, IEnumerable<LineInfo> lines2) {
 
-			// find matching for lines1 and then for lines2
-			List<ExtendedLineInfo> mappingForLines1 = FindMatching (lines1, lines2);
-			List<ExtendedLineInfo> mappingForLines2 = FindMatching (lines2, lines1);
+			// LineInfo -> ExtendedLineInfo
+			var extendedLineInfos1 = new LinkedList<ExtendedLineInfo>();
+			var extendedLineInfos2 = new LinkedList<ExtendedLineInfo>();
+			foreach(var line in lines1) extendedLineInfos1.AddLast(new ExtendedLineInfo(line));
+			foreach(var line in lines2) extendedLineInfos2.AddLast(new ExtendedLineInfo(line));
 
-			RemoveOverlappings (mappingForLines1, mappingForLines2);
-			RemoveOverlappings (mappingForLines2, mappingForLines1);
+			// find matchings for every line in list1 to list2 and reverse
+			FindMatching (extendedLineInfos1, extendedLineInfos2);
 
-			List<BiMatchedLines> finalMappings = FindBidirectionalMapping (mappingForLines1, mappingForLines2);
+			RemoveOverlappings (extendedLineInfos1);
+			RemoveOverlappings (extendedLineInfos2);
+
+			var finalMappings = FindBidirectionalMapping (extendedLineInfos1, extendedLineInfos2);
 
 			return finalMappings;
 		}
 
 		/// <summary>
-		/// This creates a list of good matching subtitles from list2 to every element from list1.
+		/// This creates a list of good matching subtitles from list1 to every element from list2.
 		/// </summary>
-		/// <returns>The returned has list1.Count Elements. Every element (with position "i") is a list of numbers indicating the matching lines in list2 to the i-th line in list1.</returns>
 		/// <param name="list1">List1.</param>
 		/// <param name="list2">List2.</param>
-		private static List<ExtendedLineInfo> FindMatching(List<LineInfo> list1, List<LineInfo> list2) {
+		private static void FindMatching(LinkedList<ExtendedLineInfo> list1, LinkedList<ExtendedLineInfo> list2) {
 			// TODO: this has O(n²) time -> optimize
-			List<ExtendedLineInfo> matchings = new List<ExtendedLineInfo>(list1.Count);
-			foreach (LineInfo list1line in list1) {
-				ExtendedLineInfo thisLineInfo = new ExtendedLineInfo (list1line);
-
-				for (int list2Index = 0; list2Index < list2.Count; list2Index++) {
-					LineInfo list2line = list2[list2Index]; 
-
+			foreach (ExtendedLineInfo list1line in list1) {
+				foreach (ExtendedLineInfo list2line in list2) {
 					if (OverlappingScore(list1line, list2line) < InstanceSettings.systemSettings.overlappingThreshold_InterSub)
 						continue;
-					
-					thisLineInfo.matchingLines.Add (list2Index);
+					list1line.matchingLines.AddLast (list2line);
+					list2line.matchingLines.AddLast (list1line);
 				}
-
-				matchings.Add (thisLineInfo);
 			}
-
-			return matchings;
 		}
 
 		/// <summary>
 		/// Removes the overlappings in one list.
-		/// 
+		///
 		/// Example:
-		/// 
+		///
 		/// sub1 is in list1
 		/// sub2 and sub3 are in list2
-		/// 
+		///
 		/// sub1 overlaps with sub2, sub3
 		///  + sub2 and sub3 overlap
-		/// 
+		///
 		/// An example of this in the real worlds are announcements while the main characters are speaking.
 		/// We obviously only want to map the character-dialog and the announcement to its own translation.
-		/// 
+		///
 		/// </summary>
-		static void RemoveOverlappings (List<ExtendedLineInfo> primaryList, List<ExtendedLineInfo> secondaryList)
+		static void RemoveOverlappings (LinkedList<ExtendedLineInfo> primaryList)
 		{
 			foreach (ExtendedLineInfo eli in primaryList) {
-				bool[] isMatchingLineOverlapping = null;
-				while ((isMatchingLineOverlapping = GetInListOverlapping (eli.matchingLines, secondaryList)) != null) {
-					DeleteLeastFittingOverlappingSubtitle (eli.lineInfo, eli.matchingLines, isMatchingLineOverlapping, secondaryList);
-				}
-			}
-		}
 
-		/// <summary>
-		/// Gets an array of lines in "list" which overlap with another of "matchingLines" in this lines.
-		/// </summary>
-		/// <returns>null when there are no overlappings</returns>
-		/// <param name="matchingLines">Matching lines.</param>
-		/// <param name="list">List.</param>
-		private static bool[] GetInListOverlapping (List<int> matchingLines, List<ExtendedLineInfo> list)
-		{
-			bool[] returnArray = null;
-			for (int indexA = 0; indexA < matchingLines.Count; indexA++) {
-				for (int indexB = indexA + 1; indexB < matchingLines.Count; indexB++) {
-					if (OverlappingScore (list [matchingLines [indexA]].lineInfo, list [matchingLines [indexB]].lineInfo) > InstanceSettings.systemSettings.overlappingThreshold_InSub) {
-						returnArray = returnArray ?? new bool[matchingLines.Count];
-						returnArray [indexA] = true;
-						returnArray [indexB] = true;
+				ExtendedLineInfo leastFittingLine;
+				do {
+					leastFittingLine = null;
+
+					// the function will group all overlapping lines together, so we delete the worst
+					// line from that container and recalculate the containers (because overlapping could
+					// have been stopped)
+					var nonOverlappingLineContainers = UtilsSubtitle.GetNonOverlappingTimeSpans (eli.matchingLines);
+					foreach (var lineContainer in nonOverlappingLineContainers) {
+						if (lineContainer.TimeSpans.Count > 1) {
+							leastFittingLine = GetLeastFittingLine(eli.lineInfo, lineContainer.TimeSpans);
+							break;
+						}
 					}
-				}
-			}
 
-			return returnArray;
+					// rebuild matching lines without the removed line
+					if(leastFittingLine != null) {
+						eli.matchingLines.Remove(leastFittingLine);
+						continue;
+					}
+				} while(leastFittingLine != null);
+			}
 		}
 
 		/// <summary>
-		/// Delete the entry from "matchingLines" that overlaps with in-subtitle-list-lines and
-		/// has the least overlapping score with "lineInfo".
+		/// Returns the line from "matching lines" that has the least overlapping rating with "lineInfo".
 		/// </summary>
-		private static void DeleteLeastFittingOverlappingSubtitle (LineInfo lineInfo, List<Int32> matchingLines, bool[] isOverlapping, List<ExtendedLineInfo> referencedList)
+		private static ExtendedLineInfo GetLeastFittingLine(LineInfo lineInfo, LinkedList<ExtendedLineInfo> matchingLines)
 		{
 			float leastFittingOverlappingScore =  0.5f;
-			int leastFittingIndex = -1;
-			for (int index = 0; index < matchingLines.Count; index++) {
-				if (!isOverlapping [index])
-					continue;
+			ExtendedLineInfo leastFittingLine = null;
+			foreach(ExtendedLineInfo matchingLine in matchingLines) {
 
-				float currentOverlappingScore = OverlappingScore (lineInfo, referencedList [matchingLines [index]].lineInfo);
-				if (leastFittingIndex == -1 || (currentOverlappingScore < leastFittingOverlappingScore)) {
+				float currentOverlappingScore = OverlappingScore (lineInfo, matchingLine);
+				if (leastFittingLine == null || (currentOverlappingScore < leastFittingOverlappingScore)) {
 					leastFittingOverlappingScore = currentOverlappingScore;
-					leastFittingIndex = index;
+					leastFittingLine = matchingLine;
 				}
 			}
 
-			// remove that choosen line from the matching
-			matchingLines.RemoveAt (leastFittingIndex);
+			return leastFittingLine;
 		}
 
 		/// <summary>
 		/// Score for overlapping of two subtitles between 0 and 1.
-		/// 
+		///
 		/// Corner cases:
 		/// 	subtitles do not overlap -> 0
 		/// 	subtitles fully overlap -> 1
@@ -183,36 +180,33 @@ namespace subs2srs4linux
 		/// <returns>The score.</returns>
 		/// <param name="a">The alpha component.</param>
 		/// <param name="b">The blue component.</param>
-		private static float OverlappingScore(LineInfo a, LineInfo b) {
+		private static float OverlappingScore(ITimeSpan a, ITimeSpan b) {
 			double overlappingSpan = UtilsCommon.OverlappingTimeSpan (a, b);
 			double line1timeSpan = a.EndTime - a.StartTime;
 			double line2timeSpan = b.EndTime - b.StartTime;
 
-			// ignore matchings if there is next to no overlapping 
+			// ignore matchings if there is next to no overlapping
 			float line1score = (float)overlappingSpan / (float)line1timeSpan;
 			float line2score = (float)overlappingSpan / (float)line2timeSpan;
 
 			return (line1score + line2score) * 0.5f;
 		}
 
-		private static List<BiMatchedLines> FindBidirectionalMapping (List<ExtendedLineInfo> mappingForLines1, List<ExtendedLineInfo> mappingForLines2)
+		private static LinkedList<BiMatchedLines> FindBidirectionalMapping (LinkedList<ExtendedLineInfo> mappingForLines1, LinkedList<ExtendedLineInfo> mappingForLines2)
 		{
-			Func<Int32, Boolean, BiMatchedLines> bfsSearch = delegate(Int32 lineIndex, Boolean isInFirstList) {
-				
+			Func<ExtendedLineInfo, Boolean, BiMatchedLines> bfsSearch = delegate(ExtendedLineInfo lineInfo, Boolean isInFirstList) {
+
 
 				// first value in tuple: the index of the line in respective list; second value: true -> list1, false -> list2
-				LinkedList<Tuple<Int32, Boolean>> bfsList = new LinkedList<Tuple<int, bool>> ();
+				var bfsList = new Queue<Tuple<ExtendedLineInfo, bool>> ();
 				BiMatchedLines bimatchedLines = new BiMatchedLines ();
 
 				// all matching lines that are meant to be together are a connected component in the bipartite graph of lines in list1 and list2 -> find
 				// these with breadth-first search
-				bfsList.AddLast(new Tuple<int, bool>(lineIndex, isInFirstList));
+				bfsList.Enqueue(new Tuple<ExtendedLineInfo, bool>(lineInfo, isInFirstList));
 				while (bfsList.Count > 0) {
-					Tuple<Int32, Boolean> currentTuple = bfsList.First.Value;
-					ExtendedLineInfo currentLineInfo = currentTuple.Item2 ? mappingForLines1 [currentTuple.Item1] : mappingForLines2 [currentTuple.Item1];
-
-					// remove first value
-					bfsList.RemoveFirst();
+					Tuple<ExtendedLineInfo, Boolean> currentTuple = bfsList.Dequeue();
+					ExtendedLineInfo currentLineInfo = currentTuple.Item1;
 
 					// this value was already handled so it can be skipped
 					if(currentLineInfo.alreadyUsedInBidirectionalSearch)
@@ -221,41 +215,36 @@ namespace subs2srs4linux
 
 					bimatchedLines.listlines[currentTuple.Item2 ? 0 : 1].AddLast(currentLineInfo.lineInfo);
 
-					foreach (Int32 oppositeLineMatching in currentLineInfo.matchingLines)
-						bfsList.AddLast (new Tuple<int, bool> (oppositeLineMatching, !currentTuple.Item2)); // this line is in the opposite list
+					foreach (var oppositeLineMatching in currentLineInfo.matchingLines)
+						bfsList.Enqueue(new Tuple<ExtendedLineInfo, bool> (oppositeLineMatching, !currentTuple.Item2)); // this line is in the opposite list
 				}
 
 				return (bimatchedLines.listlines[0].Count > 0 || bimatchedLines.listlines[1].Count > 0) ? bimatchedLines : null;
 			};
 
-			List<BiMatchedLines> returnList = new List<BiMatchedLines> ();
-			List<ExtendedLineInfo>.Enumerator mappingForLinesEnum;
+			var returnList = new LinkedList<BiMatchedLines> ();
 
 			// handle all lines in list1
-			mappingForLinesEnum = mappingForLines1.GetEnumerator ();
-			for (int index = 0; mappingForLinesEnum.MoveNext (); index++) {
-				BiMatchedLines bml = bfsSearch (index, true);
-				if (bml != null)
-					returnList.Add (bml);
+			foreach(ExtendedLineInfo line in mappingForLines1) {
+				BiMatchedLines bml = bfsSearch (line, true);
+				if (bml != null) returnList.AddLast (bml);
 			}
 
 			// handle all lines in list2
-			mappingForLinesEnum = mappingForLines2.GetEnumerator ();
-			for (int index = 0; mappingForLinesEnum.MoveNext (); index++) {
-				BiMatchedLines bml = bfsSearch (index, false);
-				if (bml != null)
-					returnList.Add (bml);
+			foreach(ExtendedLineInfo line in mappingForLines2) {
+				BiMatchedLines bml = bfsSearch (line, false);
+				if (bml != null) returnList.AddLast (bml);
 			}
 
 			return returnList;
 		}
 
 
-		public static List<UtilsSubtitle.EntryInformation> GetEntryInformation(Boolean ignoreSingleSubLines, EpisodeInfo episodeInfo, List<BiMatchedLines> matchedLinesList, List<LineInfo> list1, List<LineInfo> list2) {
-			List<UtilsSubtitle.EntryInformation> returnList = new List<UtilsSubtitle.EntryInformation> ();
+		public static LinkedList<UtilsSubtitle.EntryInformation> GetEntryInformation(Boolean ignoreSingleSubLines, EpisodeInfo episodeInfo, IEnumerable<BiMatchedLines> matchedLinesList) {
+			var returnList = new LinkedList<UtilsSubtitle.EntryInformation> ();
 
 			foreach (SubtitleMatcher.BiMatchedLines matchedLines in matchedLinesList) {
-					
+
 				// ignore line when no counterpart was found
 				if (ignoreSingleSubLines && (matchedLines.listlines [0].Count == 0 || matchedLines.listlines [1].Count == 0))
 					continue;
@@ -268,7 +257,7 @@ namespace subs2srs4linux
 				Func<IEnumerable<LineInfo>, String> catenateString = delegate(IEnumerable<LineInfo> lineInfos) {
 					StringBuilder thisStringBuilder = new StringBuilder();
 					foreach(var thisLineInfo in lineInfos) {
-						thisStringBuilder.Append (thisLineInfo.text + " | ");
+						thisStringBuilder.Append (thisLineInfo.text + "|");
 
 						// adjust timestamps to this line
 						if(timestamspUninitialized) {
@@ -286,8 +275,8 @@ namespace subs2srs4linux
 
 				String sub1string = catenateString (matchedLines.listlines [0]);
 				String sub2string = catenateString (matchedLines.listlines [1]);
-				
-				returnList.Add (new UtilsSubtitle.EntryInformation (sub1string, sub2string, episodeInfo, startTimestamp, endTimestamp));
+
+				returnList.AddLast (new UtilsSubtitle.EntryInformation (sub1string, sub2string, episodeInfo, startTimestamp, endTimestamp));
 			}
 
 			return returnList;

@@ -20,12 +20,12 @@ using System.Collections.Generic;
 namespace subs2srs4linux {
 	class UtilsAlignSubToAudio {
 		private static double m_stepSize = 0.5;
-		private List<UtilsSubtitle.LineContainer> m_lineContainers;
+		private List<UtilsSubtitle.LineContainer<LineInfo>> m_lineContainers;
 		private StreamInfo m_audioStreamInfo;
 		private UtilsInputFiles.FileDesc m_audioFileDesc;
 
 		public UtilsAlignSubToAudio(List<LineInfo> lines, UtilsInputFiles.FileDesc audioFile) {
-			m_lineContainers = UtilsSubtitle.GetNonOverlappingTimeSpans(lines);
+			// TODO: m_lineContainers = UtilsSubtitle.GetNonOverlappingTimeSpans<LineInfo>(lines);
 			m_audioStreamInfo = UtilsVideo.ChooseStreamInfo(audioFile.filename, audioFile.properties, StreamInfo.StreamType.ST_AUDIO);
 			m_audioFileDesc = audioFile;
 		}
