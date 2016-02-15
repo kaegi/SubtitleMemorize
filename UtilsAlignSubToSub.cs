@@ -37,12 +37,39 @@ namespace subs2srs4linux
 			m_referenceList = referenceList;
 		}
 
+		/// <summary>
+		/// All lines are in the two list that will get split multiple times.
+		/// This slice represents one of these splits (it is a subset of the two lists).
+		/// Only lines in same slices can get matched.
+		/// </summary>
+		private class RemainingSlice {
+			public LinkedList<LineInfo> referenceListLines;
+			public LinkedList<LineInfo> listToChangeLines;
+
+			public RemainingSlice(IEnumerable<LineInfo> referenceListData, IEnumerable<LineInfo> listToChangeData) {
+				referenceListLines = new LinkedList<LineInfo>(referenceListData);
+				listToChangeData = new LinkedList<LineInfo>(listToChangeData);
+			}
+		}
+
 		public void Retime() {
-			List<UtilsSubtitle.LineContainer> lineContainer1 = UtilsSubtitle.GetNonOverlappingTimeSpans(m_listToChange);
-			List<UtilsSubtitle.LineContainer> lineContainer2 = UtilsSubtitle.GetNonOverlappingTimeSpans(m_referenceList);
 
 			double bestOffset = 0;
 			double bestOffsetRating = 0;
+
+			var stackOfSubtitleListParts = new Queue<RemainingSlice>();
+
+			// initilize first slice (with all lines)
+			{
+				RemainingSlice slice = new RemainingSlice(m_referenceList, m_listToChange);
+				stackOfSubtitleListParts.Enqueue(slice);
+			}
+
+			while(stackOfSubtitleListParts.Count > 0) {
+				RemainingSlice slice = stackOfSubtitleListParts.Dequeue();
+
+			}
+
 
 			const double offsetPerIteration = 0.05;
 			int sign = 1; // will alternate every iteration
@@ -99,18 +126,16 @@ namespace subs2srs4linux
 			double allTimeSpanTime = 0;
 			for(int listIndex = 0; listIndex < 2; listIndex++) {
 				List<LineInfo> currentList = lists[listIndex];
-				for(int i = 0; i < biMatchedLines.listlines[listIndex].Count; i++) {
-					int currentLineIndex = biMatchedLines.listlines[listIndex][i];
-					allTimeSpanTime += UtilsCommon.GetTimeSpanLength(currentList[currentLineIndex]);
+
+				foreach (var currentLine in biMatchedLines.listlines[listIndex]) {
+					allTimeSpanTime += UtilsCommon.GetTimeSpanLength(currentLine);
 				}
 			}
 
 			// calculate "shared time"
-			for(int i = 0; i < biMatchedLines.listlines[0].Count; i++) {
-				for(int j = 0; j < biMatchedLines.listlines[1].Count; j++) {
-					LineInfo lineInfoA = lists[0][biMatchedLines.listlines[0][i]];
-					LineInfo lineInfoB = lists[1][biMatchedLines.listlines[1][j]];
-					sharedTime += UtilsCommon.OverlappingTimeSpan(lineInfoA, lineInfoB);
+			foreach(var lineInfoA in biMatchedLines.listlines[0]) {
+				foreach (var lineInfoB in biMatchedLines.listlines[1]) {
+					sharedTime += UtilsCommon.OverlappingTimeSpan (lineInfoA, lineInfoB);
 				}
 			}
 

@@ -40,7 +40,12 @@ namespace subs2srs4linux
 		/// </summary>
 		public class BiMatchedLines
 		{
-			public readonly List<Int32>[] listlines = { new List<int>(), new List<int>() };
+			public readonly LinkedList<LineInfo>[] listlines = new LinkedList<LineInfo>[2];
+
+			public BiMatchedLines() {
+				listlines[0] = new LinkedList<LineInfo>();
+				listlines[1] = new LinkedList<LineInfo>();
+			}
 		}
 
 		/// <summary>
@@ -58,18 +63,6 @@ namespace subs2srs4linux
 		/// <param name="lines1">Lines1.</param>
 		/// <param name="lines2">Lines2.</param>
 		public static List<BiMatchedLines> MatchSubtitles(List<LineInfo> lines1, List<LineInfo> lines2) {
-			
-			lines1.Sort (delegate(LineInfo x, LineInfo y) {
-				if(x.startTime < y.startTime) return -1;
-				else if(x.startTime.Equals(y.startTime)) return 0;
-				else return 1;
-			});
-
-			lines2.Sort (delegate(LineInfo x, LineInfo y) {
-				if(x.startTime < y.startTime) return -1;
-				else if(x.startTime.Equals(y.startTime)) return 0;
-				else return 1;
-			});
 
 			// find matching for lines1 and then for lines2
 			List<ExtendedLineInfo> mappingForLines1 = FindMatching (lines1, lines2);
@@ -226,7 +219,7 @@ namespace subs2srs4linux
 						continue;
 					currentLineInfo.alreadyUsedInBidirectionalSearch = true;
 
-					bimatchedLines.listlines[currentTuple.Item2 ? 0 : 1].Add(currentTuple.Item1);
+					bimatchedLines.listlines[currentTuple.Item2 ? 0 : 1].AddLast(currentLineInfo.lineInfo);
 
 					foreach (Int32 oppositeLineMatching in currentLineInfo.matchingLines)
 						bfsList.AddLast (new Tuple<int, bool> (oppositeLineMatching, !currentTuple.Item2)); // this line is in the opposite list
@@ -272,13 +265,12 @@ namespace subs2srs4linux
 				double endTimestamp = 0;
 
 
-				Func<List<Int32>, List<LineInfo>, String> catenateString = delegate(List<int> lineIndexList, List<LineInfo> lineInfoList) {
+				Func<IEnumerable<LineInfo>, String> catenateString = delegate(IEnumerable<LineInfo> lineInfos) {
 					StringBuilder thisStringBuilder = new StringBuilder();
-					LineInfo thisLineInfo;
-					List<Int32>.Enumerator lineIndexEnum;
-					lineIndexEnum = lineIndexList.GetEnumerator ();
-					while (lineIndexEnum.MoveNext ()) {
-						thisLineInfo = lineInfoList [lineIndexEnum.Current];
+					foreach(var thisLineInfo in lineInfos) {
+						thisStringBuilder.Append (thisLineInfo.text + " | ");
+
+						// adjust timestamps to this line
 						if(timestamspUninitialized) {
 							// initialize timestamps
 							startTimestamp = thisLineInfo.StartTime;
@@ -288,13 +280,12 @@ namespace subs2srs4linux
 							startTimestamp = Math.Min(startTimestamp, thisLineInfo.StartTime);
 							endTimestamp = Math.Max(endTimestamp, thisLineInfo.EndTime);
 						}
-						thisStringBuilder.Append (thisLineInfo.text + " | ");
 					}
 					return thisStringBuilder.ToString();
 				};
 
-				String sub1string = catenateString (matchedLines.listlines [0], list1);
-				String sub2string = catenateString (matchedLines.listlines [1], list2);
+				String sub1string = catenateString (matchedLines.listlines [0]);
+				String sub2string = catenateString (matchedLines.listlines [1]);
 				
 				returnList.Add (new UtilsSubtitle.EntryInformation (sub1string, sub2string, episodeInfo, startTimestamp, endTimestamp));
 			}
