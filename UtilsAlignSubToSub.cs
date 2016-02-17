@@ -56,30 +56,40 @@ namespace subs2srs4linux
 			}
 		}
 
-		public void Retime() {
+		public void Retime(bool noSplitting=false) {
 
-			var stackOfSubtitleListParts = new Queue<RemainingSlice>();
+			var queue = new Queue<RemainingSlice>();
 
 			// initilize first slice (with all lines)
 			RemainingSlice fullSlice = new RemainingSlice(new LinkedList<LineInfo>(m_referenceList), new LinkedList<LineInfo>(m_listToChange));
-			stackOfSubtitleListParts.Enqueue(fullSlice);
+			queue.Enqueue(fullSlice);
 
-			while(stackOfSubtitleListParts.Count > 0) {
-				RemainingSlice slice = stackOfSubtitleListParts.Dequeue();
+			if(noSplitting) {
+				double bestOffset = FindBestOffset(fullSlice);
+				UtilsSubtitle.ShiftByTime(m_listToChange, bestOffset);
+				return;
+			}
+
+
+			while(queue.Count > 0) {
+				RemainingSlice slice = queue.Dequeue();
 				if(slice.listToChangeLines.Count == 0 || slice.referenceListLines.Count == 0) continue;
-				HandleSlice(slice, stackOfSubtitleListParts);
+
+				double bestOffset = FindBestOffset(slice);
+				ApplyOffset(slice, bestOffset, queue);
 			}
 		}
 
-		private void HandleSlice(RemainingSlice slice, Queue<RemainingSlice> queue) {
+		private double FindBestOffset(RemainingSlice slice) {
+			double stepSize = 0.1;
+			int iterations = 1600;
 
 			double bestOffset = 0;
 			double bestOffsetRating = 0;
 
-			const double offsetPerIteration = 0.1;
 			int sign = 1; // will alternate every iteration
-			for(int iteration = 0; iteration < 1600; iteration++) {
-				double offset = sign * (offsetPerIteration * iteration);
+			for(int iteration = 0; iteration < iterations; iteration++) {
+				double offset = sign * (stepSize * iteration);
 				sign *= -1;
 
 				double averageRating = GetRatingOfOffset(offset, slice.referenceListLines, slice.listToChangeLines);
@@ -91,9 +101,7 @@ namespace subs2srs4linux
 				}
 			}
 
-			//Console.WriteLine(bestOffset + ", " + bestOffsetRating + "; " + slice.referenceListLines.Count + " -> " + slice.listToChangeLines.Count + "; pos: " + slice.position);
-			ApplyOffset(slice, bestOffset, queue);
-
+			return bestOffset;
 		}
 
 		private double GetStartTime(SubtitleMatcher.BiMatchedLines biMatchedLines) {
