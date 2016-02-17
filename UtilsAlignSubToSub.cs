@@ -48,14 +48,18 @@ namespace subs2srs4linux
 			public LinkedList<LineInfo> referenceListLines;
 			public LinkedList<LineInfo> listToChangeLines;
 
-			public int position = 0; // TODO: debug value
-
 			public RemainingSlice(LinkedList<LineInfo> referenceListData, LinkedList<LineInfo> listToChangeData) {
 				referenceListLines = referenceListData;
 				listToChangeLines = listToChangeData;
 			}
 		}
 
+		/// <summary>
+		/// By calling this function, all references to LineInfo in "listToChange" passed in
+		/// constructor can be changed. Retiming includes removing/introducing commercial breaks.
+		///
+		/// By using the "noSplitting=true" option, the whole list gets shifted as one.
+		/// </summary>
 		public void Retime(bool noSplitting=false) {
 
 			var queue = new Queue<RemainingSlice>();
@@ -64,6 +68,7 @@ namespace subs2srs4linux
 			RemainingSlice fullSlice = new RemainingSlice(new LinkedList<LineInfo>(m_referenceList), new LinkedList<LineInfo>(m_listToChange));
 			queue.Enqueue(fullSlice);
 
+			// just find best offset
 			if(noSplitting) {
 				double bestOffset = FindBestOffset(fullSlice);
 				UtilsSubtitle.ShiftByTime(m_listToChange, bestOffset);
@@ -71,6 +76,11 @@ namespace subs2srs4linux
 			}
 
 
+			// Only lines that are in the same slice (list of lines on both sides) can be matched.
+			// When processing the slices, a consecutive row of lines is recognized as "good". Two new
+			// slices (one left of the right of the row) are then created.
+			//
+			// This queue will process all these slices that have some elements in them.
 			while(queue.Count > 0) {
 				RemainingSlice slice = queue.Dequeue();
 				if(slice.listToChangeLines.Count == 0 || slice.referenceListLines.Count == 0) continue;
@@ -80,6 +90,11 @@ namespace subs2srs4linux
 			}
 		}
 
+		/// <summary>
+		/// Find best offset for "listToChange" so it matches "referenceList". There can be
+		/// multiple "peaks" if one subtitle has additional breaks the other does not have.
+		/// Only one of them will be returned.
+		/// </summary>
 		private double FindBestOffset(RemainingSlice slice) {
 			double stepSize = 0.1;
 			int iterations = 1600;
@@ -104,6 +119,10 @@ namespace subs2srs4linux
 			return bestOffset;
 		}
 
+		/// <summary>
+		/// Returns the minimum time of all lines in BiMatchedLines.
+		/// XXX: move this to BiMatchedLines?
+		/// </summary>
 		private double GetStartTime(SubtitleMatcher.BiMatchedLines biMatchedLines) {
 			double startTime = 0;
 			bool initialized = false;
@@ -117,6 +136,15 @@ namespace subs2srs4linux
 			return startTime;
 		}
 
+		/// <summary>
+		/// This function will...
+		/// a) move all lines to change in slice by offset
+		/// b) match the lines in "listToChange" and "referenceList"
+		/// c) find a threshold value for matchings
+		/// d) find the longest row of consecutive matchings that are above the threshold
+		/// e) create slices for lines before and lines after this "good row"
+		/// f) reset offset of these remaining lines and put slice into queue
+		/// </summary>
 		private void ApplyOffset(RemainingSlice slice, double offset, Queue<RemainingSlice> queue) {
 			UtilsSubtitle.ShiftByTime(slice.listToChangeLines, offset);
 
@@ -128,21 +156,29 @@ namespace subs2srs4linux
 			});
 
 
-			// find average rating TODO: value is not perfect for this task (should be higher)
+			// --------------------------------------------------
+			// find threshold rating
 			double averageRating = 0;
 			int numRatings = 0;
 			foreach(var biMatchedLines in biMatchedLinesList) {
 				double rating = RateBiMatchedLines(biMatchedLines);
-				if(rating > 0.0001) {
+				if(rating > 0.0001) { // ignore "zero" ratings
 					averageRating += rating;
 					numRatings++;
 				}
 			}
 			averageRating /= numRatings;
-
 			double thresholdValue = averageRating * 0.5;
 
-			// find longest row over average value
+			// --------------------------------------------------
+			// Find longest row over threshold rating.
+			//
+			// Zero ratings may be inbetween good ratings when some
+			// lines couldn't get matched (for example street-sign
+			// translations that aren't in subtitle file in native language).
+			// These are stepped over: There can be a infinite number of zero ratings
+			// ratings in the row except at the beginning and the end (these will
+			// get matched at a different time if possible).
 			int numGoodMatched = 0;
 			int currentRowStart = 0;
 
@@ -153,6 +189,7 @@ namespace subs2srs4linux
 				double rating = RateBiMatchedLines(biMatchedLines);
 
 				if(rating < thresholdValue) {
+					// step over zero ratings
 					if(rating > 0.000001)
 						numGoodMatched = 0; // not a zero rating
 				} else {
@@ -168,38 +205,37 @@ namespace subs2srs4linux
 				}
 			}
 
-
+			// could good row be found?
 			if(maxNumGoodMatched == -1) return;
 
-			{
-				// everything in front of the "good row" can be matched
-				var remainingSliceReferenceList = new LinkedList<LineInfo>();
-				var remainingSliceToChangeList = new LinkedList<LineInfo>();
-				for(int index = 0; index < bestRowStart; index++) {
-					var biMatchedLines = biMatchedLinesList[index];
-					foreach(var lineInfo in biMatchedLines.listlines[0]) remainingSliceReferenceList.AddLast(lineInfo);
-					foreach(var lineInfo in biMatchedLines.listlines[1]) remainingSliceToChangeList.AddLast(lineInfo);
-				}
-				UtilsSubtitle.ShiftByTime(remainingSliceToChangeList, -offset); // correct offsets back
-				RemainingSlice sliceLeft = new RemainingSlice(remainingSliceReferenceList, remainingSliceToChangeList);
-				sliceLeft.position = slice.position;
-				queue.Enqueue(sliceLeft);
-			}
+			// create new slices left and right
+			RemainingSlice newSlice;
 
-			{
-				// everything after the "good row" has to matched
-				var remainingSliceReferenceList = new LinkedList<LineInfo>();
-				var remainingSliceToChangeList = new LinkedList<LineInfo>();
-				for(int index = bestRowStart + maxNumGoodMatched + 1; index < biMatchedLinesList.Count; index++) {
-					var biMatchedLines = biMatchedLinesList[index];
-					foreach(var lineInfo in biMatchedLines.listlines[0]) remainingSliceReferenceList.AddLast(lineInfo);
-					foreach(var lineInfo in biMatchedLines.listlines[1]) remainingSliceToChangeList.AddLast(lineInfo);
-				}
-				UtilsSubtitle.ShiftByTime(remainingSliceToChangeList, -offset); // correct offsets back
-				RemainingSlice sliceRight = new RemainingSlice(remainingSliceReferenceList, remainingSliceToChangeList);
-				sliceRight.position = slice.position + bestRowStart + maxNumGoodMatched + 1;
-				queue.Enqueue(sliceRight);
+			// left slice
+			newSlice = GetSubSlice(biMatchedLinesList, 0, bestRowStart);
+			UtilsSubtitle.ShiftByTime(newSlice.listToChangeLines, -offset);
+			queue.Enqueue(newSlice);
+
+			// right slice
+			newSlice = GetSubSlice(biMatchedLinesList, bestRowStart + maxNumGoodMatched + 1, biMatchedLinesList.Count);
+			UtilsSubtitle.ShiftByTime(newSlice.listToChangeLines, -offset);
+			queue.Enqueue(newSlice);
+		}
+
+		/// <summary>
+		/// Generate a slice from a part of matched lines list.
+		/// </summary>
+		private RemainingSlice GetSubSlice(List<SubtitleMatcher.BiMatchedLines> biMatchedLinesList, int start, int end) {
+
+			// everything after the "good row" has be to matched
+			var remainingSliceReferenceList = new LinkedList<LineInfo>();
+			var remainingSliceToChangeList = new LinkedList<LineInfo>();
+			for(int index = start; index < end; index++) {
+				var biMatchedLines = biMatchedLinesList[index];
+				foreach(var lineInfo in biMatchedLines.listlines[0]) remainingSliceReferenceList.AddLast(lineInfo);
+				foreach(var lineInfo in biMatchedLines.listlines[1]) remainingSliceToChangeList.AddLast(lineInfo);
 			}
+			return new RemainingSlice(remainingSliceReferenceList, remainingSliceToChangeList);
 		}
 
 
@@ -217,21 +253,19 @@ namespace subs2srs4linux
 
 			// match lines
 			var biMatchedLinesList = SubtitleMatcher.MatchSubtitles(referenceList, listToChange);
-			double averageRating = 0;
-			int numRatings = 1;
+			double finalRating = 0;
 
 			foreach(var biMatchedLines in biMatchedLinesList) {
 				double rating = RateBiMatchedLines(biMatchedLines);
 
-				averageRating += rating * rating * rating;
+				// use rating^3 because that way small values will become smaller
+				finalRating += rating * rating * rating;
 			}
-
-			averageRating /= numRatings;
 
 			// shift timings back
 			UtilsSubtitle.ShiftByTime(listToChange, -offset);
 
-			return averageRating;
+			return finalRating;
 		}
 
 		/// <summary>
