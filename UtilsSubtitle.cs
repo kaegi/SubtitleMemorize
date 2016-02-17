@@ -43,7 +43,7 @@ namespace subs2srs4linux
 		/// <summary>
 		/// Shifts all lines/timestamps by a given time.
 		/// </summary>
-		static public void ShiftByTime(List<LineInfo> lines, double shiftValueInSecs) {
+		static public void ShiftByTime(IEnumerable<LineInfo> lines, double shiftValueInSecs) {
 			foreach (LineInfo line in lines) {
 				line.startTime += shiftValueInSecs;
 				line.endTime += shiftValueInSecs;
@@ -61,7 +61,7 @@ namespace subs2srs4linux
 			// do not extract again when file was already extracted once
 			if (!File.Exists (newSubtitleFilePath))
 				UtilsVideo.ExtractStream (filename, subtitleStreamInfo, newSubtitleFilePath);
-			
+
 			return ParseSubtitle (settings, newSubtitleFilePath, properties);
 		}
 
@@ -164,7 +164,7 @@ namespace subs2srs4linux
 		/// Returns the longest list of line containers, for which no line containers overlap. Addtionaly
 		/// these containers are sorted by start time.
 		/// </summary>
-		public static LinkedList<LineContainer<T>> GetNonOverlappingTimeSpans<T>(LinkedList<T> lines) where T : ITimeSpan {
+		public static LinkedList<LineContainer<T>> GetNonOverlappingTimeSpans<T>(LinkedList<T> lines, double threshold=0) where T : ITimeSpan {
 			var containers = new LinkedList<LineContainer<T>>();
 			var lineAlreadyAdded = new bool[lines.Count];
 			var lineANode = lines.First;
@@ -194,10 +194,15 @@ restartLoop:
 						continue;
 					}
 
+					// just test treshold if line collides with container
 					if(UtilsCommon.IsOverlapping(lineBNode.Value, lineContainer)) {
-						lineContainer.AddLine(lineBNode.Value);
-						lineAlreadyAdded[lineBindex] = true;
-						goto restartLoop;
+						foreach(ITimeSpan timeSpanInContainer in lineContainer.TimeSpans) {
+							if(UtilsCommon.OverlappingScore(lineBNode.Value, timeSpanInContainer) > threshold) {
+								lineContainer.AddLine(lineBNode.Value);
+								lineAlreadyAdded[lineBindex] = true;
+								goto restartLoop;
+							}
+						}
 					}
 
 					lineBindex++;
@@ -218,7 +223,7 @@ restartLoop:
 		/// Every EntryInformation-Instance, that isn't filtered away will be used
 		/// for exactly one card.
 		/// </summary>
-		public class EntryInformation : ITimeSpan {
+		public class EntryInformation : IComparable<ITimeSpan>, ITimeSpan {
 			public String targetLanguageString;
 			public String nativeLanguageString;
 			public EpisodeInfo episodeInfo;
@@ -255,6 +260,16 @@ restartLoop:
 			public double EndTime {
 				get { return endTimestamp; }
 			}
+
+			/// <summary>
+			/// Compare lines based on their Start Times.
+			/// </summary>
+			public int CompareTo(ITimeSpan other) {
+				if(StartTime == other.StartTime) return 0;
+				return StartTime < other.StartTime ? -1 : 1;
+			}
+
+
 		}
 	}
 }

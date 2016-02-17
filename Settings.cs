@@ -42,6 +42,8 @@ namespace subs2srs4linux
 		public String formatConvertCommand = "ffmpeg";
 
 		public String preLoadedSettings = null;
+
+		public double subToSubAlign_minGoodMatchingThreshold = 0.6;
 	}
 
 	[Serializable]

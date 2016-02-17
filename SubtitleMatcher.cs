@@ -100,7 +100,7 @@ namespace subs2srs4linux
 			// TODO: this has O(n²) time -> optimize
 			foreach (ExtendedLineInfo list1line in list1) {
 				foreach (ExtendedLineInfo list2line in list2) {
-					if (OverlappingScore(list1line, list2line) < InstanceSettings.systemSettings.overlappingThreshold_InterSub)
+					if (UtilsCommon.OverlappingScore(list1line, list2line) < 0.4)
 						continue;
 					list1line.matchingLines.AddLast (list2line);
 					list2line.matchingLines.AddLast (list1line);
@@ -134,7 +134,7 @@ namespace subs2srs4linux
 					// the function will group all overlapping lines together, so we delete the worst
 					// line from that container and recalculate the containers (because overlapping could
 					// have been stopped)
-					var nonOverlappingLineContainers = UtilsSubtitle.GetNonOverlappingTimeSpans (eli.matchingLines);
+					var nonOverlappingLineContainers = UtilsSubtitle.GetNonOverlappingTimeSpans (eli.matchingLines, 0.2);
 					foreach (var lineContainer in nonOverlappingLineContainers) {
 						if (lineContainer.TimeSpans.Count > 1) {
 							leastFittingLine = GetLeastFittingLine(eli.lineInfo, lineContainer.TimeSpans);
@@ -156,11 +156,11 @@ namespace subs2srs4linux
 		/// </summary>
 		private static ExtendedLineInfo GetLeastFittingLine(LineInfo lineInfo, LinkedList<ExtendedLineInfo> matchingLines)
 		{
-			float leastFittingOverlappingScore =  0.5f;
+			double leastFittingOverlappingScore =  0.5;
 			ExtendedLineInfo leastFittingLine = null;
 			foreach(ExtendedLineInfo matchingLine in matchingLines) {
 
-				float currentOverlappingScore = OverlappingScore (lineInfo, matchingLine);
+				double currentOverlappingScore = UtilsCommon.OverlappingScore (lineInfo, matchingLine);
 				if (leastFittingLine == null || (currentOverlappingScore < leastFittingOverlappingScore)) {
 					leastFittingOverlappingScore = currentOverlappingScore;
 					leastFittingLine = matchingLine;
@@ -168,28 +168,6 @@ namespace subs2srs4linux
 			}
 
 			return leastFittingLine;
-		}
-
-		/// <summary>
-		/// Score for overlapping of two subtitles between 0 and 1.
-		///
-		/// Corner cases:
-		/// 	subtitles do not overlap -> 0
-		/// 	subtitles fully overlap -> 1
-		/// </summary>
-		/// <returns>The score.</returns>
-		/// <param name="a">The alpha component.</param>
-		/// <param name="b">The blue component.</param>
-		private static float OverlappingScore(ITimeSpan a, ITimeSpan b) {
-			double overlappingSpan = UtilsCommon.OverlappingTimeSpan (a, b);
-			double line1timeSpan = a.EndTime - a.StartTime;
-			double line2timeSpan = b.EndTime - b.StartTime;
-
-			// ignore matchings if there is next to no overlapping
-			float line1score = (float)overlappingSpan / (float)line1timeSpan;
-			float line2score = (float)overlappingSpan / (float)line2timeSpan;
-
-			return (line1score + line2score) * 0.5f;
 		}
 
 		private static LinkedList<BiMatchedLines> FindBidirectionalMapping (LinkedList<ExtendedLineInfo> mappingForLines1, LinkedList<ExtendedLineInfo> mappingForLines2)
@@ -240,14 +218,15 @@ namespace subs2srs4linux
 		}
 
 
-		public static LinkedList<UtilsSubtitle.EntryInformation> GetEntryInformation(Boolean ignoreSingleSubLines, EpisodeInfo episodeInfo, IEnumerable<BiMatchedLines> matchedLinesList) {
+		public static List<UtilsSubtitle.EntryInformation> GetEntryInformation(Boolean ignoreSingleSubLines, EpisodeInfo episodeInfo, IEnumerable<BiMatchedLines> matchedLinesList) {
 			var returnList = new LinkedList<UtilsSubtitle.EntryInformation> ();
 
 			foreach (SubtitleMatcher.BiMatchedLines matchedLines in matchedLinesList) {
 
 				// ignore line when no counterpart was found
-				if (ignoreSingleSubLines && (matchedLines.listlines [0].Count == 0 || matchedLines.listlines [1].Count == 0))
-					continue;
+				bool deactivated = false;
+				if (matchedLines.listlines [0].Count == 0 || matchedLines.listlines [1].Count == 0)
+					deactivated = true;
 
 				bool timestamspUninitialized = true;
 				double startTimestamp = 0;
@@ -276,10 +255,15 @@ namespace subs2srs4linux
 				String sub1string = catenateString (matchedLines.listlines [0]);
 				String sub2string = catenateString (matchedLines.listlines [1]);
 
-				returnList.AddLast (new UtilsSubtitle.EntryInformation (sub1string, sub2string, episodeInfo, startTimestamp, endTimestamp));
+				var entryInfo = new UtilsSubtitle.EntryInformation (sub1string, sub2string, episodeInfo, startTimestamp, endTimestamp);
+				entryInfo.isActive = !deactivated;
+				returnList.AddLast (entryInfo);
 			}
 
-			return returnList;
+
+			var retList = new List<UtilsSubtitle.EntryInformation>(returnList);
+			retList.Sort();
+			return retList;
 		}
 	}
 }

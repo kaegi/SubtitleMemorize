@@ -226,6 +226,30 @@ namespace subs2srs4linux
 			return a.EndTime >= b.StartTime && a.StartTime <= b.EndTime;
 		}
 
+		/// <summary>
+		/// Score for overlapping of two subtitles between 0 and 1.
+		///
+		/// Corner cases:
+		/// 	subtitles do not overlap -> 0
+		/// 	subtitles fully overlap -> 1
+		/// </summary>
+		/// <returns>The score.</returns>
+		/// <param name="a">The alpha component.</param>
+		/// <param name="b">The blue component.</param>
+		public static double OverlappingScore(ITimeSpan a, ITimeSpan b) {
+			double overlappingSpan = UtilsCommon.OverlappingTimeSpan (a, b);
+			double line1timeSpan = a.EndTime - a.StartTime;
+			double line2timeSpan = b.EndTime - b.StartTime;
+
+			// ignore matchings if there is next to no overlapping
+			double line1score = (double)overlappingSpan / (double)line1timeSpan;
+			double line2score = (double)overlappingSpan / (double)line2timeSpan;
+
+			return (line1score + line2score) * 0.5f;
+		}
+
+
+
 
 		/// <summary>
 		/// Align subtitle line by constant value, to audio or to other subtitle based on settings in "perSubSettings".
