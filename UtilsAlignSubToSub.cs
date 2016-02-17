@@ -83,7 +83,13 @@ namespace subs2srs4linux
 			// This queue will process all these slices that have some elements in them.
 			while(queue.Count > 0) {
 				RemainingSlice slice = queue.Dequeue();
-				if(slice.listToChangeLines.Count == 0 || slice.referenceListLines.Count == 0) continue;
+				if(slice.listToChangeLines.Count == 0 || slice.referenceListLines.Count == 0) {
+					// TODO: these shouldn't just be moved out of the way but left in another slice
+					// this is more debug code than anything else
+					UtilsSubtitle.ShiftByTime(slice.listToChangeLines, 10000);
+					UtilsSubtitle.ShiftByTime(slice.referenceListLines, 10000);
+					continue;
+				}
 
 				double bestOffset = FindBestOffset(slice);
 				ApplyOffset(slice, bestOffset, queue);
@@ -96,27 +102,73 @@ namespace subs2srs4linux
 		/// Only one of them will be returned.
 		/// </summary>
 		private double FindBestOffset(RemainingSlice slice) {
-			double stepSize = 0.1;
-			int iterations = 1600;
 
-			double bestOffset = 0;
-			double bestOffsetRating = 0;
+			// the tuple is (offset, rating)
+			var firstPassList = new List<OffsetRatingTuple>(5);
+			FindGoodOffsets(slice, 0, 0.3, 1000, firstPassList);
+
+			// find fine grained offsets around approximated offsets
+			var secondPassList = new List<OffsetRatingTuple>(5);
+			foreach(var offsetRatingTuple in firstPassList)
+				FindGoodOffsets(slice, offsetRatingTuple.offset, 0.01, 90, secondPassList);
+
+			return secondPassList[0].offset;
+		}
+
+		private class OffsetRatingTuple : IComparable<OffsetRatingTuple> {
+			public double offset;
+			public double rating;
+
+			public OffsetRatingTuple(double offset, double rating) {
+				this.offset = offset;
+				this.rating = rating;
+			}
+
+			public int CompareTo(OffsetRatingTuple x) {
+				return rating < x.rating ? 1 : -1;
+			}
+		}
+
+		/// <summary>
+		/// This function test "iterations"-times different offsets and saves the best in "returnList".
+		/// The offsets will be around "centerOffset" and "2 * stepSize" is the  in every direction.
+		/// The returnList will be filled until "Count==Capacity". At every time, "returnList" is sorted
+		/// by rating ("returnList[0]" has the best rating of all tested offsets).
+		/// </summary>
+		private void FindGoodOffsets(RemainingSlice slice, double centerOffset, double stepSize, int iterations, List<OffsetRatingTuple> returnList) {
 
 			int sign = 1; // will alternate every iteration
 			for(int iteration = 0; iteration < iterations; iteration++) {
-				double offset = sign * (stepSize * iteration);
+				double offset = sign * (stepSize * iteration) + centerOffset;
 				sign *= -1;
 
 				double averageRating = GetRatingOfOffset(offset, slice.referenceListLines, slice.listToChangeLines);
 
-				// is this offset better than the current offset?
-				if(averageRating >= bestOffsetRating) {
-					bestOffset = offset;
-					bestOffsetRating = averageRating;
+				if(returnList.Count < returnList.Capacity) {
+					returnList.Add(new OffsetRatingTuple(offset, averageRating));
+
+					// if all entries are filled they have to be sorted by how good they are
+					// (at index 0 the rating is best)
+					if(returnList.Count == returnList.Capacity)
+						returnList.Sort();
+				} else {
+					// is value better than worst in return list?
+					if(averageRating > returnList[returnList.Count - 1].rating) {
+						returnList[returnList.Count - 1].offset = offset;
+						returnList[returnList.Count - 1].rating = averageRating;
+
+						// bubble sort in sorted list
+						for(int i = returnList.Count - 1; i >= 1; i--) {
+							// move value up (rating at lower index is higher) or end loop?
+							if(returnList[i].rating < returnList[i - 1].rating) break;
+
+							var tmp = returnList[i];
+							returnList[i] = returnList[i - 1];
+							returnList[i - 1] = tmp;
+						}
+					}
 				}
 			}
-
-			return bestOffset;
 		}
 
 		/// <summary>
@@ -168,7 +220,7 @@ namespace subs2srs4linux
 				}
 			}
 			averageRating /= numRatings;
-			double thresholdValue = averageRating * 0.5;
+			double thresholdValue = averageRating * 0.8;
 
 			// --------------------------------------------------
 			// Find longest row over threshold rating.
@@ -176,11 +228,13 @@ namespace subs2srs4linux
 			// Zero ratings may be inbetween good ratings when some
 			// lines couldn't get matched (for example street-sign
 			// translations that aren't in subtitle file in native language).
-			// These are stepped over: There can be a infinite number of zero ratings
+			// These are stepped over: There can be a limited number of zero ratings
 			// ratings in the row except at the beginning and the end (these will
 			// get matched at a different time if possible).
 			int numGoodMatched = 0;
 			int currentRowStart = 0;
+			int allowedZeroRatings = 0;
+
 
 			int maxNumGoodMatched = -1;
 			int bestRowStart = 0;
@@ -190,7 +244,7 @@ namespace subs2srs4linux
 
 				if(rating < thresholdValue) {
 					// step over zero ratings
-					if(rating > 0.000001)
+					if(rating > 0.000001 || allowedZeroRatings-- < 0)
 						numGoodMatched = 0; // not a zero rating
 				} else {
 					// update row start/end
@@ -202,6 +256,8 @@ namespace subs2srs4linux
 						maxNumGoodMatched = numGoodMatched;
 						bestRowStart = currentRowStart;
 					}
+
+					allowedZeroRatings = 4;
 				}
 			}
 
