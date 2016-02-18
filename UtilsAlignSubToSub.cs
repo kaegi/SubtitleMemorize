@@ -137,12 +137,14 @@ namespace subs2srs4linux
 		/// </summary>
 		private void FindGoodOffsets(RemainingSlice slice, double centerOffset, double stepSize, int iterations, List<OffsetRatingTuple> returnList) {
 
+			var subtitleMatcherParams = SubtitleMatcher.GetParameterCache(slice.referenceListLines, slice.listToChangeLines);
+
 			int sign = 1; // will alternate every iteration
 			for(int iteration = 0; iteration < iterations; iteration++) {
 				double offset = sign * (stepSize * iteration) + centerOffset;
 				sign *= -1;
 
-				double averageRating = GetRatingOfOffset(offset, slice.referenceListLines, slice.listToChangeLines);
+				double averageRating = GetRatingOfOffset(offset, subtitleMatcherParams);
 
 				if(returnList.Count < returnList.Capacity) {
 					returnList.Add(new OffsetRatingTuple(offset, averageRating));
@@ -201,7 +203,8 @@ namespace subs2srs4linux
 			UtilsSubtitle.ShiftByTime(slice.listToChangeLines, offset);
 
 			// match lines
-			var biMatchedLinesLinkedList = SubtitleMatcher.MatchSubtitles(slice.referenceListLines, slice.listToChangeLines);
+			var subtitleMatcherParameters = SubtitleMatcher.GetParameterCache(slice.referenceListLines, slice.listToChangeLines);
+			var biMatchedLinesLinkedList = SubtitleMatcher.MatchSubtitles(subtitleMatcherParameters);
 			var biMatchedLinesList = new List<SubtitleMatcher.BiMatchedLines>(biMatchedLinesLinkedList);
 			biMatchedLinesList.Sort(delegate(SubtitleMatcher.BiMatchedLines x,SubtitleMatcher.BiMatchedLines y) {
 				return GetStartTime(x) < GetStartTime(y) ? -1 : 1;
@@ -298,17 +301,17 @@ namespace subs2srs4linux
 		/// <summary>
 		/// Shift all lines in "list to change" by "offset", create a matching, rate the matching and shift lines back.
 		/// </summary>
-		public double GetRatingOfOffset(double offset, IEnumerable<LineInfo> referenceList, IEnumerable<LineInfo> listToChange) {
+		public double GetRatingOfOffset(double offset, SubtitleMatcher.SubtitleMatcherCache subtitleMatcherParams) {
 			/*
 			 * Other ideas for rating:
 			 * 		bonus value for censecutive good bi-match ratings
 			 */
 
 			// move timings of every line
-			UtilsSubtitle.ShiftByTime(listToChange, offset);
+			subtitleMatcherParams.ShiftTime(offset, false, true);
 
 			// match lines
-			var biMatchedLinesList = SubtitleMatcher.MatchSubtitles(referenceList, listToChange);
+			var biMatchedLinesList = SubtitleMatcher.MatchSubtitles(subtitleMatcherParams);
 			double finalRating = 0;
 
 			foreach(var biMatchedLines in biMatchedLinesList) {
@@ -319,7 +322,7 @@ namespace subs2srs4linux
 			}
 
 			// shift timings back
-			UtilsSubtitle.ShiftByTime(listToChange, -offset);
+			subtitleMatcherParams.ShiftTime(-offset, false, true);
 
 			return finalRating;
 		}
