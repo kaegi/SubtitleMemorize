@@ -967,7 +967,7 @@ finish_regex:;
 		/// <summary>
 		/// XXX: documentation missing
 		/// </summary>
-		private void UpdatePreviewListEntry(int index, TreeIter? treeIter = null) {
+		private void UpdatePreviewListEntry(int index, TreeIter? treeIter = null, bool updateSelectedEntryTextView=false) {
 			if(index < 0 || index >= m_allEntryInfomation.Count) throw new ArgumentOutOfRangeException(); // nothing to update
 			if(treeIter == null)
 				treeIter = GetTreeIterByIndex(index);  // TODO: cache this value
@@ -981,6 +981,11 @@ finish_regex:;
 			// set values in list TODO: can there be an index change?
 			m_liststoreLines.SetValue(treeIter.Value, 0, beginString + entryInfo.targetLanguageString + endString);
 			m_liststoreLines.SetValue(treeIter.Value, 1, beginString + entryInfo.nativeLanguageString + endString);
+
+			if(updateSelectedEntryTextView && index == m_selectedPreviewIndex) {
+				m_textviewTargetLanguage.Buffer.Text = entryInfo.targetLanguageString;
+				m_textviewNativeLanguage.Buffer.Text = entryInfo.nativeLanguageString;
+			}
 		}
 
 		/// <summary>
@@ -992,7 +997,7 @@ finish_regex:;
 			TreeIter treeIter;
 			if(!m_liststoreLines.GetIterFirst(out treeIter)) return;
 			for(int i = 0; i < m_allEntryInfomation.Count; i++) {
-				UpdatePreviewListEntry(i, treeIter);
+				UpdatePreviewListEntry(i, treeIter, true);
 				if(!m_liststoreLines.IterNext(ref treeIter))
 					break; // error: the two list didn't have the same number of elements
 			}
@@ -1140,17 +1145,7 @@ finish_regex:;
 
 
 				m_treeviewSelectionLines.UnselectAll();
-				TreeIter treeIter = new TreeIter();
-				if(m_liststoreLines.GetIterFirst(out treeIter)) {
-					m_treeviewSelectionLines.SelectIter(treeIter); // select first entry
 
-					// update all entries so activation of line gets properly displayed
-					int index = 0;
-					do {
-						UpdatePreviewListEntry(index, treeIter);
-						index++;
-					} while(m_liststoreLines.IterNext(ref treeIter));
-				}
 
 
 				m_previewWindow.ShowAll ();
@@ -1370,6 +1365,17 @@ finish_regex:;
 			m_liststoreLines.Clear ();
 			foreach (UtilsSubtitle.EntryInformation entryInfo in m_allEntryInfomation)
 				m_liststoreLines.AppendValues (entryInfo.targetLanguageString, entryInfo.nativeLanguageString);
+
+			// update all entries so activation of line gets properly displayed
+			TreeIter treeIter = new TreeIter ();
+			if (m_liststoreLines.GetIterFirst (out treeIter)) {
+				int index = 0;
+				do {
+					UpdatePreviewListEntry (index, treeIter);
+					index++;
+				} while(m_liststoreLines.IterNext (ref treeIter));
+				m_treeviewSelectionLines.SelectIter (treeIter); // select first entry
+			}
 		}
 
 
