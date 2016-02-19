@@ -1078,11 +1078,19 @@ namespace subs2srs4linux
 				ShowAllSelectedEntryInformations();
 
 
-				// select first entry
 				m_treeviewSelectionLines.UnselectAll();
-				TreeIter firstTreeIter = new TreeIter();
-				m_liststoreLines.GetIterFirst(out firstTreeIter);
-				m_treeviewSelectionLines.SelectIter(firstTreeIter);
+				TreeIter treeIter = new TreeIter();
+				if(m_liststoreLines.GetIterFirst(out treeIter)) {
+					m_treeviewSelectionLines.SelectIter(treeIter); // select first entry
+
+					// update all entries so activation of line gets properly displayed
+					int index = 0;
+					do {
+						UpdatePreviewListEntry(index, treeIter);
+						index++;
+					} while(m_liststoreLines.IterNext(ref treeIter));
+				}
+
 
 				m_previewWindow.ShowAll ();
 			});
@@ -1572,4 +1580,3 @@ namespace subs2srs4linux
 		}
 	}
 }
-
