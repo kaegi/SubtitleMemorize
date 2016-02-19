@@ -83,13 +83,13 @@ namespace subs2srs4linux
 			// This queue will process all these slices that have some elements in them.
 			while(queue.Count > 0) {
 				RemainingSlice slice = queue.Dequeue();
-				if(slice.listToChangeLines.Count == 0 || slice.referenceListLines.Count == 0) {
-					// TODO: these shouldn't just be moved out of the way but left in another slice
-					// this is more debug code than anything else
-					UtilsSubtitle.ShiftByTime(slice.listToChangeLines, 10000);
-					UtilsSubtitle.ShiftByTime(slice.referenceListLines, 10000);
-					continue;
-				}
+				//if(slice.listToChangeLines.Count == 0 || slice.referenceListLines.Count == 0) {
+				//	// T O D O: these shouldn't just be moved out of the way but left in another slice
+				//	// this is more debug code than anything else
+				//	UtilsSubtitle.ShiftByTime(slice.listToChangeLines, 10000);
+				//	UtilsSubtitle.ShiftByTime(slice.referenceListLines, 10000);
+				//	continue;
+				//}
 
 				double bestOffset = FindBestOffset(slice);
 				ApplyOffset(slice, bestOffset, queue);
@@ -272,12 +272,12 @@ namespace subs2srs4linux
 
 			// left slice
 			newSlice = GetSubSlice(biMatchedLinesList, 0, bestRowStart);
-			UtilsSubtitle.ShiftByTime(newSlice.listToChangeLines, -offset);
+			//UtilsSubtitle.ShiftByTime(newSlice.listToChangeLines, -offset); // by disabling this code, remaining slices are now embedded in greater slices
 			queue.Enqueue(newSlice);
 
 			// right slice
 			newSlice = GetSubSlice(biMatchedLinesList, bestRowStart + maxNumGoodMatched + 1, biMatchedLinesList.Count);
-			UtilsSubtitle.ShiftByTime(newSlice.listToChangeLines, -offset);
+			//UtilsSubtitle.ShiftByTime(newSlice.listToChangeLines, -offset);
 			queue.Enqueue(newSlice);
 		}
 
