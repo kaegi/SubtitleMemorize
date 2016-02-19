@@ -24,7 +24,7 @@ namespace subs2srs4linux
 {
 	public class StreamInfo
 	{
-		
+
 		public class StreamType {
 
 			public static readonly StreamType ST_SUBTITLE = new StreamType (0, "subtitle");
@@ -32,11 +32,9 @@ namespace subs2srs4linux
 			public static readonly StreamType ST_VIDEO = new StreamType (2, "video");
 			public static readonly StreamType ST_UNKNOWN = new StreamType (3, "unknown"); // others streams like fonts
 
-			private readonly int index;
 			private readonly String plainString;
 
 			private StreamType(int index, String plainString) {
-				this.index = index;
 				this.plainString = plainString;
 			}
 
@@ -48,7 +46,7 @@ namespace subs2srs4linux
 				return plainString;
 			}
 		}
-		
+
 		private StreamType m_streamType;
 		private String m_language;
 		private int m_streamIndex;

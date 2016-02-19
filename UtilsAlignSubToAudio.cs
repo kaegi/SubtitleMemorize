@@ -19,10 +19,12 @@ using System.Collections.Generic;
 
 namespace subs2srs4linux {
 	class UtilsAlignSubToAudio {
+#pragma warning disable 0414, 0169
 		private static double m_stepSize = 0.5;
 		private List<UtilsSubtitle.LineContainer<LineInfo>> m_lineContainers;
 		private StreamInfo m_audioStreamInfo;
 		private UtilsInputFiles.FileDesc m_audioFileDesc;
+#pragma warning restore 0414, 0169
 
 		public UtilsAlignSubToAudio(List<LineInfo> lines, UtilsInputFiles.FileDesc audioFile) {
 			// TODO: m_lineContainers = UtilsSubtitle.GetNonOverlappingTimeSpans<LineInfo>(lines);
