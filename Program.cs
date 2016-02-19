@@ -813,17 +813,77 @@ namespace subs2srs4linux
 			expr.EvaluateFunction += delegate(string name, FunctionArgs args) {
 				switch(name) {
 					// an exmple for this function is "contains(sub1, 'some text')" that selects all lines, where sub1 contains 'some text'
+					case "c":
 					case "contains": {
 						 // two string parameters are expected
-						 if(args.Parameters.Length != 2) return;
+						 if(args.Parameters.Length < 1) return;
 						 object[] arguments = args.EvaluateParameters();
-						 if(!(arguments[0] is String && arguments[1] is String)) return;
+						 foreach(var argument in arguments)
+							 if(!(argument is String)) return;
 
-						 // evaluate function
-						 String string0 = (String)arguments[0];
-						 String string1 = (String)arguments[1];
-						 args.Result = string0.Contains(string1);
+						 String substring = (String)arguments[arguments.Length - 1];
 						 args.HasResult = true;
+						 args.Result = false;
+
+						 bool result = false;
+						 if(arguments.Length == 1) {
+							 result = infoSource_Entry.nativeLanguageString.Contains(substring);
+							 if(result) { args.Result = result; goto contains_finished; }
+
+							 result = infoSource_Entry.targetLanguageString.Contains(substring);
+							 if(result) { args.Result = result; goto contains_finished; }
+						 } else {
+							 // evaluate function
+							 for(int i = 0; i < arguments.Length - 1; i++) {
+								 String string0 = (String)arguments[i];
+								 result = string0.Contains(substring);
+								 if(result) { args.Result = result; goto contains_finished; }
+							 }
+						 }
+
+contains_finished:;
+
+					} break;
+
+					// search for regex; for example: "r(text1, 'hi|hello')"
+					// 'r('hi|hello')' searches both in sub1 and sub2
+					case "r":
+					case "regex": {
+						 // two string parameters are expected
+						 if(args.Parameters.Length < 1) return;
+						 object[] arguments = args.EvaluateParameters();
+						 foreach(var argument in arguments)
+							 if(!(argument is String)) return;
+
+						 String regex = (String)arguments[arguments.Length - 1];
+						 args.HasResult = true;
+						 args.Result = false;
+
+						 if(arguments.Length == 1) {
+							 try {
+								 var match = Regex.Match(infoSource_Entry.nativeLanguageString, regex, RegexOptions.Compiled | RegexOptions.IgnoreCase);
+								 args.Result = match.Success;
+								 if(match.Success) goto finish_regex;
+							 } catch { }
+
+							 try {
+								 var match = Regex.Match(infoSource_Entry.targetLanguageString, regex, RegexOptions.Compiled | RegexOptions.IgnoreCase);
+								 args.Result = match.Success;
+								 if(match.Success) goto finish_regex;
+							 } catch { }
+						 } else if(arguments.Length > 1) {
+							 // try to match any text before regex argument
+							 for(int i = 0; i < arguments.Length - 1; i++) {
+								 try {
+									 String str = (String)arguments[0];
+									 var match = Regex.Match(str, regex, RegexOptions.Compiled | RegexOptions.IgnoreCase);
+									 args.Result = match.Success;
+									 if(match.Success) goto finish_regex;
+								 } catch { }
+							 }
+						 }
+
+finish_regex:;
 
 					} break;
 
@@ -839,6 +899,7 @@ namespace subs2srs4linux
 					} break;
 				}
 			};
+
 
 			// go through whole list and evaluate the expression for every entry
 			TreeIter treeIter;
