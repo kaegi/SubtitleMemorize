@@ -35,6 +35,11 @@ namespace subs2srs4linux
 				line.text = line.text.Replace ("\n", " ");
 				line.text = line.text.Replace ("\t", " ");
 				line.text = line.text.Trim();
+				if(line.endTime < line.startTime) {
+					var tmp = line.endTime;
+					line.endTime = line.startTime;
+					line.startTime = tmp;
+				}
 			}
 
 			lines.RemoveAll (item => item.text == "");
