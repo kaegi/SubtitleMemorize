@@ -152,7 +152,7 @@
               <object class="GtkToolButton" id="toolbutton_merge">
                 <property name="visible">True</property>
                 <property name="can_focus">False</property>
-                <property name="label" translatable="yes">Merge</property>
+                <property name="label" translatable="yes">Merge next</property>
                 <property name="use_underline">True</property>
                 <property name="stock_id">gtk-edit</property>
               </object>

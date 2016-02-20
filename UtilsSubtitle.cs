@@ -245,6 +245,28 @@ restartLoop:
 			}
 
 			/// <summary>
+			/// Unifies two EntryInformation into one (merging). The two EntryInformation have to be compatible
+			/// which can be checked with IsMergePossbile().
+			/// </summary>
+			public EntryInformation(EntryInformation first, EntryInformation second, String separatorString=" ") {
+				this.targetLanguageString = first.targetLanguageString + separatorString + second.targetLanguageString;
+				this.nativeLanguageString = first.nativeLanguageString + separatorString + second.nativeLanguageString;
+				this.episodeInfo = first.episodeInfo;
+				this.startTimestamp = Math.Min(first.startTimestamp, second.startTimestamp);
+				this.endTimestamp = Math.Max(first.endTimestamp, second.endTimestamp);
+				this.isActive = first.isActive || second.isActive;
+			}
+
+			/// <summary>
+			/// Checks whether two EntryInformation instances can be merged. (If they
+			/// are not in the same episode, in which episode is the new EntryInformation?)
+			/// </summary>
+			public static bool IsMergePossbile(EntryInformation a, EntryInformation b) {
+				if(a.episodeInfo != b.episodeInfo) return false;
+				return true;
+			}
+
+			/// <summary>
 			/// Returns some string that identifies this entry information.
 			/// </summary>
 			/// <returns>The key.</returns>
