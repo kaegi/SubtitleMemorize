@@ -33,8 +33,11 @@ namespace subs2srs4linux
 
 		}
 
-		// TODO: Rename
-		public static string CallExeAndGetStdout(string exePath, string args, bool stdout=true) {
+		/// <summary>
+		/// Calls a executable file by path by usings C# "Process" class. All errors of executable
+		/// will be ignored (the function just returns "null" in this case).
+		/// </summary>
+		private static string CallExeAndGetOutput(string exePath, string args, bool stderrInsteadOfStdout=false) {
 			Process process = new Process();
 
 			try {
@@ -46,15 +49,13 @@ namespace subs2srs4linux
 				process.StartInfo.RedirectStandardError = true;
 				process.Start();
 
-				if(stdout)
-					return process.StandardOutput.ReadToEnd();
-				else
-					return process.StandardError.ReadToEnd();
+				if(stderrInsteadOfStdout) return process.StandardError.ReadToEnd();
+				else return process.StandardOutput.ReadToEnd();
 			} catch {
 				try {
 					process.Kill();
 				} catch(Exception) {
-					// can't do anything anymore -> just ignore it
+					// can't do anything about it at this point -> just ignore it
 				}
 			}
 
@@ -64,7 +65,9 @@ namespace subs2srs4linux
 		/// <summary>
 		/// Filler function (possible future use). Try to find path by executable name.
 		/// This includes relative paths and absolute/system directory paths.
-		/// 
+		///
+		/// TODO: search for executables by name in /usr/bin/... and other directories
+		///
 		/// This function does nothing else besides returning the initial "exeName" because
 		/// calling a process by name already searches the system directories ("/usr/bin/", ...).
 		/// </summary>
@@ -74,9 +77,12 @@ namespace subs2srs4linux
 			return exeName;
 		}
 
-		public static string StartProcessGetStdout(String exeName, String args) {
+		/// <summary>
+		/// Finds the executable file by name and then executes it.
+		/// </summary>
+		public static string StartProcessAndGetOutput(String exeName, String args, bool stderrInsteadOfStdout=false) {
 			String exePath = FindExePath (exeName);
-			return CallExeAndGetStdout (exePath, args);
+			return CallExeAndGetOutput (exePath, args, stderrInsteadOfStdout);
 		}
 
 
@@ -361,4 +367,3 @@ namespace subs2srs4linux
 		}
 	}
 }
-

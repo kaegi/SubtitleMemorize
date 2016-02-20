@@ -92,7 +92,7 @@ namespace subs2srs4linux
 		public static List<StreamInfo> ReadAllStreams(String filename) {
 
 			// use ffprobe/avprobe(?) to get nice XML-description of contents
-			String stdout = UtilsCommon.CallExeAndGetStdout (InstanceSettings.systemSettings.formatProberCommand, @"-v quiet -print_format xml -show_streams """ + filename + @"""");
+			String stdout = UtilsCommon.StartProcessAndGetOutput(InstanceSettings.systemSettings.formatProberCommand, @"-v quiet -print_format xml -show_streams """ + filename + @"""");
 
 			List<StreamInfo> allStreamInfos = new List<StreamInfo> ();
 			StreamInfo lastStreamInfo = null;
@@ -140,4 +140,3 @@ namespace subs2srs4linux
 		}
 	}
 }
-

@@ -24,9 +24,9 @@ namespace subs2srs4linux
 	public static class UtilsVideo
 	{
 		public static bool ExtractStream(String videoFilePath, StreamInfo streamInfo, String newSubtitleFilePath) {
-			
+
 			String argumentString = String.Format ("-y -v quiet -i \"{0}\" -map 0:{1} \"{2}\"", videoFilePath, streamInfo.StreamIndex, newSubtitleFilePath);
-			UtilsCommon.CallExeAndGetStdout ("ffmpeg", argumentString);
+			UtilsCommon.StartProcessAndGetOutput("ffmpeg", argumentString);
 			return true; // TODO: exception instead of return value
 		}
 
@@ -81,4 +81,3 @@ namespace subs2srs4linux
 		}
 	}
 }
-

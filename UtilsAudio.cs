@@ -31,7 +31,7 @@ namespace subs2srs4linux
 					audioFile,
 					audioStreamInfo.StreamIndex);
 
-			String stderr = UtilsCommon.CallExeAndGetStdout(InstanceSettings.systemSettings.formatConvertCommand, arguments, false);
+			String stderr = UtilsCommon.StartProcessAndGetOutput(InstanceSettings.systemSettings.formatConvertCommand, arguments, true);
 			String[] lines = stderr.Split('\n');
 			for(int i = lines.Length - 1; i >= 0; i--) {
 				String line = lines[i];

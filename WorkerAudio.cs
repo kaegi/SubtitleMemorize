@@ -53,10 +53,9 @@ namespace subs2srs4linux
 					outputAudioFilepath // output file
 				);
 				Console.WriteLine ("ffmpeg " + arguments);
-				UtilsCommon.CallExeAndGetStdout (InstanceSettings.systemSettings.formatConvertCommand, arguments);
+				UtilsCommon.StartProcessAndGetOutput(InstanceSettings.systemSettings.formatConvertCommand, arguments);
 			}
 			return audioFieldValues;
 		}
 	}
 }
-

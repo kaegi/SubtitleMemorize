@@ -568,7 +568,6 @@ namespace subs2srs4linux
 				m_entryNativeLanguage.Text = AddFilesToEntry(m_entryNativeLanguage.Text, filenames, "Error in native language file entry field: ");
 			};
 
-
 			// ----------------------------------------------------------------------------------------------------
 			m_buttonVideoFileChoose.Clicked += delegate(object o, EventArgs e) {
 				// Open file dialog
@@ -730,7 +729,7 @@ namespace subs2srs4linux
 
 
 				Thread thr = new Thread (new ThreadStart (delegate() {
-					UtilsCommon.CallExeAndGetStdout("mpv", arguments);
+					UtilsCommon.StartProcessAndGetOutput("mpv", arguments);
 				}));
 				thr.Start ();
 			};
