@@ -640,13 +640,18 @@ namespace subs2srs4linux
 		/// Changes names of Search&Replace Buttons to "Select", "Deselect", ... dependent on
 		/// Shift and Ctrl.
 		/// </summary>
-		private void UpdatePreviewButtonNames() {
+		private void UpdatePreviewWidgetLabels() {
 			if(m_previewWindow_isShiftPressed) {
 				if(m_previewWindow_isControlPressed) m_buttonSelectLinesBySearch.Label = "Deselect (inc)";
 				else m_buttonSelectLinesBySearch.Label = "Select (inc)";
 			} else {
 				if(m_previewWindow_isControlPressed) m_buttonSelectLinesBySearch.Label = "Deselect ";
 				else m_buttonSelectLinesBySearch.Label = "Select";
+			}
+			if(m_previewWindow_isControlPressed) {
+				m_toolbuttonMerge.Label = "Merge prev.";
+			} else {
+				m_toolbuttonMerge.Label = "Merge next";
 			}
 		}
 
@@ -705,7 +710,7 @@ namespace subs2srs4linux
 					m_previewWindow_isShiftPressed = true;
 				if(args.Event.KeyValue == Gdk.Keyval.FromName("Control_R") || args.Event.KeyValue == Gdk.Keyval.FromName("Control_L"))
 					m_previewWindow_isControlPressed = true;
-				UpdatePreviewButtonNames();
+				UpdatePreviewWidgetLabels();
 			};
 
 			m_previewWindow.KeyReleaseEvent += delegate(object o, KeyReleaseEventArgs args) {
@@ -713,7 +718,7 @@ namespace subs2srs4linux
 					m_previewWindow_isShiftPressed = false;
 				if(args.Event.KeyValue == Gdk.Keyval.FromName("Control_R") || args.Event.KeyValue == Gdk.Keyval.FromName("Control_L"))
 					m_previewWindow_isControlPressed = false;
-				UpdatePreviewButtonNames();
+				UpdatePreviewWidgetLabels();
 			};
 
 			m_buttonSelectLinesBySearch.Clicked += delegate(object sender, EventArgs e) {
@@ -780,7 +785,7 @@ namespace subs2srs4linux
 				List<int> selectedIndices = new List<int>(selectedTreePaths.Length);
 				foreach(var treePath in selectedTreePaths) { selectedIndices.Add(treePath.Indices[0]); }
 
-				MergeLines(selectedIndices, MergeMode.Next);
+				MergeLines(selectedIndices, m_previewWindow_isControlPressed ? MergeMode.Prev : MergeMode.Next);
 			};
 		}
 
@@ -802,6 +807,14 @@ namespace subs2srs4linux
 
 			// sort so consecutive indices can be recognized
 			selectedIndices.Sort();
+
+			// "merge prev" is like "merge next" for previous entry
+			if(mergeMode == MergeMode.Prev) {
+				for(int i = 0; i < selectedIndices.Count; i++) selectedIndices[i] -= 1;
+			}
+
+			// remove illegal indices
+			selectedIndices.RemoveAll(delegate(int i) { return i < 0 || i >= m_allEntryInfomation.Count; });
 
 			// go through whole list and unify selected
 			int inSelectedIndicesListIndex = 0;
