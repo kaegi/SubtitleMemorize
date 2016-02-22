@@ -819,6 +819,9 @@ namespace subs2srs4linux
 				int thisIndex = selectedIndices[inSelectedIndicesListIndex] - numDeletedRows;
 				var thisEntryInfo = m_allEntryInfomation[thisIndex];
 
+				// can't merge next if this entry is last
+				if(thisIndex == m_allEntryInfomation.Count - 1) break;
+
 				int nextIndex = selectedIndices[inSelectedIndicesListIndex] - numDeletedRows + 1;
 				var nextEntryInfo = m_allEntryInfomation[nextIndex];
 
