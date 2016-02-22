@@ -780,49 +780,68 @@ namespace subs2srs4linux
 				List<int> selectedIndices = new List<int>(selectedTreePaths.Length);
 				foreach(var treePath in selectedTreePaths) { selectedIndices.Add(treePath.Indices[0]); }
 
-				// sort so consecutive indices can be recognized
-				selectedIndices.Sort();
+				MergeLines(selectedIndices, MergeMode.Next);
+			};
+		}
 
-				// go through whole list and unify selected
-				int inSelectedIndicesListIndex = 0;
-				int numDeletedRows = 0; // every time a entry information is deleted, all the following indices will decrease
-				TreeIter treeIter;
-				if(!m_liststoreLines.GetIterFirst(out treeIter)) return;
-				for(int currentListIndex = 0; currentListIndex <= selectedIndices[selectedIndices.Count - 1]; currentListIndex++) {
-					// skip if line was not selected for merging
-					if(currentListIndex < selectedIndices[inSelectedIndicesListIndex]) {
-						m_liststoreLines.IterNext(ref treeIter);
-						continue;
-					}
+		/// <summary>
+		/// There are three different modes for merging. Every selected line...
+		///		...will be merged with next line
+		///		...will be merged with previous line
+		///		...will be merged with all other selected lines
+		/// </summary>
+		private enum MergeMode {
+			Selected,
+			Next,
+			Prev,
+		}
 
-					// get references and indices to current EntryInformation and next EntryInformation
-					int thisIndex = selectedIndices[inSelectedIndicesListIndex] - numDeletedRows;
-					var thisEntryInfo = m_allEntryInfomation[thisIndex];
+		private void MergeLines(List<int> selectedIndices, MergeMode mergeMode) {
+			// can't merge zero objects
+			if(selectedIndices.Count < 1) return;
 
-					int nextIndex = selectedIndices[inSelectedIndicesListIndex] - numDeletedRows + 1;
-					var nextEntryInfo = m_allEntryInfomation[nextIndex];
+			// sort so consecutive indices can be recognized
+			selectedIndices.Sort();
 
-					inSelectedIndicesListIndex++;
-
-					// only merge if merging is possible
-					if(!UtilsSubtitle.EntryInformation.IsMergePossbile(thisEntryInfo, nextEntryInfo)) continue;
-					nextEntryInfo = new UtilsSubtitle.EntryInformation(thisEntryInfo, nextEntryInfo);
-
-					// "next entry" now contains both entries -> save this change
-					m_allEntryInfomation[nextIndex] = nextEntryInfo;
-
-					// remove entry that was unified into next
-					m_allEntryInfomation.RemoveAt(thisIndex);
-					m_liststoreLines.Remove(ref treeIter); // this also moves treeIter to the next row
-					numDeletedRows++;
-
-					// update new entry which is now at index "thisIndex"
-					UpdatePreviewListEntry(thisIndex, treeIter);
+			// go through whole list and unify selected
+			int inSelectedIndicesListIndex = 0;
+			int numDeletedRows = 0; // every time a entry information is deleted, all the following indices will decrease
+			TreeIter treeIter;
+			if(!m_liststoreLines.GetIterFirst(out treeIter)) return;
+			for(int currentListIndex = 0; currentListIndex <= selectedIndices[selectedIndices.Count - 1]; currentListIndex++) {
+				// skip if line was not selected for merging
+				if(currentListIndex < selectedIndices[inSelectedIndicesListIndex]) {
+					m_liststoreLines.IterNext(ref treeIter);
+					continue;
 				}
 
-				// update entry selection
-				SelectEntry();
-			};
+				// get references and indices to current EntryInformation and next EntryInformation
+				int thisIndex = selectedIndices[inSelectedIndicesListIndex] - numDeletedRows;
+				var thisEntryInfo = m_allEntryInfomation[thisIndex];
+
+				int nextIndex = selectedIndices[inSelectedIndicesListIndex] - numDeletedRows + 1;
+				var nextEntryInfo = m_allEntryInfomation[nextIndex];
+
+				inSelectedIndicesListIndex++;
+
+				// only merge if merging is possible
+				if(!UtilsSubtitle.EntryInformation.IsMergePossbile(thisEntryInfo, nextEntryInfo)) continue;
+				nextEntryInfo = new UtilsSubtitle.EntryInformation(thisEntryInfo, nextEntryInfo);
+
+				// "next entry" now contains both entries -> save this change
+				m_allEntryInfomation[nextIndex] = nextEntryInfo;
+
+				// remove entry that was unified into next
+				m_allEntryInfomation.RemoveAt(thisIndex);
+				m_liststoreLines.Remove(ref treeIter); // this also moves treeIter to the next row
+				numDeletedRows++;
+
+				// update new entry which is now at index "thisIndex"
+				UpdatePreviewListEntry(thisIndex, treeIter);
+			}
+
+			// update entry selection
+			SelectEntry();
 		}
 
 		/// <summary>
