@@ -844,6 +844,7 @@ namespace subs2srs4linux
 			}
 
 			// update entry selection
+			m_selectedPreviewIndex = -1;
 			SelectEntry();
 		}
 
