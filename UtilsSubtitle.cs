@@ -55,6 +55,61 @@ namespace subs2srs4linux
 			}
 		}
 
+		/// <summary>
+		/// Creates an entry information for every BiMatchedLine object.
+		/// </summary>
+		public static List<UtilsSubtitle.EntryInformation> GetEntryInformation(Settings settings, EpisodeInfo episodeInfo, IEnumerable<SubtitleMatcher.BiMatchedLines> matchedLinesList) {
+			var returnList = new LinkedList<UtilsSubtitle.EntryInformation> ();
+
+			foreach (SubtitleMatcher.BiMatchedLines matchedLines in matchedLinesList) {
+
+				// ignore line when no counterpart was found
+				bool deactivated = false;
+				if (matchedLines.listlines [0].Count == 0 || matchedLines.listlines [1].Count == 0)
+					deactivated = true;
+
+				bool timestamspUninitialized = true;
+				double startTimestamp = 0;
+				double endTimestamp = 0;
+
+
+				Func<IEnumerable<LineInfo>, String> catenateString = delegate(IEnumerable<LineInfo> lineInfos) {
+					StringBuilder thisStringBuilder = new StringBuilder();
+					foreach(var thisLineInfo in lineInfos) {
+						thisStringBuilder.Append (thisLineInfo.text + "|");
+
+						// adjust timestamps to this line
+						if(timestamspUninitialized) {
+							// initialize timestamps
+							startTimestamp = thisLineInfo.StartTime;
+							endTimestamp = thisLineInfo.EndTime;
+							timestamspUninitialized = false;
+						} else {
+							startTimestamp = Math.Min(startTimestamp, thisLineInfo.StartTime);
+							endTimestamp = Math.Max(endTimestamp, thisLineInfo.EndTime);
+						}
+					}
+					return thisStringBuilder.ToString();
+				};
+
+				String sub1string = catenateString (matchedLines.listlines [0]);
+				String sub2string = catenateString (matchedLines.listlines [1]);
+
+				var entryInfo = new UtilsSubtitle.EntryInformation (sub1string, sub2string,
+																	episodeInfo,
+																	startTimestamp, endTimestamp,
+																	startTimestamp - settings.AudioPaddingBefore,
+																	endTimestamp + settings.AudioPaddingAfter);
+				entryInfo.isActive = !deactivated;
+				returnList.AddLast (entryInfo);
+			}
+
+
+			var retList = new List<UtilsSubtitle.EntryInformation>(returnList);
+			retList.Sort();
+			return retList;
+		}
+
 		private static List<LineInfo> ParseSubtitleInVideoFile(Settings settings, string filename, Dictionary<String, String> properties) {
 			StreamInfo subtitleStreamInfo = UtilsVideo.ChooseStreamInfo (filename, properties, StreamInfo.StreamType.ST_SUBTITLE);
 
@@ -234,18 +289,28 @@ restartLoop:
 			public EpisodeInfo episodeInfo;
 			public double startTimestamp;
 			public double endTimestamp;
+			public double audioStartTimestamp;
+			public double audioEndTimestamp;
 			public bool isActive;
 
 			public double Duration {
 				get { return UtilsCommon.GetTimeSpanLength(this); }
 			}
 
-			public EntryInformation(String targetLanguageString, String nativeLanguageString, EpisodeInfo episodeInfo, double startTimestamp, double endTimestamp) {
+			public EntryInformation(String targetLanguageString,
+									String nativeLanguageString,
+									EpisodeInfo episodeInfo,
+									double startTimestamp,
+									double endTimestamp,
+									double audioStartTimestamp,
+									double audioEndTimestamp) {
 				this.targetLanguageString = targetLanguageString;
 				this.nativeLanguageString = nativeLanguageString;
 				this.episodeInfo = episodeInfo;
 				this.startTimestamp = startTimestamp;
 				this.endTimestamp = endTimestamp;
+				this.audioStartTimestamp = audioStartTimestamp;
+				this.audioEndTimestamp = audioEndTimestamp;
 				this.isActive = true;
 			}
 

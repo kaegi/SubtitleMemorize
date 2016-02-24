@@ -33,6 +33,8 @@ namespace subs2srs4linux
 		////////////////// AUTO-GENERATED CODE BEGIN //////////////////////
 #pragma warning disable 0414 // private field assigned but not used
 		private Gtk.Action m_action1;
+		private Gtk.Adjustment m_adjustmentAudioPaddingAfter;
+		private Gtk.Adjustment m_adjustmentAudioPaddingBefore;
 		private Gtk.Adjustment m_adjustmentImageSizePercentage;
 		private Gtk.Adjustment m_episodeAdjustment;
 		private Gtk.Image m_image1;
@@ -171,6 +173,14 @@ namespace subs2srs4linux
 		private Gtk.CheckButton m_checkbuttonNormalizeAudio;
 		private Gtk.CheckButton m_checkbuttonDeactivateAudioClips;
 		private Gtk.Label m_label26;
+		private Gtk.Frame m_frame16;
+		private Gtk.Alignment m_alignment13;
+		private Gtk.Grid m_grid6;
+		private Gtk.Label m_label28;
+		private Gtk.Label m_label29;
+		private Gtk.SpinButton m_spinbuttonAudioPaddingBefore;
+		private Gtk.SpinButton m_spinbuttonAudioPaddingAfter;
+		private Gtk.Label m_label27;
 		private Gtk.Label m_label53;
 		private Gtk.Expander m_expanderImageOptions;
 		private Gtk.Box m_box17;
@@ -209,6 +219,8 @@ namespace subs2srs4linux
 
 		private void InitializeGtkObjects(Gtk.Builder b) {
 			m_action1 = (Gtk.Action) b.GetObject("action1");
+			m_adjustmentAudioPaddingAfter = (Gtk.Adjustment) b.GetObject("adjustment_audio_padding_after");
+			m_adjustmentAudioPaddingBefore = (Gtk.Adjustment) b.GetObject("adjustment_audio_padding_before");
 			m_adjustmentImageSizePercentage = (Gtk.Adjustment) b.GetObject("adjustment_image_size_percentage");
 			m_episodeAdjustment = (Gtk.Adjustment) b.GetObject("episode_adjustment");
 			m_image1 = (Gtk.Image) b.GetObject("image1");
@@ -347,6 +359,14 @@ namespace subs2srs4linux
 			m_checkbuttonNormalizeAudio = (Gtk.CheckButton) b.GetObject("checkbutton_normalize_audio");
 			m_checkbuttonDeactivateAudioClips = (Gtk.CheckButton) b.GetObject("checkbutton_deactivate_audio_clips");
 			m_label26 = (Gtk.Label) b.GetObject("label26");
+			m_frame16 = (Gtk.Frame) b.GetObject("frame16");
+			m_alignment13 = (Gtk.Alignment) b.GetObject("alignment13");
+			m_grid6 = (Gtk.Grid) b.GetObject("grid6");
+			m_label28 = (Gtk.Label) b.GetObject("label28");
+			m_label29 = (Gtk.Label) b.GetObject("label29");
+			m_spinbuttonAudioPaddingBefore = (Gtk.SpinButton) b.GetObject("spinbutton_audio_padding_before");
+			m_spinbuttonAudioPaddingAfter = (Gtk.SpinButton) b.GetObject("spinbutton_audio_padding_after");
+			m_label27 = (Gtk.Label) b.GetObject("label27");
 			m_label53 = (Gtk.Label) b.GetObject("label53");
 			m_expanderImageOptions = (Gtk.Expander) b.GetObject("expander_image_options");
 			m_box17 = (Gtk.Box) b.GetObject("box17");
@@ -730,7 +750,10 @@ namespace subs2srs4linux
 
 				UtilsSubtitle.EntryInformation entryInfo = m_allEntryInfomation[m_selectedPreviewIndex];
 				EpisodeInfo episodeInfo = m_episodeInfo[entryInfo.episodeInfo.Index];
-				String arguments = String.Format("--really-quiet --no-video --start={0} --end={1} \"{2}\"", UtilsCommon.ToTimeArg(entryInfo.startTimestamp), UtilsCommon.ToTimeArg(entryInfo.endTimestamp), episodeInfo.VideoFileDesc.filename);
+				String arguments = String.Format("--really-quiet --no-video --start={0} --end={1} \"{2}\"",
+						UtilsCommon.ToTimeArg(entryInfo.audioStartTimestamp),
+						UtilsCommon.ToTimeArg(entryInfo.audioEndTimestamp),
+						episodeInfo.VideoFileDesc.filename);
 
 
 				Thread thr = new Thread (new ThreadStart (delegate() {
@@ -1263,7 +1286,7 @@ finish_regex:;
 
 				var subtitleMatcherParameters = SubtitleMatcher.GetParameterCache (list1, list2);
 				var matchedLinesList = SubtitleMatcher.MatchSubtitles(subtitleMatcherParameters);
-				var thisEpisodeEntryInfos = SubtitleMatcher.GetEntryInformation(settings.IgnoreSingleSubLines, episodeInfos[episodeIndex], matchedLinesList);
+				var thisEpisodeEntryInfos = UtilsSubtitle.GetEntryInformation(settings, episodeInfos[episodeIndex], matchedLinesList);
 				allEntryInformations.AddRange(thisEpisodeEntryInfos);
 
 				progressInfo.ProcessedSteps (1);
@@ -1550,6 +1573,9 @@ finish_regex:;
 			setEntryPath (m_entryNativeLanguage, settings.NativeFilePath);
 			setEntryPath (m_entryVideoFile, settings.VideoFilePath);
 
+			m_adjustmentAudioPaddingBefore.Value = (int)(settings.AudioPaddingBefore * 1000);
+			m_adjustmentAudioPaddingAfter.Value = (int)(settings.AudioPaddingAfter * 1000);
+
 			m_spinbuttonSub1TimeShift.Text = ((int)(settings.PerSubtitleSettings [0].SubDelay * 1000)).ToString();
 			m_comboboxtextCorrectTimingsModeSub1.Active = (int)settings.PerSubtitleSettings [0].AlignMode;
 			m_checkbuttonUseSub1Timings.Active = settings.PerSubtitleSettings [0].UseTimingsOfThisSub;
@@ -1579,6 +1605,9 @@ finish_regex:;
 			int firstEpisodeNumber = 1;
 			Int32.TryParse (m_spinbuttonEpisodeNumber.Text, out firstEpisodeNumber);
 			settings.FirstEpisodeNumber = firstEpisodeNumber;
+
+			settings.AudioPaddingBefore = m_adjustmentAudioPaddingBefore.Value / 1000.0;
+			settings.AudioPaddingAfter = m_adjustmentAudioPaddingAfter.Value / 1000.0;
 
 			settings.PerSubtitleSettings[0].AlignMode = (PerSubtitleSettings.AlignModes) m_comboboxtextCorrectTimingsModeSub1.Active;
 			settings.PerSubtitleSettings[0].UseTimingsOfThisSub = m_checkbuttonUseSub1Timings.Active;

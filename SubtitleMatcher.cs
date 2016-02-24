@@ -367,55 +367,6 @@ namespace subs2srs4linux
 
 			return returnList;
 		}
-
-
-		public static List<UtilsSubtitle.EntryInformation> GetEntryInformation(Boolean ignoreSingleSubLines, EpisodeInfo episodeInfo, IEnumerable<BiMatchedLines> matchedLinesList) {
-			var returnList = new LinkedList<UtilsSubtitle.EntryInformation> ();
-
-			foreach (SubtitleMatcher.BiMatchedLines matchedLines in matchedLinesList) {
-
-				// ignore line when no counterpart was found
-				bool deactivated = false;
-				if (matchedLines.listlines [0].Count == 0 || matchedLines.listlines [1].Count == 0)
-					deactivated = true;
-
-				bool timestamspUninitialized = true;
-				double startTimestamp = 0;
-				double endTimestamp = 0;
-
-
-				Func<IEnumerable<LineInfo>, String> catenateString = delegate(IEnumerable<LineInfo> lineInfos) {
-					StringBuilder thisStringBuilder = new StringBuilder();
-					foreach(var thisLineInfo in lineInfos) {
-						thisStringBuilder.Append (thisLineInfo.text + "|");
-
-						// adjust timestamps to this line
-						if(timestamspUninitialized) {
-							// initialize timestamps
-							startTimestamp = thisLineInfo.StartTime;
-							endTimestamp = thisLineInfo.EndTime;
-							timestamspUninitialized = false;
-						} else {
-							startTimestamp = Math.Min(startTimestamp, thisLineInfo.StartTime);
-							endTimestamp = Math.Max(endTimestamp, thisLineInfo.EndTime);
-						}
-					}
-					return thisStringBuilder.ToString();
-				};
-
-				String sub1string = catenateString (matchedLines.listlines [0]);
-				String sub2string = catenateString (matchedLines.listlines [1]);
-
-				var entryInfo = new UtilsSubtitle.EntryInformation (sub1string, sub2string, episodeInfo, startTimestamp, endTimestamp);
-				entryInfo.isActive = !deactivated;
-				returnList.AddLast (entryInfo);
-			}
-
-
-			var retList = new List<UtilsSubtitle.EntryInformation>(returnList);
-			retList.Sort();
-			return retList;
-		}
 	}
 }
 

@@ -101,6 +101,20 @@ namespace subs2srs4linux
 		private int m_imageMaxWidth = 800;
 		private int m_imageMaxHeight = 600;
 
+		private double m_audioPaddingBefore = 0;
+		private double m_audioPaddingAfter = 0;
+
+
+		public double AudioPaddingBefore {
+			get { return m_audioPaddingBefore;  }
+			set { m_audioPaddingBefore = value; }
+		}
+
+		public double AudioPaddingAfter {
+			get { return m_audioPaddingAfter;  }
+			set { m_audioPaddingAfter = value; }
+		}
+
 		public int ImageMaxHeight {
 			get { return m_imageMaxHeight;  }
 			set { m_imageMaxHeight = value; }
