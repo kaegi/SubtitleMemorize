@@ -802,9 +802,6 @@ namespace subs2srs4linux
 		}
 
 		private void MergeLines(List<int> selectedIndices, MergeMode mergeMode) {
-			// can't merge zero objects
-			if(selectedIndices.Count < 1) return;
-
 			// sort so consecutive indices can be recognized
 			selectedIndices.Sort();
 
@@ -815,6 +812,9 @@ namespace subs2srs4linux
 
 			// remove illegal indices
 			selectedIndices.RemoveAll(delegate(int i) { return i < 0 || i >= m_allEntryInfomation.Count; });
+
+			// can't merge zero objects
+			if(selectedIndices.Count < 1) return;
 
 			// go through whole list and unify selected
 			int inSelectedIndicesListIndex = 0;
