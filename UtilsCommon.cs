@@ -85,6 +85,18 @@ namespace subs2srs4linux
 			return CallExeAndGetOutput (exePath, args, stderrInsteadOfStdout);
 		}
 
+		/// <summary>
+		/// Find maximum scaling value so that image just fits into box. Giving a negative value will deactivate scaling in that
+		///	dimension (width or maxWidth less 0 means only height will be used).
+		/// </summary>
+		public static double GetMaxScaling(double width, double height, double maxWidth, double maxHeight, bool scale1atMax=true) {
+			double scaling1 = width >= 0 && maxWidth >= 0 ? maxWidth / width : 1000000.0;
+			double scaling2 = height >= 0 && maxHeight >= 0 ? maxHeight / height : 1000000.0;
+			double scaling = Math.Min(scaling1, scaling2);
+			if(scale1atMax) scaling = Math.Min(scaling, 1.0);
+			return scaling;
+		}
+
 
 		/// <summary>
 		/// The MIME mappings that are relevant for this project (video files and subtitles).
