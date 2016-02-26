@@ -47,10 +47,11 @@ namespace subs2srs4linux
 			}
 		}
 
-		private StreamType m_streamType;
-		private String m_language;
+		private StreamType m_streamType; // ST_SUBTITLE, ST_VIDEO, ...
+		private String m_language; // Japanese, English, ...
 		private int m_streamIndex;
-		private String m_streamName; // h264, ssa, ttf, etc
+		private String m_streamName; // h264, ssa, ttf, ...
+		private Dictionary<String, String> m_attributeDictionary;
 
 		public StreamType StreamTypeValue {
 			get { return m_streamType; }
@@ -69,11 +70,47 @@ namespace subs2srs4linux
 		}
 
 
-		private StreamInfo (int streamIndex, StreamType st, String streamName) {
+		private StreamInfo (int streamIndex, StreamType st, String streamName, Dictionary<String, String> attributeDictionary) {
 			m_streamIndex = streamIndex;
 			m_streamType = st;
 			m_language = null;
 			m_streamName = streamName;
+			m_attributeDictionary = attributeDictionary;
+		}
+
+
+		/// <summary>
+		/// ffmpeg generates a lot of information about streams as a key-value pair like
+		///
+		///		index:"7"
+		///		codec_type:"attachment"
+		///		...
+		///
+		/// This function returns the value for a key, or "null" if key was not found.
+		/// </summary>
+		public String GetAttribute(String name) {
+			String ret = null;
+			if(!m_attributeDictionary.TryGetValue(name, out ret)) return null;
+			return ret;
+		}
+
+		/// <summary>
+		/// See <see cref="GetAttribute"> for general information. This method finds the value
+		/// as string in dicionary and then tries to parse it as int. Returns "null" if key was
+		/// not found or there was an error while parsing.
+		/// </summary>
+		public Int32? GetAttributeInt(String name) {
+			String val = GetAttribute(name);
+			int ret = 0;
+			if(!Int32.TryParse(val, out ret)) return null;
+			return ret;
+		}
+
+		/// <summary>
+		/// Returns true if ffmpeg created attribute with key "name".
+		/// </summary>
+		public bool HasAttribute(String name) {
+			return m_attributeDictionary.ContainsKey(name);
 		}
 
 		/// <summary>
@@ -114,8 +151,14 @@ namespace subs2srs4linux
 						default: streamType = StreamType.ST_UNKNOWN; break;
 						}
 
+						// read all other information into dictionary
+						var attributeDictionary = new Dictionary<String, String>();
+						for(int i = 0; i < reader.AttributeCount; i++) {
+							reader.MoveToNextAttribute();
+							attributeDictionary.Add(reader.Name, reader.Value);
+						}
 
-						StreamInfo streamInfo = new StreamInfo (Int32.Parse(reader["index"]), streamType, reader["codec_name"]);
+						StreamInfo streamInfo = new StreamInfo (Int32.Parse(reader["index"]), streamType, reader["codec_name"], attributeDictionary);
 						allStreamInfos.Add (streamInfo);
 						lastStreamInfo = streamInfo;
 					}
