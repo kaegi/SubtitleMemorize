@@ -97,7 +97,7 @@ namespace subs2srs4linux
 			List<StreamInfo> allStreamInfos = new List<StreamInfo> ();
 			StreamInfo lastStreamInfo = null;
 
-			// use XmlReader to read all informations from "stream"-tags and "tag"-tags 
+			// use XmlReader to read all informations from "stream"-tags and "tag"-tags
 			using (XmlReader reader = XmlReader.Create(new StringReader (stdout))) {
 				while (reader.Read ()) {
 					if (reader.NodeType != XmlNodeType.Element)

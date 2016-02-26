@@ -50,7 +50,7 @@ namespace subs2srs4linux
 
 				// extract image
 				double timeStamp = UtilsCommon.GetMiddleTime (entryInformation);
-				UtilsImage.GetImage (videoFileDesc.filename, timeStamp, outputSnapshotFilepath);
+				UtilsImage.GetImage (videoFileDesc.filename, timeStamp, outputSnapshotFilepath, 1);
 			}
 			return snapshotFieldValues;
 		}

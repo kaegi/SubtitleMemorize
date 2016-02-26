@@ -417,12 +417,19 @@ Of course you can press Shift and Control at the same time which will deselect a
                             <property name="can_focus">False</property>
                             <property name="orientation">vertical</property>
                             <child>
-                              <object class="GtkImage" id="image_preview">
+                              <object class="GtkEventBox" id="eventbox_image_preview">
                                 <property name="visible">True</property>
                                 <property name="can_focus">False</property>
                                 <property name="vexpand">True</property>
-                                <property name="stock">gtk-missing-image</property>
-                                <property name="icon_size">0</property>
+                                <child>
+                                  <object class="GtkImage" id="image_preview">
+                                    <property name="visible">True</property>
+                                    <property name="can_focus">False</property>
+                                    <property name="vexpand">True</property>
+                                    <property name="stock">gtk-missing-image</property>
+                                    <property name="icon_size">0</property>
+                                  </object>
+                                </child>
                               </object>
                               <packing>
                                 <property name="expand">False</property>
@@ -450,7 +457,7 @@ Of course you can press Shift and Control at the same time which will deselect a
                           <object class="GtkLabel" id="label23">
                             <property name="visible">True</property>
                             <property name="can_focus">False</property>
-                            <property name="label" translatable="yes">Picture (click to enlarge)</property>
+                            <property name="label" translatable="yes">Picture (click to show real size)</property>
                           </object>
                         </child>
                       </object>

@@ -75,6 +75,7 @@ namespace subs2srs4linux
 		private Gtk.Box m_box7;
 		private Gtk.Frame m_frame12;
 		private Gtk.Box m_box11;
+		private Gtk.EventBox m_eventboxImagePreview;
 		private Gtk.Image m_imagePreview;
 		private Gtk.Button m_buttonPlayContent;
 		private Gtk.Label m_label23;
@@ -261,6 +262,7 @@ namespace subs2srs4linux
 			m_box7 = (Gtk.Box) b.GetObject("box7");
 			m_frame12 = (Gtk.Frame) b.GetObject("frame12");
 			m_box11 = (Gtk.Box) b.GetObject("box11");
+			m_eventboxImagePreview = (Gtk.EventBox) b.GetObject("eventbox_image_preview");
 			m_imagePreview = (Gtk.Image) b.GetObject("image_preview");
 			m_buttonPlayContent = (Gtk.Button) b.GetObject("button_play_content");
 			m_label23 = (Gtk.Label) b.GetObject("label23");
@@ -404,8 +406,8 @@ namespace subs2srs4linux
 			m_buttonCancelOperation = (Gtk.Button) b.GetObject("button_cancel_operation");
 		}
 #pragma warning restore 0414
-		////////////////// AUTO-GENERATED CODE END //////////////////////
 
+		////////////////// AUTO-GENERATED CODE END //////////////////////
 		private readonly Settings m_defaultSettings = new Settings();
 		private readonly Gtk.Builder m_builder = new Builder();
 		private int m_numberOfInfobarLabelMarkupChanges = 0;
@@ -809,6 +811,24 @@ namespace subs2srs4linux
 				foreach(var treePath in selectedTreePaths) { selectedIndices.Add(treePath.Indices[0]); }
 
 				MergeLines(selectedIndices, m_previewWindow_isControlPressed ? MergeMode.Prev : MergeMode.Next);
+			};
+
+			m_eventboxImagePreview.ButtonReleaseEvent += delegate(object o, ButtonReleaseEventArgs args) {
+				var imageWnd = new Gtk.Window("subs2srs4linux - Image preview");
+				var image = new Gtk.Image();
+
+				// do not select currently selected entry again
+				if (m_selectedPreviewIndex < 0 || m_selectedPreviewIndex >= m_allEntryInfomation.Count)
+					return;
+
+				// extract image in real size (size that will be exported)
+				UtilsSubtitle.EntryInformation entryInfo = m_allEntryInfomation [m_selectedPreviewIndex];
+				UtilsInputFiles.FileDesc videoFilename = m_episodeInfo[entryInfo.episodeInfo.Index].VideoFileDesc;
+				UtilsImage.GetImage(videoFilename.filename, UtilsCommon.GetMiddleTime(entryInfo), InstanceSettings.temporaryFilesPath + "subs2srs_real.jpg", 0.5);
+
+				image.Pixbuf = new Gdk.Pixbuf (InstanceSettings.temporaryFilesPath + "subs2srs_real.jpg");
+				imageWnd.Add(image);
+				imageWnd.ShowAll();
 			};
 		}
 
@@ -1460,12 +1480,13 @@ finish_regex:;
 			if (selectedIndex != m_selectedPreviewIndex)
 				return;
 
+			// TODO: get real scaling
 			UtilsInputFiles.FileDesc videoFilename = m_episodeInfo[entryInfo.episodeInfo.Index].VideoFileDesc;
-			UtilsImage.GetImage(videoFilename.filename, UtilsCommon.GetMiddleTime(entryInfo), "/tmp/subs2srs.jpg");
+			UtilsImage.GetImage(videoFilename.filename, UtilsCommon.GetMiddleTime(entryInfo), InstanceSettings.temporaryFilesPath + "subs2srs.jpg", 0.2);
 
 			Gtk.Application.Invoke (delegate {
 				if(selectedIndex == m_selectedPreviewIndex) // selection could have changed during the creation of the snapshot
-					m_imagePreview.Pixbuf = new Gdk.Pixbuf ("/tmp/subs2srs.jpg", 300, 300);
+					m_imagePreview.Pixbuf = new Gdk.Pixbuf (InstanceSettings.temporaryFilesPath + "subs2srs.jpg", 300, 300);
 			});
 		}
 
