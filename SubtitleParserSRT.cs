@@ -125,8 +125,8 @@ namespace subs2srs4linux
 		/// </summary>
 		private LineInfo createLineInfo (string lineText, string rawStartTime, string rawEndTime)
 		{
-			DateTime startTime = this.parseTime (rawStartTime);
-			DateTime endTime = this.parseTime (rawEndTime);
+			double startTime = this.parseTime (rawStartTime);
+			double endTime = this.parseTime (rawEndTime);
 
 			lineText = lineText.Replace ("\t", " ");
 			lineText = Regex.Replace (lineText, "</?[ibuIBU]>", "").Trim ();
@@ -140,7 +140,7 @@ namespace subs2srs4linux
 		/// <summary>
 		/// Parse a .srt formmated timestamp.
 		/// </summary>
-		private DateTime parseTime (string rawTime)
+		private double parseTime (string rawTime)
 		{
 			DateTime time = new DateTime ();
 
@@ -164,7 +164,7 @@ namespace subs2srs4linux
 				throw new Exception ("Invalid time format");
 			}
 
-			return time;
+			return time.TimeOfDay.TotalMilliseconds / 1000.0;
 		}
 
 	}

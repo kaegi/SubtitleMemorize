@@ -7,6 +7,11 @@
 *.sln.docstates
 *.userprefs
 
+#
+todo
+TODO
+Todo
+
 # Build results
 
 [Dd]ebug/

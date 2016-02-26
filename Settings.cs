@@ -1,4 +1,21 @@
-﻿using System;
+﻿// Copyright (C) 2016    Chang Spivey
+//
+// This program is free software; you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation; either version 3 of the License, or
+// (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with this program; if not, write to the Free Software Foundation,
+// Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301  USA
+//
+
+using System;
 using System.IO;
 using System.Runtime.Serialization.Formatters.Binary;
 
@@ -9,29 +26,57 @@ namespace subs2srs4linux
 	/// </summary>
 	public static class InstanceSettings {
 		public static String temporaryFilesPath = System.IO.Path.GetTempPath() + "subs2srs4linux/";
-	}
-	
-	public static class ConstantSettings { 
-		public const float overlappingThreshold_InterSub = 0.4f;
-		public const float overlappingThreshold_InSub = 0.01f;
 
-		public const String formatProberCommand = "ffprobe";
-		public const String formatConvertCommand = "ffmpeg";
+		public static SystemSettings systemSettings = new SystemSettings();
 	}
-	
+
+	/// <summary>
+	/// These values will be read from a xml file (through serialization) in the same path as the program.
+	/// </summary>
+	[Serializable]
+	public class SystemSettings {
+		public float overlappingThreshold_InterSub = 0.4f;
+		public float overlappingThreshold_InSub = 0.01f;
+
+		public String formatProberCommand = "ffprobe";
+		public String formatConvertCommand = "ffmpeg";
+
+		public String preLoadedSettings = null;
+
+		public double subToSubAlign_minGoodMatchingThreshold = 0.6;
+	}
+
 	[Serializable]
 	public class PerSubtitleSettings {
-		private int m_subDelay = 100; // in ms
+		/// for automatic subtitle timing correction
+		public enum AlignModes {
+			ByConstantValue,
+			ToSubtitle,
+			ToAudio,
+		}
 
-		public int SubDelay {
+		private AlignModes m_alignMode = AlignModes.ByConstantValue;
+		private bool m_useTmingsOfThisSub;
+		private double m_subDelay = 0; // in seconds
+
+		public bool UseTimingsOfThisSub {
+			get { return m_useTmingsOfThisSub; }
+			set { m_useTmingsOfThisSub = value; }
+		}
+		public double SubDelay {
 			get { return m_subDelay; }
 			set { m_subDelay = value; }
+		}
+
+		public AlignModes AlignMode {
+			get { return m_alignMode; }
+			set { m_alignMode = value; }
 		}
 
 		public PerSubtitleSettings() {
 		}
 	}
-	
+
 	[Serializable]
 	public class Settings
 	{
@@ -41,11 +86,59 @@ namespace subs2srs4linux
 		private string m_videoFilePath;
 
 		private string m_deckName;
+		private int m_firstEpisodeNumber;
 
 		private PerSubtitleSettings[] m_perSubtitleSettings = { new PerSubtitleSettings(), new PerSubtitleSettings() };
 
 		private bool m_ignoreStyledSubLines = true;
 		private bool m_ignoreSingleLines = true; // single = lines without an obvious counterpart
+
+		private bool m_normalizeAudio = true;
+
+		private bool m_exportAudio = true;
+		private bool m_exportImages = true;
+
+		private int m_imageMaxWidth = 800;
+		private int m_imageMaxHeight = 600;
+
+		private double m_audioPaddingBefore = 0;
+		private double m_audioPaddingAfter = 0;
+
+
+		public double AudioPaddingBefore {
+			get { return m_audioPaddingBefore;  }
+			set { m_audioPaddingBefore = value; }
+		}
+
+		public double AudioPaddingAfter {
+			get { return m_audioPaddingAfter;  }
+			set { m_audioPaddingAfter = value; }
+		}
+
+		public int ImageMaxHeight {
+			get { return m_imageMaxHeight;  }
+			set { m_imageMaxHeight = value; }
+		}
+
+		public int ImageMaxWidth {
+			get { return m_imageMaxWidth;  }
+			set { m_imageMaxWidth = value; }
+		}
+
+		public bool NormalizeAudio {
+			get { return m_normalizeAudio;  }
+			set { m_normalizeAudio = value; }
+		}
+
+		public bool ExportImages {
+			get { return m_exportImages;  }
+			set { m_exportImages = value; }
+		}
+
+		public bool ExportAudio {
+			get { return m_exportAudio;  }
+			set { m_exportAudio = value; }
+		}
 
 		public string TargetFilePath {
 			get { return m_targetFilePath;  }
@@ -84,6 +177,11 @@ namespace subs2srs4linux
 		public bool IgnoreSingleSubLines {
 			get { return m_ignoreSingleLines; }
 			set { m_ignoreSingleLines = value; }
+		}
+
+		public int FirstEpisodeNumber {
+			get { return m_firstEpisodeNumber; }
+			set { m_firstEpisodeNumber = value; }
 		}
 
 

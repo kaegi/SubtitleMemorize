@@ -1,4 +1,21 @@
-﻿using System;
+﻿// Copyright (C) 2016    Chang Spivey
+//
+// This program is free software; you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation; either version 3 of the License, or
+// (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with this program; if not, write to the Free Software Foundation,
+// Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301  USA
+//
+
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text.RegularExpressions;
@@ -22,7 +39,7 @@ namespace subs2srs4linux
 		/// </summary>
 		/// <param name="settings">Settings.</param>
 		/// <param name="rawLines">Raw lines.</param>
-		public List<LineInfo> parse(Settings settings, List<String> rawLines) {
+		public List<LineInfo> parse(Settings settings, LinkedList<String> rawLines) {
 			List<LineInfo> lines = new List<LineInfo> ();
 
 			string formatRegex = GetFormatRegex (rawLines);
@@ -31,6 +48,8 @@ namespace subs2srs4linux
 			
 			// parse every line with format regex and save lines in LineInfo
 			foreach(string rawLine in rawLines) {
+				if (settings.IgnoreStyledSubLines && rawLine.Contains (",{\\")) // TODO: this is a really big hint for styled subtitles but might create false-negatives
+					continue;
 				Match lineMatch = Regex.Match(rawLine, formatRegex, RegexOptions.IgnoreCase | RegexOptions.Compiled);
 
 				if (!lineMatch.Success)
@@ -64,10 +83,10 @@ namespace subs2srs4linux
 		}
 
 		/// <summary>
-		/// Parse SSA timestamps like "0:19:30.25" to C#'s DateTime format
+		/// Parse SSA timestamps like "0:19:30.25" to seconds
 		/// </summary>
-		/// <returns>The DateTime-Object.</returns>
-		public DateTime parseTime(String timeString) {
+		/// <returns>number of seconds in comparision to start of file</returns>
+		public double parseTime(String timeString) {
 			// Format: "0:00:00.00"
 			// Format: "Hours:Minutes:Seconds.HSecs
 			Match match = Regex.Match (timeString, @"^(?<Hours>\d):(?<Mins>\d\d):(?<Secs>\d\d).(?<HSecs>\d\d)$", RegexOptions.IgnoreCase | RegexOptions.Compiled);
@@ -85,7 +104,7 @@ namespace subs2srs4linux
 				throw new Exception ("Incorrect time format: \"" + timeString + "\"");
 			}
 
-			return time;
+			return time.TimeOfDay.TotalMilliseconds / 1000.0;
 		}
 
 		/// <summary>
@@ -93,7 +112,7 @@ namespace subs2srs4linux
 		/// </summary>
 		/// <returns>The format regex.</returns>
 		/// <param name="rawLines">Raw lines.</param>
-		public string GetFormatRegex(List<String> rawLines) {
+		public string GetFormatRegex(LinkedList<String> rawLines) {
 		
 			// find "Format: ..." line in "[Event]" Section
 			bool eventSection = false;
@@ -132,7 +151,7 @@ namespace subs2srs4linux
 					regex += "(?<Text>.*)"; // should be last in format string; no comma or "?" in regex
 				} else {
 					// ignore until next comma
-					regex += "(.*?),";
+					regex += ".*?,";
 				}
 			}
 
@@ -145,11 +164,11 @@ namespace subs2srs4linux
 		/// <param name="settings">Settings.</param>
 		/// <param name="stream">Stream.</param>
 		public List<LineInfo> parse(Settings settings, Stream stream, Encoding encoding) {
-			List<String> rawLines = new List<String> ();
+			LinkedList<String> rawLines = new LinkedList<String> ();
 			using(StreamReader reader = new StreamReader (stream, encoding)) {
 				String line;
 				while((line = reader.ReadLine()) != null) {
-					rawLines.Add(line.Trim());
+					rawLines.AddLast(line.Trim());
 				}
 			}
 

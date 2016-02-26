@@ -14,40 +14,19 @@
 // along with this program; if not, write to the Free Software Foundation,
 // Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301  USA
 //
-
 using System;
 
 namespace subs2srs4linux
 {
-	public class LineInfo : IComparable<ITimeSpan>, ITimeSpan
+	public interface ITimeSpan
 	{
-		public double startTime;
-		public double endTime;
-		public String name;
-		public String text;
-
-		public LineInfo (double startTime, double endTime, String name, String text)
-		{
-			this.startTime = startTime;
-			this.endTime = endTime;
-			this.name = name;
-			this.text = text;
+		double StartTime {
+			get;
 		}
 
-		/// <summary>
-		/// Compare lines based on their Start Times.
-		/// </summary>
-		public int CompareTo(ITimeSpan other) {
-			if(StartTime == other.StartTime) return 0;
-			return StartTime < other.StartTime ? -1 : 1;
-		}
-
-		public double StartTime {
-			get { return startTime; }
-		}
-
-		public double EndTime {
-			get { return endTime; }
+		double EndTime {
+			get;
 		}
 	}
 }
+
