@@ -824,6 +824,8 @@ namespace subs2srs4linux
 				// extract image in real size (size that will be exported)
 				UtilsSubtitle.EntryInformation entryInfo = m_allEntryInfomation [m_selectedPreviewIndex];
 				UtilsInputFiles.FileDesc videoFilename = m_episodeInfo[entryInfo.episodeInfo.Index].VideoFileDesc;
+				StreamInfo videoStreamInfo = m_episodeInfo[entryInfo.episodeInfo.Index].VideoStreamInfo;
+
 				UtilsImage.GetImage(videoFilename.filename, UtilsCommon.GetMiddleTime(entryInfo), InstanceSettings.temporaryFilesPath + "subs2srs_real.jpg", 0.5);
 
 				image.Pixbuf = new Gdk.Pixbuf (InstanceSettings.temporaryFilesPath + "subs2srs_real.jpg");
@@ -1152,8 +1154,18 @@ finish_regex:;
 
 			// fill episode info
 			List<EpisodeInfo> episodeFiles = new List<EpisodeInfo>();
-			for(int episodeIndex = 0; episodeIndex < numberOfEpisodes; episodeIndex++)
-				episodeFiles.Add(new EpisodeInfo(episodeIndex, episodeIndex + settings.FirstEpisodeNumber, videoFileDescs[episodeIndex], videoFileDescs[episodeIndex], sub1FileDescs[episodeIndex], sub2FileDescs[episodeIndex]));
+			for(int episodeIndex = 0; episodeIndex < numberOfEpisodes; episodeIndex++) {
+				int episodeNumber = episodeIndex + settings.FirstEpisodeNumber;
+				var videoFileDesc = videoFileDescs[episodeIndex];
+				var audioFileDesc = videoFileDescs[episodeIndex];
+				var sub1FileDesc = sub1FileDescs[episodeIndex];
+				var sub2FileDesc = sub2FileDescs[episodeIndex];
+				var videoStreamInfo = UtilsVideo.ChooseStreamInfo(videoFileDesc.filename, videoFileDesc.properties, StreamInfo.StreamType.ST_VIDEO);
+				var audioStreamInfo = UtilsVideo.ChooseStreamInfo(audioFileDesc.filename, audioFileDesc.properties, StreamInfo.StreamType.ST_AUDIO);
+				var sub1StreamInfo = UtilsVideo.ChooseStreamInfo(sub1FileDesc.filename, sub1FileDesc.properties, StreamInfo.StreamType.ST_SUBTITLE);
+				var sub2StreamInfo = UtilsVideo.ChooseStreamInfo(sub2FileDesc.filename, sub2FileDesc.properties, StreamInfo.StreamType.ST_SUBTITLE);
+				episodeFiles.Add(new EpisodeInfo(episodeIndex, episodeNumber, videoFileDesc, audioFileDesc, sub1FileDesc, sub2FileDesc, videoStreamInfo, audioStreamInfo, sub1StreamInfo, sub2StreamInfo));
+			}
 
 			return episodeFiles;
 		}

@@ -28,7 +28,7 @@ namespace subs2srs4linux {
 
 		public UtilsAlignSubToAudio(List<LineInfo> lines, UtilsInputFiles.FileDesc audioFile) {
 			// TODO: m_lineContainers = UtilsSubtitle.GetNonOverlappingTimeSpans<LineInfo>(lines);
-			m_audioStreamInfo = UtilsVideo.ChooseStreamInfo(audioFile.filename, audioFile.properties, StreamInfo.StreamType.ST_AUDIO);
+			//m_audioStreamInfo = UtilsVideo.ChooseStreamInfo(audioFile.filename, audioFile.properties, StreamInfo.StreamType.ST_AUDIO);
 			m_audioFileDesc = audioFile;
 		}
 

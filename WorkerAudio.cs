@@ -24,7 +24,6 @@ namespace subs2srs4linux
 	{
 		public static List<String> ExtractAudio(Settings settings, String path, List<UtilsSubtitle.EntryInformation> allEntries) {
 			List<String> audioFieldValues = new List<string>(allEntries.Count);
-			Dictionary<UtilsInputFiles.FileDesc, StreamInfo> choosenStreamInfo = new Dictionary<UtilsInputFiles.FileDesc, StreamInfo> ();
 			for(int i = 0; i < allEntries.Count; i++) {
 				UtilsSubtitle.EntryInformation entryInformation = allEntries[i];
 
@@ -33,17 +32,7 @@ namespace subs2srs4linux
 				audioFieldValues.Add("[sound:" + outputAudioFilename + "]");
 
 				UtilsInputFiles.FileDesc audioFileDesc = entryInformation.episodeInfo.AudioFileDesc;
-
-
-				// the operation of reading all streams is slow (ca 1s) because it analyses whole the file -> cache result
-				StreamInfo audioStreamInfo = null;
-				if (choosenStreamInfo.ContainsKey (audioFileDesc)) {
-					audioStreamInfo = choosenStreamInfo [audioFileDesc];
-				} else {
-					audioStreamInfo = UtilsVideo.ChooseStreamInfo (audioFileDesc.filename, audioFileDesc.properties, StreamInfo.StreamType.ST_AUDIO);
-					choosenStreamInfo.Add (audioFileDesc, audioStreamInfo);
-				}
-
+				var audioStreamInfo = entryInformation.episodeInfo.AudioStreamInfo;
 
 				String arguments = String.Format ("-v quiet -y -i \"{0}\" -map 0:{1} -ss \"{2}\" -to \"{3}\" -vn -c:a libvorbis \"{4}\"",
 					audioFileDesc.filename, // input file

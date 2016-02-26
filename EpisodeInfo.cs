@@ -26,6 +26,9 @@ namespace subs2srs4linux
 		private readonly UtilsInputFiles.FileDesc m_videoFileDesc;
 		private readonly UtilsInputFiles.FileDesc m_audioFileDesc;
 		private readonly UtilsInputFiles.FileDesc[] m_subsFileDesc = new UtilsInputFiles.FileDesc[2];
+		private readonly StreamInfo m_videoStreamInfo;
+		private readonly StreamInfo m_audioStreamInfo;
+		private readonly StreamInfo[] m_subStreamInfos = new StreamInfo[2];
 
 		public int Index {
 			get { return m_index; }
@@ -57,9 +60,36 @@ namespace subs2srs4linux
 			}
 		}
 
-	
+		public StreamInfo VideoStreamInfo {
+			get {
+				return m_videoStreamInfo;
+			}
+		}
 
-		public EpisodeInfo (int index, int number, UtilsInputFiles.FileDesc videoFileDesc, UtilsInputFiles.FileDesc audioFileDesc, UtilsInputFiles.FileDesc sub1FileDesc, UtilsInputFiles.FileDesc sub2FileDesc)
+		public StreamInfo AudioStreamInfo {
+			get {
+				return m_audioStreamInfo;
+			}
+		}
+
+		public StreamInfo[] SubsStreamInfos {
+			get {
+				return m_subStreamInfos;
+			}
+		}
+
+
+
+		public EpisodeInfo (int index,
+				int number,
+				UtilsInputFiles.FileDesc videoFileDesc,
+				UtilsInputFiles.FileDesc audioFileDesc,
+				UtilsInputFiles.FileDesc sub1FileDesc,
+				UtilsInputFiles.FileDesc sub2FileDesc,
+				StreamInfo videoStreamInfo,
+				StreamInfo audioStreamInfo,
+				StreamInfo sub1StreamInfo,
+				StreamInfo sub2StreamInfo)
 		{
 			m_index = index;
 			m_number = number;
@@ -67,6 +97,10 @@ namespace subs2srs4linux
 			m_audioFileDesc = audioFileDesc;
 			m_subsFileDesc[0] = sub1FileDesc;
 			m_subsFileDesc[1] = sub2FileDesc;
+			m_videoStreamInfo = videoStreamInfo;
+			m_audioStreamInfo = audioStreamInfo;
+			m_subStreamInfos[0] = sub1StreamInfo;
+			m_subStreamInfos[1] = sub2StreamInfo;
 		}
 	}
 }

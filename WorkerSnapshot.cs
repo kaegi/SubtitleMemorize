@@ -19,12 +19,11 @@ using System.Collections.Generic;
 using System.IO;
 
 namespace subs2srs4linux
-{	
+{
 	public static class WorkerSnapshot
 	{
 		public static List<String> ExtractSnaphots(Settings settings, String path, List<UtilsSubtitle.EntryInformation> allEntries) {
 			List<String> snapshotFieldValues = new List<string>(allEntries.Count);
-			Dictionary<UtilsInputFiles.FileDesc, StreamInfo> choosenStreamInfo = new Dictionary<UtilsInputFiles.FileDesc, StreamInfo> ();
 			for(int i = 0; i < allEntries.Count; i++) {
 				UtilsSubtitle.EntryInformation entryInformation = allEntries[i];
 
@@ -38,15 +37,6 @@ namespace subs2srs4linux
 
 				// get file with snapshot information -> video
 				UtilsInputFiles.FileDesc videoFileDesc = entryInformation.episodeInfo.VideoFileDesc;
-
-				// the operation of reading all streams is slow (ca 1s) because it analyses whole the file -> cache result
-				StreamInfo videoStreamInfo = null;
-				if (choosenStreamInfo.ContainsKey (videoFileDesc)) {
-					videoStreamInfo = choosenStreamInfo [videoFileDesc];
-				} else {
-					videoStreamInfo = UtilsVideo.ChooseStreamInfo (videoFileDesc.filename, videoFileDesc.properties, StreamInfo.StreamType.ST_VIDEO);
-					choosenStreamInfo.Add (videoFileDesc, videoStreamInfo);
-				}
 
 				// extract image
 				double timeStamp = UtilsCommon.GetMiddleTime (entryInformation);
