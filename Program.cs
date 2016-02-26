@@ -821,12 +821,22 @@ namespace subs2srs4linux
 				if (m_selectedPreviewIndex < 0 || m_selectedPreviewIndex >= m_allEntryInfomation.Count)
 					return;
 
-				// extract image in real size (size that will be exported)
+				// get references to classes that describe the video file and stream
 				UtilsSubtitle.EntryInformation entryInfo = m_allEntryInfomation [m_selectedPreviewIndex];
 				UtilsInputFiles.FileDesc videoFilename = m_episodeInfo[entryInfo.episodeInfo.Index].VideoFileDesc;
 				StreamInfo videoStreamInfo = m_episodeInfo[entryInfo.episodeInfo.Index].VideoStreamInfo;
 
-				UtilsImage.GetImage(videoFilename.filename, UtilsCommon.GetMiddleTime(entryInfo), InstanceSettings.temporaryFilesPath + "subs2srs_real.jpg", 0.5);
+				// get size of image in video streams
+				Int32? videoWidth = videoStreamInfo.GetAttributeInt("width");
+				Int32? videoHeight = videoStreamInfo.GetAttributeInt("height");
+				if(videoWidth == null) videoWidth = -1;
+				if(videoHeight == null) videoHeight = -1;
+
+				// get correct scaling
+				double scaling = UtilsCommon.GetMaxScaling(videoWidth.Value, videoHeight.Value, m_previewSettings.ImageMaxWidth, m_previewSettings.ImageMaxHeight);
+
+				// extract big image from video
+				UtilsImage.GetImage(videoFilename.filename, UtilsCommon.GetMiddleTime(entryInfo), InstanceSettings.temporaryFilesPath + "subs2srs_real.jpg", scaling);
 
 				image.Pixbuf = new Gdk.Pixbuf (InstanceSettings.temporaryFilesPath + "subs2srs_real.jpg");
 				imageWnd.Add(image);
