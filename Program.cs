@@ -826,14 +826,8 @@ namespace subs2srs4linux
 				UtilsInputFiles.FileDesc videoFilename = m_episodeInfo[entryInfo.episodeInfo.Index].VideoFileDesc;
 				StreamInfo videoStreamInfo = m_episodeInfo[entryInfo.episodeInfo.Index].VideoStreamInfo;
 
-				// get size of image in video streams
-				Int32? videoWidth = videoStreamInfo.GetAttributeInt("width");
-				Int32? videoHeight = videoStreamInfo.GetAttributeInt("height");
-				if(videoWidth == null) videoWidth = -1;
-				if(videoHeight == null) videoHeight = -1;
-
-				// get correct scaling
-				double scaling = UtilsCommon.GetMaxScaling(videoWidth.Value, videoHeight.Value, m_previewSettings.ImageMaxWidth, m_previewSettings.ImageMaxHeight);
+				// get right scaling
+				double scaling = UtilsVideo.GetMaxScalingByStreamInfo(videoStreamInfo, m_previewSettings.ImageMaxWidth, m_previewSettings.ImageMaxHeight);
 
 				// extract big image from video
 				UtilsImage.GetImage(videoFilename.filename, UtilsCommon.GetMiddleTime(entryInfo), InstanceSettings.temporaryFilesPath + "subs2srs_real.jpg", scaling);
@@ -1502,13 +1496,21 @@ finish_regex:;
 			if (selectedIndex != m_selectedPreviewIndex)
 				return;
 
-			// TODO: get real scaling
+			// preview image does not need to be in full size (saves computation time)
+			const int maxWidth = 300;
+			const int maxHeight = 300;
+
+			// get real scaling
 			UtilsInputFiles.FileDesc videoFilename = m_episodeInfo[entryInfo.episodeInfo.Index].VideoFileDesc;
-			UtilsImage.GetImage(videoFilename.filename, UtilsCommon.GetMiddleTime(entryInfo), InstanceSettings.temporaryFilesPath + "subs2srs.jpg", 0.2);
+			var videoStreamInfo = m_episodeInfo[entryInfo.episodeInfo.Index].VideoStreamInfo;
+			double videoScaling = UtilsVideo.GetMaxScalingByStreamInfo(videoStreamInfo, maxWidth, maxHeight);
+
+			// extract small preview image
+			UtilsImage.GetImage(videoFilename.filename, UtilsCommon.GetMiddleTime(entryInfo), InstanceSettings.temporaryFilesPath + "subs2srs.jpg", videoScaling);
 
 			Gtk.Application.Invoke (delegate {
 				if(selectedIndex == m_selectedPreviewIndex) // selection could have changed during the creation of the snapshot
-					m_imagePreview.Pixbuf = new Gdk.Pixbuf (InstanceSettings.temporaryFilesPath + "subs2srs.jpg", 300, 300);
+					m_imagePreview.Pixbuf = new Gdk.Pixbuf (InstanceSettings.temporaryFilesPath + "subs2srs.jpg", maxWidth, maxHeight);
 			});
 		}
 

@@ -25,10 +25,10 @@ namespace subs2srs4linux
 		/// Extracts an image from a video file at a given time and resizes it. Resizing preserves aspect ratio.
 		/// </summary>
 		public static bool GetImage(String videoFilename, double time, String outFilename, double scale=1) {
-			String argumentString = String.Format ("-y -v quiet -an -ss {0} -i \"{1}\" -f image2 -vf \"scale=iw*{2}/10000:ih*{2}/10000\" -vframes 1 \"{3}\"",
+			String argumentString = String.Format ("-y -v quiet -an -ss {0} -i \"{1}\" -f image2 -vf \"scale=iw*{2}/3628800:ih*{2}/3628800\" -vframes 1 \"{3}\"",
 					UtilsCommon.ToTimeArg(time),
 					videoFilename,
-					(int)(scale*10000), // int is needed because double will create values with comma (e.g "0,1")
+					(int)(scale*3628800), // int is needed because double will create values with comma (e.g "0,1"); 3628800=10! (has many divisors)
 					outFilename);
 			Console.WriteLine(String.Format("{0}: {1} {2}", System.Reflection.MethodBase.GetCurrentMethod().Name.ToString(), InstanceSettings.systemSettings.formatConvertCommand, argumentString));
 			UtilsCommon.StartProcessAndGetOutput(InstanceSettings.systemSettings.formatConvertCommand, argumentString);

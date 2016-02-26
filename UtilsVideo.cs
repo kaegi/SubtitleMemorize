@@ -79,5 +79,18 @@ namespace subs2srs4linux
 
 			return allStreams [streamIndex];
 		}
+
+		/// <summary>
+		/// Gets width and height of video from video StreamInfo, then applies <see cref="UtilsCommon.GetMaxScaling">.
+		/// </summary>
+		public static double GetMaxScalingByStreamInfo(StreamInfo videoStreamInfo, double maxWidth, double maxHeight) {
+				// get size of image in video streams
+				Int32? videoWidth = videoStreamInfo.GetAttributeInt("width");
+				Int32? videoHeight = videoStreamInfo.GetAttributeInt("height");
+				if(videoWidth == null) videoWidth = -1; // ignore this dimension
+				if(videoHeight == null) videoHeight = -1; // ignore this dimension
+
+				return UtilsCommon.GetMaxScaling(videoWidth.Value, videoHeight.Value, maxWidth, maxHeight);
+		}
 	}
 }
