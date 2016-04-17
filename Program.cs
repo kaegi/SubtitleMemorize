@@ -443,9 +443,9 @@ namespace subtitleMemorize
 		private PendingOperation m_pendingOperation = PendingOperation.NOTHING;
 		private InfoProgress m_progressAndCancellable = null;
 
-		static private readonly string m_infobarLabelStandardMarkup = "Welcome to subtitleMemorize!" +
+		static private readonly string m_infobarLabelStandardMarkup = "Welcome to SubtitleMemorize!" +
 			" To see more information just hover the cursor over a button or field.\n" +
-			"If any questions arise, please visit <span foreground=\"white\"><a href=\"https://www.github.com/\">https://www.github.com/</a></span>.";
+			"If any questions arise, please visit <span foreground=\"white\"><a href=\"https://github.com/ChangSpivey/SubtitleMemorize\">https://github.com/ChangSpivey/SubtitleMemorize</a></span>.";
 
 		public MainClass() {
 			GLib.ExceptionManager.UnhandledException += GlibUnhandledException;
