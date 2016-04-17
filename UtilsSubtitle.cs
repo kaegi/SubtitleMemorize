@@ -22,7 +22,7 @@ using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
 
-namespace subs2srs4linux
+namespace subtitleMemorize
 {
 	public static class UtilsSubtitle
 	{

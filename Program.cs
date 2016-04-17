@@ -26,7 +26,7 @@ using System.Xml.Serialization;
 using Gtk;
 using NCalc;
 
-namespace subs2srs4linux
+namespace subtitleMemorize
 {
 	class MainClass
 	{
@@ -443,7 +443,7 @@ namespace subs2srs4linux
 		private PendingOperation m_pendingOperation = PendingOperation.NOTHING;
 		private InfoProgress m_progressAndCancellable = null;
 
-		static private readonly string m_infobarLabelStandardMarkup = "Welcome to subs2srs4linux!" +
+		static private readonly string m_infobarLabelStandardMarkup = "Welcome to subtitleMemorize!" +
 			" To see more information just hover the cursor over a button or field.\n" +
 			"If any questions arise, please visit <span foreground=\"white\"><a href=\"https://www.github.com/\">https://www.github.com/</a></span>.";
 
@@ -451,7 +451,7 @@ namespace subs2srs4linux
 			GLib.ExceptionManager.UnhandledException += GlibUnhandledException;
 
 			Gtk.Application.Init ();
-			m_builder.AddFromString (ReadResourceString ("subs2srs4linux.Resources.gtk.glade"));
+			m_builder.AddFromString (ReadResourceString ("subtitleMemorize.Resources.gtk.glade"));
 			m_builder.Autoconnect (this);
 
 			InitializeGtkObjects (m_builder);
@@ -822,7 +822,7 @@ namespace subs2srs4linux
 			};
 
 			m_eventboxImagePreview.ButtonReleaseEvent += delegate(object o, ButtonReleaseEventArgs args) {
-				var imageWnd = new Gtk.Window("subs2srs4linux - Image preview");
+				var imageWnd = new Gtk.Window("subtitleMemorize - Image preview");
 				var image = new Gtk.Image();
 
 				// do not select currently selected entry again
@@ -838,9 +838,9 @@ namespace subs2srs4linux
 				double scaling = UtilsVideo.GetMaxScalingByStreamInfo(videoStreamInfo, m_previewSettings.ImageMaxWidth, m_previewSettings.ImageMaxHeight);
 
 				// extract big image from video
-				UtilsImage.GetImage(videoFilename.filename, UtilsCommon.GetMiddleTime(entryInfo), InstanceSettings.temporaryFilesPath + "subs2srs_real.jpg", scaling);
+				UtilsImage.GetImage(videoFilename.filename, UtilsCommon.GetMiddleTime(entryInfo), InstanceSettings.temporaryFilesPath + "subtitleMemorize_real.jpg", scaling);
 
-				image.Pixbuf = new Gdk.Pixbuf (InstanceSettings.temporaryFilesPath + "subs2srs_real.jpg");
+				image.Pixbuf = new Gdk.Pixbuf (InstanceSettings.temporaryFilesPath + "subtitleMemorize_real.jpg");
 				imageWnd.Add(image);
 				imageWnd.ShowAll();
 			};
@@ -1528,11 +1528,11 @@ finish_regex:;
 			double videoScaling = UtilsVideo.GetMaxScalingByStreamInfo(videoStreamInfo, maxWidth, maxHeight);
 
 			// extract small preview image
-			UtilsImage.GetImage(videoFilename.filename, UtilsCommon.GetMiddleTime(entryInfo), InstanceSettings.temporaryFilesPath + "subs2srs.jpg", videoScaling);
+			UtilsImage.GetImage(videoFilename.filename, UtilsCommon.GetMiddleTime(entryInfo), InstanceSettings.temporaryFilesPath + "subtitleMemorize.jpg", videoScaling);
 
 			Gtk.Application.Invoke (delegate {
 				if(selectedIndex == m_selectedPreviewIndex) // selection could have changed during the creation of the snapshot
-					m_imagePreview.Pixbuf = new Gdk.Pixbuf (InstanceSettings.temporaryFilesPath + "subs2srs.jpg", maxWidth, maxHeight);
+					m_imagePreview.Pixbuf = new Gdk.Pixbuf (InstanceSettings.temporaryFilesPath + "subtitleMemorize.jpg", maxWidth, maxHeight);
 			});
 		}
 
@@ -1795,7 +1795,7 @@ finish_regex:;
 
 		public static void Main (string[] args)
 		{
-			// ensure that the temporary path ("/tmp/subs2srs4linux") exists
+			// ensure that the temporary path ("/tmp/subtitleMemorize") exists
 			Directory.CreateDirectory(InstanceSettings.temporaryFilesPath);
 
 			// find exe path so there we can load settings from there

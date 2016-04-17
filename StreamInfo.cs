@@ -20,7 +20,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Xml;
 
-namespace subs2srs4linux
+namespace subtitleMemorize
 {
 	public class StreamInfo
 	{

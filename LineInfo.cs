@@ -17,7 +17,7 @@
 
 using System;
 
-namespace subs2srs4linux
+namespace subtitleMemorize
 {
 	public class LineInfo : IComparable<ITimeSpan>, ITimeSpan
 	{

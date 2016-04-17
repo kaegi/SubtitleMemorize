@@ -22,7 +22,7 @@ using System.Text;
 using System.Linq;
 using System.IO;
 
-namespace subs2srs4linux
+namespace subtitleMemorize
 {
 	public class UtilsInputFiles
 	{

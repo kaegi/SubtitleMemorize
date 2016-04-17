@@ -24,7 +24,7 @@ using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
 
-namespace subs2srs4linux
+namespace subtitleMemorize
 {
 	public class UtilsCommon
 	{

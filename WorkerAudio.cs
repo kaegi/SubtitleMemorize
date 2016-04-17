@@ -18,7 +18,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 
-namespace subs2srs4linux
+namespace subtitleMemorize
 {
 	public static class WorkerAudio
 	{

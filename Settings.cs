@@ -19,13 +19,13 @@ using System;
 using System.IO;
 using System.Runtime.Serialization.Formatters.Binary;
 
-namespace subs2srs4linux
+namespace subtitleMemorize
 {
 	/// <summary>
 	/// Settings for one program instance.
 	/// </summary>
 	public static class InstanceSettings {
-		public static String temporaryFilesPath = System.IO.Path.GetTempPath() + "subs2srs4linux/";
+		public static String temporaryFilesPath = System.IO.Path.GetTempPath() + "subtitleMemorize/";
 
 		public static SystemSettings systemSettings = new SystemSettings();
 	}
@@ -210,4 +210,3 @@ namespace subs2srs4linux
 		}
 	}
 }
-

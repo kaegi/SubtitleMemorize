@@ -19,7 +19,7 @@ using System;
 using System.IO;
 using System.Collections.Generic;
 
-namespace subs2srs4linux
+namespace subtitleMemorize
 {
 	public static class UtilsVideo
 	{
