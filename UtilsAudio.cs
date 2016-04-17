@@ -17,7 +17,7 @@
 using System;
 using System.Text.RegularExpressions;
 
-namespace subs2srs4linux
+namespace subtitleMemorize
 {
 	public static class UtilsAudio
 	{

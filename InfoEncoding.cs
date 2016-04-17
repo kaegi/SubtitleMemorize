@@ -21,7 +21,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
-namespace subs2srs4linux
+namespace subtitleMemorize
 {
 	/// <summary>
 	/// Represents a text encoding.

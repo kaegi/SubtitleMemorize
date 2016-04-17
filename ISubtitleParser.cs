@@ -21,7 +21,7 @@ using System.IO;
 using System.Collections.Generic;
 using System.Text;
 
-namespace subs2srs4linux
+namespace subtitleMemorize
 {
 	public interface ISubtitleParser
 	{

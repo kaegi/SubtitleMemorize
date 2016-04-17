@@ -17,7 +17,7 @@
 using System;
 using System.Collections.Generic;
 
-namespace subs2srs4linux
+namespace subtitleMemorize
 {
 	/// <summary>
 	/// This class provides a way of retiming every single line in

@@ -26,7 +26,7 @@ using System.Xml.Serialization;
 using Gtk;
 using NCalc;
 
-namespace subs2srs4linux
+namespace subtitleMemorize
 {
 	class MainClass
 	{
@@ -424,8 +424,8 @@ namespace subs2srs4linux
 		private List<EpisodeInfo> m_episodeInfo = new List<EpisodeInfo>();
 		private List<UtilsSubtitle.EntryInformation> m_allEntryInfomation = new List<UtilsSubtitle.EntryInformation>(); // all entries from all episodes
 		private int m_selectedPreviewIndex = -1; // index of single selected/focused entry in "m_previewWindowEntries"
-        private bool m_previewWindow_isShiftPressed = false;
-        private bool m_previewWindow_isControlPressed = false;
+		private bool m_previewWindow_isShiftPressed = false;
+		private bool m_previewWindow_isControlPressed = false;
 
 		// ##################################################################33
 		// Variables for Subtitle-Options-Window
@@ -443,15 +443,15 @@ namespace subs2srs4linux
 		private PendingOperation m_pendingOperation = PendingOperation.NOTHING;
 		private InfoProgress m_progressAndCancellable = null;
 
-		static private readonly string m_infobarLabelStandardMarkup = "Welcome to subs2srs4linux!" +
+		static private readonly string m_infobarLabelStandardMarkup = "Welcome to SubtitleMemorize!" +
 			" To see more information just hover the cursor over a button or field.\n" +
-			"If any questions arise, please visit <span foreground=\"white\"><a href=\"https://www.github.com/\">https://www.github.com/</a></span>.";
+			"If any questions arise, please visit <span foreground=\"white\"><a href=\"https://github.com/ChangSpivey/SubtitleMemorize\">https://github.com/ChangSpivey/SubtitleMemorize</a></span>.";
 
 		public MainClass() {
 			GLib.ExceptionManager.UnhandledException += GlibUnhandledException;
 
 			Gtk.Application.Init ();
-			m_builder.AddFromString (ReadResourceString ("subs2srs4linux.Resources.gtk.glade"));
+			m_builder.AddFromString (ReadResourceString ("subtitleMemorize.Resources.gtk.glade"));
 			m_builder.Autoconnect (this);
 
 			InitializeGtkObjects (m_builder);
@@ -475,8 +475,6 @@ namespace subs2srs4linux
 			// this has to be after "mainWindow.Show()", because otherwise the width of the window
 			// is determined by the width of this text
 			m_labelInInfobar.Markup = m_infobarLabelStandardMarkup;
-
-
 			//on_button_preview_clicked(null, null);
 
 			Application.Run ();
@@ -786,18 +784,28 @@ namespace subs2srs4linux
 
 			};
 
+
+			Action<UtilsCommon.LanguageType> onBufferChange = delegate(UtilsCommon.LanguageType languageType) {
+				var textview = GetTextViewByLanguageType(languageType);
+				var entryInfo = m_allEntryInfomation[m_selectedPreviewIndex];
+				var settingsSuccessful = entryInfo.SetLineInfosByMultiLineString(languageType, textview.Buffer.Text);
+				if(!settingsSuccessful) {
+					// TODO: resetting text here would crash the application -> give user a signal this input is incorrect
+				} else {
+					UpdatePreviewListEntry(m_selectedPreviewIndex);
+				}
+			};
+
 			// ----------------------------------------------------------------------
 			// change entries when text in preview textviews is changed
 			m_textviewTargetLanguage.Buffer.Changed += delegate(object sender, EventArgs e) {
-				m_allEntryInfomation[m_selectedPreviewIndex].targetLanguageString = m_textviewTargetLanguage.Buffer.Text;
-				UpdatePreviewListEntry(m_selectedPreviewIndex);
+				onBufferChange(UtilsCommon.LanguageType.TARGET);
 			};
 
 			// ----------------------------------------------------------------------
 			// change entries when text in preview textviews is changed
 			m_textviewNativeLanguage.Buffer.Changed += delegate(object sender, EventArgs e) {
-				m_allEntryInfomation[m_selectedPreviewIndex].nativeLanguageString = m_textviewNativeLanguage.Buffer.Text;
-				UpdatePreviewListEntry(m_selectedPreviewIndex);
+				onBufferChange(UtilsCommon.LanguageType.NATIVE);
 			};
 
 			// ----------------------------------------------------------------------
@@ -814,7 +822,7 @@ namespace subs2srs4linux
 			};
 
 			m_eventboxImagePreview.ButtonReleaseEvent += delegate(object o, ButtonReleaseEventArgs args) {
-				var imageWnd = new Gtk.Window("subs2srs4linux - Image preview");
+				var imageWnd = new Gtk.Window("subtitleMemorize - Image preview");
 				var image = new Gtk.Image();
 
 				// do not select currently selected entry again
@@ -830,12 +838,16 @@ namespace subs2srs4linux
 				double scaling = UtilsVideo.GetMaxScalingByStreamInfo(videoStreamInfo, m_previewSettings.ImageMaxWidth, m_previewSettings.ImageMaxHeight);
 
 				// extract big image from video
-				UtilsImage.GetImage(videoFilename.filename, UtilsCommon.GetMiddleTime(entryInfo), InstanceSettings.temporaryFilesPath + "subs2srs_real.jpg", scaling);
+				UtilsImage.GetImage(videoFilename.filename, UtilsCommon.GetMiddleTime(entryInfo), InstanceSettings.temporaryFilesPath + "subtitleMemorize_real.jpg", scaling);
 
-				image.Pixbuf = new Gdk.Pixbuf (InstanceSettings.temporaryFilesPath + "subs2srs_real.jpg");
+				image.Pixbuf = new Gdk.Pixbuf (InstanceSettings.temporaryFilesPath + "subtitleMemorize_real.jpg");
 				imageWnd.Add(image);
 				imageWnd.ShowAll();
 			};
+		}
+
+		public Gtk.TextView GetTextViewByLanguageType(UtilsCommon.LanguageType languageType) {
+			return languageType == UtilsCommon.LanguageType.NATIVE ? m_textviewNativeLanguage : m_textviewTargetLanguage;
 		}
 
 		/// <summary>
@@ -931,18 +943,28 @@ namespace subs2srs4linux
 			expr.EvaluateParameter += delegate(string name, ParameterArgs args) {
 				switch(name) {
 					case "isActive": // fallthrough
-					case "active": args.Result= infoSource_Entry.isActive; break;
+					case "active":   args.Result = infoSource_Entry.isActive; break;
+
 					case "number":
 					case "episodeNumber":
-					case "episode": args.Result = infoSource_Entry.episodeInfo.Number; break;
-					case "sub": args.Result = infoSource_Entry.targetLanguageString + " " + infoSource_Entry.nativeLanguageString; break;
-					case "sub1": args.Result = infoSource_Entry.targetLanguageString; break;
-					case "sub2": args.Result = infoSource_Entry.nativeLanguageString; break;
-					case "text": args.Result = infoSource_Entry.targetLanguageString + " " + infoSource_Entry.nativeLanguageString; break;
-					case "text1": args.Result = infoSource_Entry.targetLanguageString; break;
-					case "text2": args.Result = infoSource_Entry.nativeLanguageString; break;
-					case "start": args.Result = infoSource_Entry.startTimestamp; break;
-					case "end": args.Result = infoSource_Entry.endTimestamp; break;
+					case "episode":  args.Result = infoSource_Entry.episodeInfo.Number; break;
+
+					case "text":
+					case "sub":      args.Result = infoSource_Entry.ToSingleLine(UtilsCommon.LanguageType.TARGET) + " " + infoSource_Entry.ToSingleLine(UtilsCommon.LanguageType.NATIVE); break;
+
+					case "sub1":
+					case "text1":    args.Result = infoSource_Entry.ToSingleLine(UtilsCommon.LanguageType.TARGET); break;
+
+					case "sub2":
+					case "text2":    args.Result = infoSource_Entry.ToSingleLine(UtilsCommon.LanguageType.NATIVE); break;
+
+					case "actor":
+					case "actors":
+					case "name":
+					case "names":    args.Result = infoSource_Entry.GetActorString(); break;
+
+					case "start":    args.Result = infoSource_Entry.startTimestamp; break;
+					case "end":      args.Result = infoSource_Entry.endTimestamp; break;
 					case "duration": args.Result = infoSource_Entry.Duration; break;
 				}
 			};
@@ -964,10 +986,10 @@ namespace subs2srs4linux
 
 						 bool result = false;
 						 if(arguments.Length == 1) {
-							 result = infoSource_Entry.nativeLanguageString.Contains(substring);
+							 result = infoSource_Entry.ToSingleLine(UtilsCommon.LanguageType.NATIVE).Contains(substring);
 							 if(result) { args.Result = result; goto contains_finished; }
 
-							 result = infoSource_Entry.targetLanguageString.Contains(substring);
+							 result = infoSource_Entry.ToSingleLine(UtilsCommon.LanguageType.TARGET).Contains(substring);
 							 if(result) { args.Result = result; goto contains_finished; }
 						 } else {
 							 // evaluate function
@@ -998,13 +1020,13 @@ contains_finished:;
 
 						 if(arguments.Length == 1) {
 							 try {
-								 var match = Regex.Match(infoSource_Entry.nativeLanguageString, regex, RegexOptions.Compiled | RegexOptions.IgnoreCase);
+								 var match = Regex.Match(infoSource_Entry.ToSingleLine(UtilsCommon.LanguageType.NATIVE), regex, RegexOptions.Compiled | RegexOptions.IgnoreCase);
 								 args.Result = match.Success;
 								 if(match.Success) goto finish_regex;
 							 } catch { }
 
 							 try {
-								 var match = Regex.Match(infoSource_Entry.targetLanguageString, regex, RegexOptions.Compiled | RegexOptions.IgnoreCase);
+								 var match = Regex.Match(infoSource_Entry.ToSingleLine(UtilsCommon.LanguageType.TARGET), regex, RegexOptions.Compiled | RegexOptions.IgnoreCase);
 								 args.Result = match.Success;
 								 if(match.Success) goto finish_regex;
 							 } catch { }
@@ -1074,13 +1096,13 @@ finish_regex:;
 				foreach(TreePath treePath in selectedTreePaths) {
 					// replace in this entry
 					UtilsSubtitle.EntryInformation entryInfo = m_allEntryInfomation[treePath.Indices[0]];
-					if(inSub1) entryInfo.targetLanguageString = Regex.Replace(entryInfo.targetLanguageString, pattern, replaceTo);
-					if(inSub2) entryInfo.nativeLanguageString = Regex.Replace(entryInfo.nativeLanguageString, pattern, replaceTo);
+					if(inSub1) entryInfo.DoRegexReplace(UtilsCommon.LanguageType.TARGET, pattern, replaceTo);
+					if(inSub2) entryInfo.DoRegexReplace(UtilsCommon.LanguageType.NATIVE, pattern, replaceTo);
 				}
 			} else {
 				foreach (UtilsSubtitle.EntryInformation entryInfo in m_allEntryInfomation) {
-					if(inSub1) entryInfo.targetLanguageString = Regex.Replace(entryInfo.targetLanguageString, pattern, replaceTo);
-					if(inSub2) entryInfo.nativeLanguageString = Regex.Replace(entryInfo.nativeLanguageString, pattern, replaceTo);
+					if(inSub1) entryInfo.DoRegexReplace(UtilsCommon.LanguageType.TARGET, pattern, replaceTo);
+					if(inSub2) entryInfo.DoRegexReplace(UtilsCommon.LanguageType.NATIVE, pattern, replaceTo);
 				}
 			}
 			UpdatePreviewList();
@@ -1116,12 +1138,12 @@ finish_regex:;
 			String endString = entryInfo.isActive ? "" : "</span>";
 
 			// set values in list TODO: can there be an index change?
-			m_liststoreLines.SetValue(treeIter.Value, 0, beginString + entryInfo.targetLanguageString + endString);
-			m_liststoreLines.SetValue(treeIter.Value, 1, beginString + entryInfo.nativeLanguageString + endString);
+			m_liststoreLines.SetValue(treeIter.Value, 0, beginString + entryInfo.ToSingleLine(UtilsCommon.LanguageType.TARGET) + endString);
+			m_liststoreLines.SetValue(treeIter.Value, 1, beginString + entryInfo.ToSingleLine(UtilsCommon.LanguageType.NATIVE) + endString);
 
 			if(updateSelectedEntryTextView && index == m_selectedPreviewIndex) {
-				m_textviewTargetLanguage.Buffer.Text = entryInfo.targetLanguageString;
-				m_textviewNativeLanguage.Buffer.Text = entryInfo.nativeLanguageString;
+				m_textviewTargetLanguage.Buffer.Text = entryInfo.ToMultiLine(UtilsCommon.LanguageType.TARGET);
+				m_textviewNativeLanguage.Buffer.Text = entryInfo.ToMultiLine(UtilsCommon.LanguageType.NATIVE);
 			}
 		}
 
@@ -1277,7 +1299,7 @@ finish_regex:;
 					String keyField = entryInfo.GetKey ();
 					String audioField = audioFields [i];
 					String imageField = snapshotFields [i];
-					outputStream.WriteLine (keyField + "\t" + imageField + "\t" + audioField + "\t" + entryInfo.targetLanguageString + "\t" + entryInfo.nativeLanguageString);
+					outputStream.WriteLine (keyField + "\t" + imageField + "\t" + audioField + "\t" + entryInfo.ToSingleLine(UtilsCommon.LanguageType.TARGET) + "\t" + entryInfo.ToSingleLine(UtilsCommon.LanguageType.NATIVE));
 				}
 			}
 		}
@@ -1486,8 +1508,8 @@ finish_regex:;
 			UtilsSubtitle.EntryInformation entryInfo = m_allEntryInfomation [selectedIndex];
 
 			Gtk.Application.Invoke (delegate {
-				m_textviewTargetLanguage.Buffer.Text = entryInfo.targetLanguageString;
-				m_textviewNativeLanguage.Buffer.Text = entryInfo.nativeLanguageString;
+				m_textviewTargetLanguage.Buffer.Text = entryInfo.ToMultiLine(UtilsCommon.LanguageType.TARGET);
+				m_textviewNativeLanguage.Buffer.Text = entryInfo.ToMultiLine(UtilsCommon.LanguageType.NATIVE);
 			});
 
 			// wait and see if the selected image is still the same (if user scrolls through list, is highly unperformant to extract all images
@@ -1506,11 +1528,11 @@ finish_regex:;
 			double videoScaling = UtilsVideo.GetMaxScalingByStreamInfo(videoStreamInfo, maxWidth, maxHeight);
 
 			// extract small preview image
-			UtilsImage.GetImage(videoFilename.filename, UtilsCommon.GetMiddleTime(entryInfo), InstanceSettings.temporaryFilesPath + "subs2srs.jpg", videoScaling);
+			UtilsImage.GetImage(videoFilename.filename, UtilsCommon.GetMiddleTime(entryInfo), InstanceSettings.temporaryFilesPath + "subtitleMemorize.jpg", videoScaling);
 
 			Gtk.Application.Invoke (delegate {
 				if(selectedIndex == m_selectedPreviewIndex) // selection could have changed during the creation of the snapshot
-					m_imagePreview.Pixbuf = new Gdk.Pixbuf (InstanceSettings.temporaryFilesPath + "subs2srs.jpg", maxWidth, maxHeight);
+					m_imagePreview.Pixbuf = new Gdk.Pixbuf (InstanceSettings.temporaryFilesPath + "subtitleMemorize.jpg", maxWidth, maxHeight);
 			});
 		}
 
@@ -1520,7 +1542,7 @@ finish_regex:;
 			m_treeviewSelectionLines.UnselectAll ();
 			m_liststoreLines.Clear ();
 			foreach (UtilsSubtitle.EntryInformation entryInfo in m_allEntryInfomation)
-				m_liststoreLines.AppendValues (entryInfo.targetLanguageString, entryInfo.nativeLanguageString);
+				m_liststoreLines.AppendValues (entryInfo.ToSingleLine(UtilsCommon.LanguageType.TARGET), entryInfo.ToSingleLine(UtilsCommon.LanguageType.NATIVE), entryInfo.GetActorString());
 
 			// update all entries so activation of line gets properly displayed
 			TreeIter treeIter = new TreeIter ();
@@ -1773,7 +1795,7 @@ finish_regex:;
 
 		public static void Main (string[] args)
 		{
-			// ensure that the temporary path ("/tmp/subs2srs4linux") exists
+			// ensure that the temporary path ("/tmp/subtitleMemorize") exists
 			Directory.CreateDirectory(InstanceSettings.temporaryFilesPath);
 
 			// find exe path so there we can load settings from there

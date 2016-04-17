@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 11.00
 # Visual Studio 2010
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "subs2srs4linux", "subs2srs4linux.csproj", "{9A9A6F79-CA58-42C5-A116-AC1A70F0E623}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "subtitleMemorize", "subtitleMemorize.csproj", "{9A9A6F79-CA58-42C5-A116-AC1A70F0E623}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

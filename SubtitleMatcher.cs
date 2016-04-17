@@ -19,7 +19,7 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace subs2srs4linux
+namespace subtitleMemorize
 {
 	public static class SubtitleMatcher
 	{

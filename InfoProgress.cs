@@ -17,12 +17,12 @@
 using System;
 using System.Collections.Generic;
 
-namespace subs2srs4linux
+namespace subtitleMemorize
 {
 	/// <summary>
 	/// Information for progress dialog. This is independent of any toolkit because it a handler. Progress
 	/// information is divided into two types:
-	/// 
+	///
 	/// a)	the section, which describes what is currently done.
 	/// 	The section is a string like "Episode 01 - Extracting subtitle"
 	/// 	Every section has...
@@ -30,8 +30,8 @@ namespace subs2srs4linux
 	/// 	An example is the number of processed lines when matching. Each section is finished
 	/// 	after the number of processed steps is the same as the number of given steps for
 	/// 	this section.
-	/// 
-	/// 
+	///
+	///
 	/// Every section has the same share of the total 100%. There are some section fully completed, then there is the "active" section and then
 	/// sections, that are 0% complete.
 	/// Every of the n sections has 1/n part in the progress bar. In-between steps are determined by the sub-steps in the active section.
@@ -100,7 +100,7 @@ namespace subs2srs4linux
 
 
 		/// <summary>
-		/// Initializes a new instance of the <see cref="subs2srs4linux.InfoProgress"/> class. The handler takes
+		/// Initializes a new instance of the <see cref="subtitleMemorize.InfoProgress"/> class. The handler takes
 		/// an information string and a value between 0 and 1, indicating the progress.
 		/// </summary>
 		/// <param name="setProgressHandler">Set progress handler.</param>
@@ -125,7 +125,7 @@ namespace subs2srs4linux
 		/// </summary>
 		/// <param name="steps">Steps.</param>
 		public void ProcessedSteps(int steps) {
-			
+
 			// update "current" section
 			int restSteps = m_progressSections [m_currentSection].AddProcessedSteps(steps);
 
@@ -134,13 +134,13 @@ namespace subs2srs4linux
 				if (m_currentSection >= m_progressSections.Count)
 					m_currentSection = m_progressSections.Count - 1;
 			}
-			
+
 
 			while (restSteps > 0) {
 				m_currentSection++;
 				if (m_currentSection >= m_progressSections.Count)
 					m_currentSection = m_progressSections.Count - 1;
-				
+
 				restSteps = m_progressSections [m_currentSection].AddProcessedSteps (restSteps);
 			}
 
@@ -163,4 +163,3 @@ namespace subs2srs4linux
 		}
 	}
 }
-

@@ -18,10 +18,11 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
 
-namespace subs2srs4linux
+namespace subtitleMemorize
 {
 	public static class UtilsSubtitle
 	{
@@ -92,10 +93,12 @@ namespace subs2srs4linux
 					return thisStringBuilder.ToString();
 				};
 
-				String sub1string = catenateString (matchedLines.listlines [0]);
-				String sub2string = catenateString (matchedLines.listlines [1]);
+				catenateString (matchedLines.listlines [0]);
+				catenateString (matchedLines.listlines [1]);
 
-				var entryInfo = new UtilsSubtitle.EntryInformation (sub1string, sub2string,
+				var entryInfo = new UtilsSubtitle.EntryInformation (
+																	matchedLines.listlines[0].ToList(),
+																	matchedLines.listlines[1].ToList(),
 																	episodeInfo,
 																	startTimestamp, endTimestamp,
 																	startTimestamp - settings.AudioPaddingBefore,
@@ -284,8 +287,8 @@ restartLoop:
 		/// for exactly one card.
 		/// </summary>
 		public class EntryInformation : IComparable<ITimeSpan>, ITimeSpan {
-			public String targetLanguageString;
-			public String nativeLanguageString;
+			public List<LineInfo> targetLanguageLines;
+			public List<LineInfo> nativeLanguageLines;
 			public EpisodeInfo episodeInfo;
 			public double startTimestamp;
 			public double endTimestamp;
@@ -297,34 +300,47 @@ restartLoop:
 				get { return UtilsCommon.GetTimeSpanLength(this); }
 			}
 
-			public EntryInformation(String targetLanguageString,
-									String nativeLanguageString,
+			public EntryInformation(List<LineInfo> targetLanguageLines,
+									List<LineInfo> nativeLanguageLines,
 									EpisodeInfo episodeInfo,
 									double startTimestamp,
 									double endTimestamp,
 									double audioStartTimestamp,
 									double audioEndTimestamp) {
-				this.targetLanguageString = targetLanguageString;
-				this.nativeLanguageString = nativeLanguageString;
-				this.episodeInfo = episodeInfo;
-				this.startTimestamp = startTimestamp;
-				this.endTimestamp = endTimestamp;
+				this.targetLanguageLines = targetLanguageLines;
+				this.nativeLanguageLines = nativeLanguageLines;
+				this.episodeInfo         = episodeInfo;
+				this.startTimestamp      = startTimestamp;
+				this.endTimestamp        = endTimestamp;
 				this.audioStartTimestamp = audioStartTimestamp;
-				this.audioEndTimestamp = audioEndTimestamp;
-				this.isActive = true;
+				this.audioEndTimestamp   = audioEndTimestamp;
+				this.isActive            = true;
 			}
 
 			/// <summary>
 			/// Unifies two EntryInformation into one (merging). The two EntryInformation have to be compatible
 			/// which can be checked with IsMergePossbile().
 			/// </summary>
-			public EntryInformation(EntryInformation first, EntryInformation second, String separatorString=" ") {
-				this.targetLanguageString = first.targetLanguageString + separatorString + second.targetLanguageString;
-				this.nativeLanguageString = first.nativeLanguageString + separatorString + second.nativeLanguageString;
-				this.episodeInfo = first.episodeInfo;
-				this.startTimestamp = Math.Min(first.startTimestamp, second.startTimestamp);
-				this.endTimestamp = Math.Max(first.endTimestamp, second.endTimestamp);
-				this.isActive = first.isActive || second.isActive;
+			public EntryInformation(EntryInformation first, EntryInformation second) {
+				this.targetLanguageLines = first.targetLanguageLines.Concat(second.targetLanguageLines).ToList();
+				this.nativeLanguageLines = first.nativeLanguageLines.Concat(second.nativeLanguageLines).ToList();
+				this.episodeInfo          = first.episodeInfo;
+				this.startTimestamp       = Math.Min(first.startTimestamp, second.startTimestamp);
+				this.endTimestamp         = Math.Max(first.endTimestamp, second.endTimestamp);
+				this.isActive             = first.isActive || second.isActive;
+			}
+
+			public List<LineInfo> GetListByLanguageType(UtilsCommon.LanguageType languageType) {
+				return languageType == UtilsCommon.LanguageType.NATIVE ? nativeLanguageLines : targetLanguageLines;
+			}
+
+			/// <summary>
+			/// Replaces strings in line infos by regex.
+			/// </summary>
+			public void DoRegexReplace(UtilsCommon.LanguageType languageType, String pattern, String to) {
+				foreach(var line in GetListByLanguageType(languageType)) {
+					line.text = Regex.Replace(line.text, pattern, to);
+				}
 			}
 
 			/// <summary>
@@ -361,7 +377,64 @@ restartLoop:
 				return StartTime < other.StartTime ? -1 : 1;
 			}
 
+			private string ToString(UtilsCommon.LanguageType languageType, String separator="\n") {
+				String str = "";
+				bool isFirst = true;
+				foreach(var line in GetListByLanguageType(languageType)) {
+					if(isFirst) {
+						str += line.text;
+						isFirst = false;
+					} else {
+						str += separator + line.text;
+					}
+				}
+				return str;
+			}
 
+			public string ToMultiLine(UtilsCommon.LanguageType languageType) {
+				return ToString(languageType, "\n");
+			}
+
+			public string ToSingleLine(UtilsCommon.LanguageType languageType) {
+				return ToString(languageType, " ");
+			}
+
+			private List<String> GetActors(UtilsCommon.LanguageType languageType) {
+				var result = new List<String>();
+				foreach(var line in targetLanguageLines) {
+					result.Add(line.name);
+				}
+				return result;
+			}
+
+			public List<String> GetActors() {
+				var list = GetActors(UtilsCommon.LanguageType.TARGET).Concat(GetActors(UtilsCommon.LanguageType.NATIVE)).Distinct().ToList();
+				list.Sort();
+				return list;
+			}
+
+			public String GetActorString() {
+				StringBuilder stringBuilder = new StringBuilder();
+				var actors = GetActors();
+				if(actors.Count > 0) stringBuilder.Append(actors[0]);
+				foreach(var actor in actors.Skip(1)) {
+					stringBuilder.Append(", ");
+					stringBuilder.Append(actor);
+				}
+				return stringBuilder.ToString();
+			}
+
+			/// <summary>
+			/// Updates LineInfos. Strings for different LineInfos are separated by '\n'.
+			/// Returns false if text could not be parsed.
+			/// </summary>
+			public bool SetLineInfosByMultiLineString(UtilsCommon.LanguageType languageType, string text) {
+				var lines = GetListByLanguageType(languageType);
+				var stringsRows = text.Split('\n').ToList();
+				if(stringsRows.Count != lines.Count()) { return false; }
+				for(int i = 0; i < lines.Count(); i++) { lines[i].text = stringsRows[i]; }
+				return true;
+			}
 		}
 	}
 }

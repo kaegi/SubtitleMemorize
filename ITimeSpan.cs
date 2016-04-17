@@ -16,7 +16,7 @@
 //
 using System;
 
-namespace subs2srs4linux
+namespace subtitleMemorize
 {
 	public interface ITimeSpan
 	{
@@ -29,4 +29,3 @@ namespace subs2srs4linux
 		}
 	}
 }
-

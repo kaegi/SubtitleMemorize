@@ -7,7 +7,7 @@
 *.sln.docstates
 *.userprefs
 
-#
+# Todo files
 todo
 TODO
 Todo
@@ -51,6 +51,7 @@ x64/
 *.pidb
 *.log
 *.scc
+*.atom-build.*
 
 # OS generated files #
 .DS_Store*
@@ -145,7 +146,7 @@ UpgradeLog*.htm
 *.txt~
 *.swp
 *.swo
- 
+
 # svn
 .svn
 

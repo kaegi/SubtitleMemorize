@@ -21,7 +21,7 @@ using System.IO;
 using System.Text.RegularExpressions;
 using System.Text;
 
-namespace subs2srs4linux
+namespace subtitleMemorize
 {
 	/// <summary>
 	/// Parse .ass/.ssa files

@@ -23,7 +23,7 @@ using System.Linq;
 using System.Text.RegularExpressions;
 using System.Text;
 
-namespace subs2srs4linux
+namespace subtitleMemorize
 {
 	/// <summary>
 	/// Parser for Subrip (.srt) files.

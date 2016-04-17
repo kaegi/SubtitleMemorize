@@ -17,7 +17,7 @@
 using System;
 using System.Collections.Generic;
 
-namespace subs2srs4linux {
+namespace subtitleMemorize {
 	class UtilsAlignSubToAudio {
 #pragma warning disable 0414, 0169
 		private static double m_stepSize = 0.5;
