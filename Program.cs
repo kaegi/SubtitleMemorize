@@ -822,7 +822,7 @@ namespace subtitleMemorize
 			};
 
 			m_eventboxImagePreview.ButtonReleaseEvent += delegate(object o, ButtonReleaseEventArgs args) {
-				var imageWnd = new Gtk.Window("subtitleMemorize - Image preview");
+				var imageWnd = new Gtk.Window("SubtitleMemorize - Image preview");
 				var image = new Gtk.Image();
 
 				// do not select currently selected entry again
