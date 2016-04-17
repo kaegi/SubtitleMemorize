@@ -793,7 +793,6 @@ namespace subs2srs4linux
 					// TODO: resetting text here would crash the application -> give user a signal this input is incorrect
 				} else {
 					UpdatePreviewListEntry(m_selectedPreviewIndex);
-					textview.StyleContext.RemoveClass("error_style");
 				}
 			};
 
@@ -944,18 +943,28 @@ namespace subs2srs4linux
 			expr.EvaluateParameter += delegate(string name, ParameterArgs args) {
 				switch(name) {
 					case "isActive": // fallthrough
-					case "active": args.Result= infoSource_Entry.isActive; break;
+					case "active":   args.Result = infoSource_Entry.isActive; break;
+
 					case "number":
 					case "episodeNumber":
-					case "episode": args.Result = infoSource_Entry.episodeInfo.Number; break;
-					case "sub": args.Result = infoSource_Entry.ToSingleLine(UtilsCommon.LanguageType.TARGET) + " " + infoSource_Entry.ToSingleLine(UtilsCommon.LanguageType.NATIVE); break;
-					case "sub1": args.Result = infoSource_Entry.ToSingleLine(UtilsCommon.LanguageType.TARGET); break;
-					case "sub2": args.Result = infoSource_Entry.ToSingleLine(UtilsCommon.LanguageType.NATIVE); break;
-					case "text": args.Result = infoSource_Entry.ToSingleLine(UtilsCommon.LanguageType.TARGET) + " " + infoSource_Entry.ToSingleLine(UtilsCommon.LanguageType.NATIVE); break;
-					case "text1": args.Result = infoSource_Entry.ToSingleLine(UtilsCommon.LanguageType.TARGET); break;
-					case "text2": args.Result = infoSource_Entry.ToSingleLine(UtilsCommon.LanguageType.NATIVE); break;
-					case "start": args.Result = infoSource_Entry.startTimestamp; break;
-					case "end": args.Result = infoSource_Entry.endTimestamp; break;
+					case "episode":  args.Result = infoSource_Entry.episodeInfo.Number; break;
+
+					case "text":
+					case "sub":      args.Result = infoSource_Entry.ToSingleLine(UtilsCommon.LanguageType.TARGET) + " " + infoSource_Entry.ToSingleLine(UtilsCommon.LanguageType.NATIVE); break;
+
+					case "sub1":
+					case "text1":    args.Result = infoSource_Entry.ToSingleLine(UtilsCommon.LanguageType.TARGET); break;
+
+					case "sub2":
+					case "text2":    args.Result = infoSource_Entry.ToSingleLine(UtilsCommon.LanguageType.NATIVE); break;
+
+					case "actor":
+					case "actors":
+					case "name":
+					case "names":    args.Result = infoSource_Entry.GetActorString(); break;
+
+					case "start":    args.Result = infoSource_Entry.startTimestamp; break;
+					case "end":      args.Result = infoSource_Entry.endTimestamp; break;
 					case "duration": args.Result = infoSource_Entry.Duration; break;
 				}
 			};
@@ -1533,7 +1542,7 @@ finish_regex:;
 			m_treeviewSelectionLines.UnselectAll ();
 			m_liststoreLines.Clear ();
 			foreach (UtilsSubtitle.EntryInformation entryInfo in m_allEntryInfomation)
-				m_liststoreLines.AppendValues (entryInfo.ToSingleLine(UtilsCommon.LanguageType.TARGET), entryInfo.ToSingleLine(UtilsCommon.LanguageType.NATIVE));
+				m_liststoreLines.AppendValues (entryInfo.ToSingleLine(UtilsCommon.LanguageType.TARGET), entryInfo.ToSingleLine(UtilsCommon.LanguageType.NATIVE), entryInfo.GetActorString());
 
 			// update all entries so activation of line gets properly displayed
 			TreeIter treeIter = new TreeIter ();

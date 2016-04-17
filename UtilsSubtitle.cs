@@ -399,6 +399,31 @@ restartLoop:
 				return ToString(languageType, " ");
 			}
 
+			private List<String> GetActors(UtilsCommon.LanguageType languageType) {
+				var result = new List<String>();
+				foreach(var line in targetLanguageLines) {
+					result.Add(line.name);
+				}
+				return result;
+			}
+
+			public List<String> GetActors() {
+				var list = GetActors(UtilsCommon.LanguageType.TARGET).Concat(GetActors(UtilsCommon.LanguageType.NATIVE)).Distinct().ToList();
+				list.Sort();
+				return list;
+			}
+
+			public String GetActorString() {
+				StringBuilder stringBuilder = new StringBuilder();
+				var actors = GetActors();
+				if(actors.Count > 0) stringBuilder.Append(actors[0]);
+				foreach(var actor in actors.Skip(1)) {
+					stringBuilder.Append(", ");
+					stringBuilder.Append(actor);
+				}
+				return stringBuilder.ToString();
+			}
+
 			/// <summary>
 			/// Updates LineInfos. Strings for different LineInfos are separated by '\n'.
 			/// Returns false if text could not be parsed.
