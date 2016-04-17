@@ -42,7 +42,7 @@ namespace subs2srs4linux
 
 			/// <summary>
 			/// The properties of file like text encoding, important stream for container formats, etc.
-			/// 
+			///
 			/// This dictionary can be null, which means that this file has the same properties as previous file.
 			/// In case the dictionary of the first file is null it means that no properties are set.
 			/// </summary>
@@ -53,7 +53,7 @@ namespace subs2srs4linux
 				this.properties = properties;
 			}
 		};
-		
+
 		private List<DataEntry> m_dataEntries = new List<DataEntry>();
 
 		// ParserStates -> expresses most recently finished token
@@ -61,11 +61,11 @@ namespace subs2srs4linux
 			PLIST_OPEN, 					// expect ">" or key
 			PLIST_KEY,						// expect "="
 			PLIST_ASSIGN,					// expect value
-			PLIST_VALUE,					// expect comma or 
+			PLIST_VALUE,					// expect comma or
 			PLIST_COMMA, 					// expect key
 			PLIST_CLOSE,					// expect filename or ","
 
-			FLIST_COMMA,					// expect filename, property list or "," 
+			FLIST_COMMA,					// expect filename, property list or ","
 			FLIST_FILENAME,					// expect filename
 
 			NUM_PARSER_STATES
@@ -128,26 +128,26 @@ namespace subs2srs4linux
 			};
 
 
-			// create connections/mappings for state machine 
-			map (PS.PLIST_OPEN, 		TT.CLOSE,	PS.PLIST_CLOSE,		null );
-			map (PS.PLIST_OPEN, 		TT.STRING,	PS.PLIST_KEY,		(String str) => { lastKey = str; } );
-			map (PS.PLIST_KEY, 			TT.ASSIGN,	PS.PLIST_ASSIGN, 	null );
-			map (PS.PLIST_ASSIGN,		TT.STRING,	PS.PLIST_VALUE,		(String str) => { curDict.Add(lastKey, str); } );
-			map (PS.PLIST_VALUE,		TT.COMMA,	PS.PLIST_COMMA,		null );
-			map (PS.PLIST_VALUE,		TT.CLOSE,	PS.PLIST_CLOSE,		null );
-			map (PS.PLIST_COMMA,		TT.STRING,	PS.PLIST_KEY,		(String str) => { lastKey = str; } );
-			map (PS.PLIST_CLOSE,		TT.STRING,	PS.FLIST_FILENAME,	(String str) => { m_dataEntries.Add (new DataEntry (str, curDict)); curDict = null; } );
-			map (PS.FLIST_COMMA, 		TT.OPEN,	PS.PLIST_OPEN,		(String str) => { curDict = new Dictionary<String, String>(); });
-			map (PS.FLIST_COMMA, 		TT.STRING, 	PS.FLIST_FILENAME,	(String str) => { m_dataEntries.Add (new DataEntry (str, curDict)); curDict = null; } );
-			map (PS.FLIST_COMMA, 		TT.COMMA, 	PS.FLIST_COMMA,		(String str) => { m_dataEntries.Add (new DataEntry (null, curDict)); curDict = null; } );
-			map (PS.FLIST_FILENAME, 	TT.COMMA, 	PS.FLIST_COMMA,		null );
+			// create connections/mappings for state machine
+			map (PS.PLIST_OPEN, 		TT.CLOSE,		PS.PLIST_CLOSE,		  null                                                                                     );
+			map (PS.PLIST_OPEN, 		TT.STRING,	PS.PLIST_KEY,		    (String str)   => { lastKey = str; }                                                     );
+			map (PS.PLIST_KEY, 			TT.ASSIGN,	PS.PLIST_ASSIGN, 	  null                                                                                     );
+			map (PS.PLIST_ASSIGN,		TT.STRING,	PS.PLIST_VALUE,		  (String str) => { curDict.Add(lastKey, str); }                                           );
+			map (PS.PLIST_VALUE,		TT.COMMA,		PS.PLIST_COMMA,		  null                                                                                     );
+			map (PS.PLIST_VALUE,		TT.CLOSE,		PS.PLIST_CLOSE,		  null                                                                                     );
+			map (PS.PLIST_COMMA,		TT.STRING,	PS.PLIST_KEY,		    (String str) => { lastKey = str; }                                                       );
+			map (PS.PLIST_CLOSE,		TT.STRING,	PS.FLIST_FILENAME,	(String str) => { m_dataEntries.Add (new DataEntry (str, curDict)); curDict = null; }    );
+			map (PS.FLIST_COMMA, 		TT.OPEN,		PS.PLIST_OPEN,		  (String str) => { curDict = new Dictionary<String, String>(); }                          );
+			map (PS.FLIST_COMMA, 		TT.STRING, 	PS.FLIST_FILENAME,	(String str) => { m_dataEntries.Add (new DataEntry (str, curDict)); curDict = null; }    );
+			map (PS.FLIST_COMMA, 		TT.COMMA, 	PS.FLIST_COMMA,		  (String str) => { m_dataEntries.Add (new DataEntry (null, curDict)); curDict = null; }   );
+			map (PS.FLIST_FILENAME, TT.COMMA, 	PS.FLIST_COMMA,		  null                                                                                     );
 
 
 			// follow state machine to end
 			parserState = PS.FLIST_COMMA;
 			foreach (String token in tokens)
 				stateMachineMapping [(int)parserState, (int)StringToTokenType (token)] (EscapeSequencesToNormalChar (token));
-			
+
 
 			// depending on last state there could be errors
 			switch (parserState) {
@@ -178,7 +178,7 @@ namespace subs2srs4linux
 		/// '&lt;', &gt;', '=' and ','. In case these characters
 		/// are precedented by '\' they become normal characters and the
 		/// string will not be split at this point.
-		/// 
+		///
 		/// &lt;encoding=utf-8,&gt;
 		/// </summary>
 		/// <example></example>
@@ -202,7 +202,7 @@ namespace subs2srs4linux
 					nextIsEscapeChar = true;
 				} else {
 					if (c == '<' || c == '>' || c == '=' || c == ',') {
-						if(intervalLength > 0) strings.AddLast (inputStr.Substring (beginInterval, intervalLength)); // text before special character 
+						if(intervalLength > 0) strings.AddLast (inputStr.Substring (beginInterval, intervalLength)); // text before special character
 						strings.AddLast (inputStr.Substring (beginInterval + intervalLength, 1)); // special character
 
 						// reset interval values
@@ -228,7 +228,7 @@ namespace subs2srs4linux
 			// unhandled escape char
 			if (nextIsEscapeChar)
 				throw new Exception ("Unexpected EOL (unfinished escape sequence)");
-			
+
 				strings.AddLast (inputStr.Substring (beginInterval));
 
 			// remove first and last empty strings
@@ -236,7 +236,7 @@ namespace subs2srs4linux
 				strings.RemoveFirst ();
 			while (strings.Last.Value == "")
 				strings.RemoveLast ();
-			
+
 
 			return strings.ToArray ();
 		}
@@ -354,10 +354,9 @@ namespace subs2srs4linux
 			// create filler entry
 			if (m_dataEntries.Count == 0)
 				m_dataEntries.Add (new DataEntry (null, null));
-			
+
 			m_dataEntries [0].properties = m_dataEntries [0].properties ?? new Dictionary<string, string> ();
 			m_dataEntries [0].properties [key] = value;
 		}
 	}
 }
-

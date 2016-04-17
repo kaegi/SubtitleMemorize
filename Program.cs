@@ -424,8 +424,8 @@ namespace subs2srs4linux
 		private List<EpisodeInfo> m_episodeInfo = new List<EpisodeInfo>();
 		private List<UtilsSubtitle.EntryInformation> m_allEntryInfomation = new List<UtilsSubtitle.EntryInformation>(); // all entries from all episodes
 		private int m_selectedPreviewIndex = -1; // index of single selected/focused entry in "m_previewWindowEntries"
-        private bool m_previewWindow_isShiftPressed = false;
-        private bool m_previewWindow_isControlPressed = false;
+		private bool m_previewWindow_isShiftPressed = false;
+		private bool m_previewWindow_isControlPressed = false;
 
 		// ##################################################################33
 		// Variables for Subtitle-Options-Window
@@ -475,8 +475,6 @@ namespace subs2srs4linux
 			// this has to be after "mainWindow.Show()", because otherwise the width of the window
 			// is determined by the width of this text
 			m_labelInInfobar.Markup = m_infobarLabelStandardMarkup;
-
-
 			//on_button_preview_clicked(null, null);
 
 			Application.Run ();
@@ -786,18 +784,29 @@ namespace subs2srs4linux
 
 			};
 
+
+			Action<UtilsCommon.LanguageType> onBufferChange = delegate(UtilsCommon.LanguageType languageType) {
+				var textview = GetTextViewByLanguageType(languageType);
+				var entryInfo = m_allEntryInfomation[m_selectedPreviewIndex];
+				var settingsSuccessful = entryInfo.SetLineInfosByMultiLineString(languageType, textview.Buffer.Text);
+				if(!settingsSuccessful) {
+					// TODO: resetting text here would crash the application -> give user a signal this input is incorrect
+				} else {
+					UpdatePreviewListEntry(m_selectedPreviewIndex);
+					textview.StyleContext.RemoveClass("error_style");
+				}
+			};
+
 			// ----------------------------------------------------------------------
 			// change entries when text in preview textviews is changed
 			m_textviewTargetLanguage.Buffer.Changed += delegate(object sender, EventArgs e) {
-				m_allEntryInfomation[m_selectedPreviewIndex].targetLanguageString = m_textviewTargetLanguage.Buffer.Text;
-				UpdatePreviewListEntry(m_selectedPreviewIndex);
+				onBufferChange(UtilsCommon.LanguageType.TARGET);
 			};
 
 			// ----------------------------------------------------------------------
 			// change entries when text in preview textviews is changed
 			m_textviewNativeLanguage.Buffer.Changed += delegate(object sender, EventArgs e) {
-				m_allEntryInfomation[m_selectedPreviewIndex].nativeLanguageString = m_textviewNativeLanguage.Buffer.Text;
-				UpdatePreviewListEntry(m_selectedPreviewIndex);
+				onBufferChange(UtilsCommon.LanguageType.NATIVE);
 			};
 
 			// ----------------------------------------------------------------------
@@ -836,6 +845,10 @@ namespace subs2srs4linux
 				imageWnd.Add(image);
 				imageWnd.ShowAll();
 			};
+		}
+
+		public Gtk.TextView GetTextViewByLanguageType(UtilsCommon.LanguageType languageType) {
+			return languageType == UtilsCommon.LanguageType.NATIVE ? m_textviewNativeLanguage : m_textviewTargetLanguage;
 		}
 
 		/// <summary>
@@ -935,12 +948,12 @@ namespace subs2srs4linux
 					case "number":
 					case "episodeNumber":
 					case "episode": args.Result = infoSource_Entry.episodeInfo.Number; break;
-					case "sub": args.Result = infoSource_Entry.targetLanguageString + " " + infoSource_Entry.nativeLanguageString; break;
-					case "sub1": args.Result = infoSource_Entry.targetLanguageString; break;
-					case "sub2": args.Result = infoSource_Entry.nativeLanguageString; break;
-					case "text": args.Result = infoSource_Entry.targetLanguageString + " " + infoSource_Entry.nativeLanguageString; break;
-					case "text1": args.Result = infoSource_Entry.targetLanguageString; break;
-					case "text2": args.Result = infoSource_Entry.nativeLanguageString; break;
+					case "sub": args.Result = infoSource_Entry.ToSingleLine(UtilsCommon.LanguageType.TARGET) + " " + infoSource_Entry.ToSingleLine(UtilsCommon.LanguageType.NATIVE); break;
+					case "sub1": args.Result = infoSource_Entry.ToSingleLine(UtilsCommon.LanguageType.TARGET); break;
+					case "sub2": args.Result = infoSource_Entry.ToSingleLine(UtilsCommon.LanguageType.NATIVE); break;
+					case "text": args.Result = infoSource_Entry.ToSingleLine(UtilsCommon.LanguageType.TARGET) + " " + infoSource_Entry.ToSingleLine(UtilsCommon.LanguageType.NATIVE); break;
+					case "text1": args.Result = infoSource_Entry.ToSingleLine(UtilsCommon.LanguageType.TARGET); break;
+					case "text2": args.Result = infoSource_Entry.ToSingleLine(UtilsCommon.LanguageType.NATIVE); break;
 					case "start": args.Result = infoSource_Entry.startTimestamp; break;
 					case "end": args.Result = infoSource_Entry.endTimestamp; break;
 					case "duration": args.Result = infoSource_Entry.Duration; break;
@@ -964,10 +977,10 @@ namespace subs2srs4linux
 
 						 bool result = false;
 						 if(arguments.Length == 1) {
-							 result = infoSource_Entry.nativeLanguageString.Contains(substring);
+							 result = infoSource_Entry.ToSingleLine(UtilsCommon.LanguageType.NATIVE).Contains(substring);
 							 if(result) { args.Result = result; goto contains_finished; }
 
-							 result = infoSource_Entry.targetLanguageString.Contains(substring);
+							 result = infoSource_Entry.ToSingleLine(UtilsCommon.LanguageType.TARGET).Contains(substring);
 							 if(result) { args.Result = result; goto contains_finished; }
 						 } else {
 							 // evaluate function
@@ -998,13 +1011,13 @@ contains_finished:;
 
 						 if(arguments.Length == 1) {
 							 try {
-								 var match = Regex.Match(infoSource_Entry.nativeLanguageString, regex, RegexOptions.Compiled | RegexOptions.IgnoreCase);
+								 var match = Regex.Match(infoSource_Entry.ToSingleLine(UtilsCommon.LanguageType.NATIVE), regex, RegexOptions.Compiled | RegexOptions.IgnoreCase);
 								 args.Result = match.Success;
 								 if(match.Success) goto finish_regex;
 							 } catch { }
 
 							 try {
-								 var match = Regex.Match(infoSource_Entry.targetLanguageString, regex, RegexOptions.Compiled | RegexOptions.IgnoreCase);
+								 var match = Regex.Match(infoSource_Entry.ToSingleLine(UtilsCommon.LanguageType.TARGET), regex, RegexOptions.Compiled | RegexOptions.IgnoreCase);
 								 args.Result = match.Success;
 								 if(match.Success) goto finish_regex;
 							 } catch { }
@@ -1074,13 +1087,13 @@ finish_regex:;
 				foreach(TreePath treePath in selectedTreePaths) {
 					// replace in this entry
 					UtilsSubtitle.EntryInformation entryInfo = m_allEntryInfomation[treePath.Indices[0]];
-					if(inSub1) entryInfo.targetLanguageString = Regex.Replace(entryInfo.targetLanguageString, pattern, replaceTo);
-					if(inSub2) entryInfo.nativeLanguageString = Regex.Replace(entryInfo.nativeLanguageString, pattern, replaceTo);
+					if(inSub1) entryInfo.DoRegexReplace(UtilsCommon.LanguageType.TARGET, pattern, replaceTo);
+					if(inSub2) entryInfo.DoRegexReplace(UtilsCommon.LanguageType.NATIVE, pattern, replaceTo);
 				}
 			} else {
 				foreach (UtilsSubtitle.EntryInformation entryInfo in m_allEntryInfomation) {
-					if(inSub1) entryInfo.targetLanguageString = Regex.Replace(entryInfo.targetLanguageString, pattern, replaceTo);
-					if(inSub2) entryInfo.nativeLanguageString = Regex.Replace(entryInfo.nativeLanguageString, pattern, replaceTo);
+					if(inSub1) entryInfo.DoRegexReplace(UtilsCommon.LanguageType.TARGET, pattern, replaceTo);
+					if(inSub2) entryInfo.DoRegexReplace(UtilsCommon.LanguageType.NATIVE, pattern, replaceTo);
 				}
 			}
 			UpdatePreviewList();
@@ -1116,12 +1129,12 @@ finish_regex:;
 			String endString = entryInfo.isActive ? "" : "</span>";
 
 			// set values in list TODO: can there be an index change?
-			m_liststoreLines.SetValue(treeIter.Value, 0, beginString + entryInfo.targetLanguageString + endString);
-			m_liststoreLines.SetValue(treeIter.Value, 1, beginString + entryInfo.nativeLanguageString + endString);
+			m_liststoreLines.SetValue(treeIter.Value, 0, beginString + entryInfo.ToSingleLine(UtilsCommon.LanguageType.TARGET) + endString);
+			m_liststoreLines.SetValue(treeIter.Value, 1, beginString + entryInfo.ToSingleLine(UtilsCommon.LanguageType.NATIVE) + endString);
 
 			if(updateSelectedEntryTextView && index == m_selectedPreviewIndex) {
-				m_textviewTargetLanguage.Buffer.Text = entryInfo.targetLanguageString;
-				m_textviewNativeLanguage.Buffer.Text = entryInfo.nativeLanguageString;
+				m_textviewTargetLanguage.Buffer.Text = entryInfo.ToMultiLine(UtilsCommon.LanguageType.TARGET);
+				m_textviewNativeLanguage.Buffer.Text = entryInfo.ToMultiLine(UtilsCommon.LanguageType.NATIVE);
 			}
 		}
 
@@ -1277,7 +1290,7 @@ finish_regex:;
 					String keyField = entryInfo.GetKey ();
 					String audioField = audioFields [i];
 					String imageField = snapshotFields [i];
-					outputStream.WriteLine (keyField + "\t" + imageField + "\t" + audioField + "\t" + entryInfo.targetLanguageString + "\t" + entryInfo.nativeLanguageString);
+					outputStream.WriteLine (keyField + "\t" + imageField + "\t" + audioField + "\t" + entryInfo.ToSingleLine(UtilsCommon.LanguageType.TARGET) + "\t" + entryInfo.ToSingleLine(UtilsCommon.LanguageType.NATIVE));
 				}
 			}
 		}
@@ -1486,8 +1499,8 @@ finish_regex:;
 			UtilsSubtitle.EntryInformation entryInfo = m_allEntryInfomation [selectedIndex];
 
 			Gtk.Application.Invoke (delegate {
-				m_textviewTargetLanguage.Buffer.Text = entryInfo.targetLanguageString;
-				m_textviewNativeLanguage.Buffer.Text = entryInfo.nativeLanguageString;
+				m_textviewTargetLanguage.Buffer.Text = entryInfo.ToMultiLine(UtilsCommon.LanguageType.TARGET);
+				m_textviewNativeLanguage.Buffer.Text = entryInfo.ToMultiLine(UtilsCommon.LanguageType.NATIVE);
 			});
 
 			// wait and see if the selected image is still the same (if user scrolls through list, is highly unperformant to extract all images
@@ -1520,7 +1533,7 @@ finish_regex:;
 			m_treeviewSelectionLines.UnselectAll ();
 			m_liststoreLines.Clear ();
 			foreach (UtilsSubtitle.EntryInformation entryInfo in m_allEntryInfomation)
-				m_liststoreLines.AppendValues (entryInfo.targetLanguageString, entryInfo.nativeLanguageString);
+				m_liststoreLines.AppendValues (entryInfo.ToSingleLine(UtilsCommon.LanguageType.TARGET), entryInfo.ToSingleLine(UtilsCommon.LanguageType.NATIVE));
 
 			// update all entries so activation of line gets properly displayed
 			TreeIter treeIter = new TreeIter ();

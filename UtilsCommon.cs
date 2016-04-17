@@ -28,6 +28,14 @@ namespace subs2srs4linux
 {
 	public class UtilsCommon
 	{
+		public enum LanguageType {
+			/// language that is known to the user
+			NATIVE,
+
+			/// language that the user wants to learn
+			TARGET,
+		}
+
 		private UtilsCommon ()
 		{
 
@@ -116,7 +124,7 @@ namespace subs2srs4linux
 
 		/// <summary>
 		/// Gets the mimetype by filename.
-		/// 
+		///
 		/// Code from:
 		/// 	https://github.com/mono/mono/blob/master/mcs/class/System.Web/System.Web/MimeMapping.cs
 		/// </summary>
@@ -127,7 +135,7 @@ namespace subs2srs4linux
 			if (filename == null) {
 				throw new ArgumentNullException ("filename");
 			}
-				
+
 			string contentType = null;
 			string extension = Path.GetExtension (filename);
 			if (_mimeMappings.TryGetValue (extension, out contentType)) {
