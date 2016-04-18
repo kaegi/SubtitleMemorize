@@ -426,6 +426,7 @@ namespace subtitleMemorize
 		private int m_selectedPreviewIndex = -1; // selected card in card list in preview window
 		private bool m_previewWindow_isShiftPressed = false;
 		private bool m_previewWindow_isControlPressed = false;
+		private bool m_ignoreBufferChanges = false;
 
 		// ##################################################################33
 		// Variables for Subtitle-Options-Window
@@ -786,6 +787,8 @@ namespace subtitleMemorize
 
 
 			Action<UtilsCommon.LanguageType> onBufferChange = delegate(UtilsCommon.LanguageType languageType) {
+				if(m_ignoreBufferChanges) return;
+
 				var textview = GetTextViewByLanguageType(languageType);
 				var cardInfo = m_cardInfos[m_selectedPreviewIndex];
 				var settingsSuccessful = cardInfo.SetLineInfosByMultiLineString(languageType, textview.Buffer.Text);
@@ -1143,8 +1146,10 @@ finish_regex:;
 			m_liststoreLines.SetValue(treeIter.Value, 2, beginString + GLib.Markup.EscapeText(cardInfo.GetActorString()) + endString);
 
 			if(updateSelectedEntryTextView && index == m_selectedPreviewIndex) {
+				m_ignoreBufferChanges = true;
 				m_textviewTargetLanguage.Buffer.Text = cardInfo.ToMultiLine(UtilsCommon.LanguageType.TARGET);
 				m_textviewNativeLanguage.Buffer.Text = cardInfo.ToMultiLine(UtilsCommon.LanguageType.NATIVE);
+				m_ignoreBufferChanges = false;
 			}
 		}
 
@@ -1509,8 +1514,10 @@ finish_regex:;
 			CardInfo cardInfo = m_cardInfos [selectedIndex];
 
 			Gtk.Application.Invoke (delegate {
+				m_ignoreBufferChanges = true;
 				m_textviewTargetLanguage.Buffer.Text = cardInfo.ToMultiLine(UtilsCommon.LanguageType.TARGET);
 				m_textviewNativeLanguage.Buffer.Text = cardInfo.ToMultiLine(UtilsCommon.LanguageType.NATIVE);
+				m_ignoreBufferChanges = false;
 			});
 
 			// wait and see if the selected image is still the same (if user scrolls through list, is highly unperformant to extract all images
