@@ -22,13 +22,13 @@ namespace subtitleMemorize
 {
 	public static class WorkerSnapshot
 	{
-		public static List<String> ExtractSnaphots(Settings settings, String path, List<UtilsSubtitle.EntryInformation> allEntries) {
+		public static List<String> ExtractSnaphots(Settings settings, String path, List<CardInfo> allEntries) {
 			List<String> snapshotFieldValues = new List<string>(allEntries.Count);
 			for(int i = 0; i < allEntries.Count; i++) {
-				UtilsSubtitle.EntryInformation entryInformation = allEntries[i];
+				CardInfo CardInfo = allEntries[i];
 
 				// create file at given path
-				String outputSnapshotFilename = entryInformation.GetKey () + ".jpg";
+				String outputSnapshotFilename = CardInfo.GetKey () + ".jpg";
 				String outputSnapshotFilepath = path + Path.DirectorySeparatorChar + outputSnapshotFilename;
 
 				// value that will be imported into Anki/SRS-Programs-Field
@@ -36,10 +36,10 @@ namespace subtitleMemorize
 				snapshotFieldValues.Add("<img src=\"" + outputSnapshotFilename + "\"/>");
 
 				// get file with snapshot information -> video
-				UtilsInputFiles.FileDesc videoFileDesc = entryInformation.episodeInfo.VideoFileDesc;
+				UtilsInputFiles.FileDesc videoFileDesc = CardInfo.episodeInfo.VideoFileDesc;
 
 				// extract image
-				double timeStamp = UtilsCommon.GetMiddleTime (entryInformation);
+				double timeStamp = UtilsCommon.GetMiddleTime (CardInfo);
 				UtilsImage.GetImage (videoFileDesc.filename, timeStamp, outputSnapshotFilepath, 1);
 			}
 			return snapshotFieldValues;

@@ -22,23 +22,23 @@ namespace subtitleMemorize
 {
 	public static class WorkerAudio
 	{
-		public static List<String> ExtractAudio(Settings settings, String path, List<UtilsSubtitle.EntryInformation> allEntries) {
+		public static List<String> ExtractAudio(Settings settings, String path, List<CardInfo> allEntries) {
 			List<String> audioFieldValues = new List<string>(allEntries.Count);
 			for(int i = 0; i < allEntries.Count; i++) {
-				UtilsSubtitle.EntryInformation entryInformation = allEntries[i];
+				CardInfo CardInfo = allEntries[i];
 
-				String outputAudioFilename = entryInformation.GetKey () + ".ogg";
+				String outputAudioFilename = CardInfo.GetKey () + ".ogg";
 				String outputAudioFilepath = path + Path.DirectorySeparatorChar + outputAudioFilename;
 				audioFieldValues.Add("[sound:" + outputAudioFilename + "]");
 
-				UtilsInputFiles.FileDesc audioFileDesc = entryInformation.episodeInfo.AudioFileDesc;
-				var audioStreamInfo = entryInformation.episodeInfo.AudioStreamInfo;
+				UtilsInputFiles.FileDesc audioFileDesc = CardInfo.episodeInfo.AudioFileDesc;
+				var audioStreamInfo = CardInfo.episodeInfo.AudioStreamInfo;
 
 				String arguments = String.Format ("-v quiet -y -i \"{0}\" -map 0:{1} -ss \"{2}\" -to \"{3}\" -vn -c:a libvorbis \"{4}\"",
 					audioFileDesc.filename, // input file
 					audioStreamInfo.StreamIndex, // audio stream index
-					UtilsCommon.ToTimeArg(entryInformation.startTimestamp), // start time
-					UtilsCommon.ToTimeArg(entryInformation.endTimestamp), // end time
+					UtilsCommon.ToTimeArg(CardInfo.startTimestamp), // start time
+					UtilsCommon.ToTimeArg(CardInfo.endTimestamp), // end time
 					outputAudioFilepath // output file
 				);
 				Console.WriteLine ("ffmpeg " + arguments);

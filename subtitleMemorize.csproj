@@ -83,6 +83,7 @@
     <Compile Include="UtilsAlignSubToAudio.cs" />
     <Compile Include="UtilsAudio.cs" />
     <Compile Include="UtilsAlignSubToSub.cs" />
+    <Compile Include="CardInfo.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <Import Project="..\packages\GtkSharp.Win32.3.1.2\build\net45\GtkSharp.Win32.targets" Condition="Exists('..\packages\GtkSharp.Win32.3.1.2\build\net45\GtkSharp.Win32.targets')" />
