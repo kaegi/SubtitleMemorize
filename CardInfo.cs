@@ -127,6 +127,7 @@ namespace subtitleMemorize
 		private List<String> GetActors(UtilsCommon.LanguageType languageType) {
 			var result = new List<String>();
 			foreach(var line in targetLanguageLines) {
+				if(String.IsNullOrWhiteSpace(line.name)) continue;
 				result.Add(line.name);
 			}
 			return result;
@@ -141,10 +142,10 @@ namespace subtitleMemorize
 		public String GetActorString() {
 			StringBuilder stringBuilder = new StringBuilder();
 			var actors = GetActors();
-			if(actors.Count > 0) stringBuilder.Append(actors[0]);
-			foreach(var actor in actors.Skip(1)) {
-				stringBuilder.Append(", ");
+			foreach(var actor in actors) {
+				stringBuilder.Append("<");
 				stringBuilder.Append(actor);
+				stringBuilder.Append("> ");
 			}
 			return stringBuilder.ToString();
 		}

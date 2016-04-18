@@ -1138,9 +1138,9 @@ finish_regex:;
 			String endString = cardInfo.isActive ? "" : "</span>";
 
 			// set values in list TODO: can there be an index change?
-			m_liststoreLines.SetValue(treeIter.Value, 0, beginString + cardInfo.ToSingleLine(UtilsCommon.LanguageType.TARGET) + endString);
-			m_liststoreLines.SetValue(treeIter.Value, 1, beginString + cardInfo.ToSingleLine(UtilsCommon.LanguageType.NATIVE) + endString);
-			m_liststoreLines.SetValue(treeIter.Value, 2, cardInfo.GetActorString());
+			m_liststoreLines.SetValue(treeIter.Value, 0, beginString + GLib.Markup.EscapeText(cardInfo.ToSingleLine(UtilsCommon.LanguageType.TARGET)) + endString);
+			m_liststoreLines.SetValue(treeIter.Value, 1, beginString + GLib.Markup.EscapeText(cardInfo.ToSingleLine(UtilsCommon.LanguageType.NATIVE)) + endString);
+			m_liststoreLines.SetValue(treeIter.Value, 2, beginString + GLib.Markup.EscapeText(cardInfo.GetActorString()) + endString);
 
 			if(updateSelectedEntryTextView && index == m_selectedPreviewIndex) {
 				m_textviewTargetLanguage.Buffer.Text = cardInfo.ToMultiLine(UtilsCommon.LanguageType.TARGET);
@@ -1543,7 +1543,9 @@ finish_regex:;
 			m_treeviewSelectionLines.UnselectAll ();
 			m_liststoreLines.Clear ();
 			foreach (CardInfo cardInfo in m_cardInfos)
-				m_liststoreLines.AppendValues (cardInfo.ToSingleLine(UtilsCommon.LanguageType.TARGET), cardInfo.ToSingleLine(UtilsCommon.LanguageType.NATIVE), cardInfo.GetActorString());
+				m_liststoreLines.AppendValues ( GLib.Markup.EscapeText(cardInfo.ToSingleLine(UtilsCommon.LanguageType.TARGET)),
+																				GLib.Markup.EscapeText(cardInfo.ToSingleLine(UtilsCommon.LanguageType.NATIVE)),
+																				GLib.Markup.EscapeText(cardInfo.GetActorString()));
 
 			// update all entries so activation of line gets properly displayed
 			TreeIter treeIter = new TreeIter ();
