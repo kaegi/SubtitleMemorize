@@ -1,6 +1,8 @@
 # Download this file using PowerShell v3 under Windows with the following comand
 # Invoke-WebRequest https://gist.githubusercontent.com/kmorcinek/2710267/raw/ -OutFile .gitignore
 
+[Mm]akefile
+
 # User-specific files
 *.suo
 *.user
@@ -8,9 +10,7 @@
 *.userprefs
 
 # Todo files
-todo
-TODO
-Todo
+[Tt][Oo][Dd][Oo]
 
 # Build results
 
