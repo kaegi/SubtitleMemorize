@@ -69,6 +69,8 @@ namespace subtitleMemorize
 			this.episodeInfo          = first.episodeInfo;
 			this.startTimestamp       = Math.Min(first.startTimestamp, second.startTimestamp);
 			this.endTimestamp         = Math.Max(first.endTimestamp, second.endTimestamp);
+			this.audioStartTimestamp  = Math.Min(first.audioStartTimestamp, second.audioStartTimestamp);
+			this.audioEndTimestamp		= Math.Max(first.audioEndTimestamp, second.audioEndTimestamp);
 			this.isActive             = first.isActive || second.isActive;
 		}
 
