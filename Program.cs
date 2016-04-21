@@ -20,11 +20,9 @@ using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
 using System.Runtime.Serialization.Formatters.Binary;
-using System.Text.RegularExpressions;
 using System.Threading;
 using System.Xml.Serialization;
 using Gtk;
-using NCalc;
 
 namespace subtitleMemorize
 {
@@ -421,12 +419,12 @@ namespace subtitleMemorize
 		// Variables for Preview window
 		private Settings m_previewSettings = null; // this set when preview window is shown and never changed until the preview window closes
 		private bool m_ignoreLineSelectionChanges = false;
-		private List<EpisodeInfo> m_episodeInfo = new List<EpisodeInfo>();
-		private List<CardInfo> m_cardInfos = new List<CardInfo>(); // all entries from all episodes
 		private int m_selectedPreviewIndex = -1; // selected card in card list in preview window
 		private bool m_previewWindow_isShiftPressed = false;
 		private bool m_previewWindow_isControlPressed = false;
 		private bool m_ignoreBufferChanges = false;
+		private PreviewListModel m_previewListModel = null;
+		private int m_previewImageID = 0;
 
 		// ##################################################################33
 		// Variables for Subtitle-Options-Window
@@ -749,8 +747,8 @@ namespace subtitleMemorize
 			m_buttonPlayContent.Clicked += delegate(object sender, EventArgs e) {
 				if(m_selectedPreviewIndex < 0) return;
 
-				CardInfo cardInfo = m_cardInfos[m_selectedPreviewIndex];
-				EpisodeInfo episodeInfo = m_episodeInfo[cardInfo.episodeInfo.Index];
+				CardInfo cardInfo = m_previewListModel.GetCardClone(m_selectedPreviewIndex);
+				EpisodeInfo episodeInfo = cardInfo.episodeInfo;
 				String arguments = String.Format("--really-quiet --no-video --start={0} --end={1} \"{2}\"",
 						UtilsCommon.ToTimeArg(cardInfo.audioStartTimestamp),
 						UtilsCommon.ToTimeArg(cardInfo.audioEndTimestamp),
@@ -765,21 +763,22 @@ namespace subtitleMemorize
 
 			m_toolbuttonToggleActivation.Clicked += delegate {
 				// switch isActive field for every selected entry
+				var updateItems = new List<int>();
 				TreePath[] selectedTreePaths = m_treeviewSelectionLines.GetSelectedRows();
 				foreach(TreePath treePath in selectedTreePaths) {
-					CardInfo cardInfo = m_cardInfos[treePath.Indices[0]];
-					cardInfo.isActive = !cardInfo.isActive;
+					updateItems.Add(treePath.Indices[0]);
 				}
 
 				// make internal changes visible to user
-				UpdatePreviewList();
+				var changeList = m_previewListModel.UpdateCardActivation(updateItems, PreviewListModel.BinaryChangeMode.Toggle);
+				UpdatePreviewListViewByChangeList(changeList);
 			};
 
 			m_toolbuttonGo.Clicked += delegate {
 				new Thread(new ThreadStart(delegate {
 					Console.WriteLine("Start computation");
 					InfoProgress progressInfo = new InfoProgress(ProgressHandler);
-					ExportData(m_previewSettings, progressInfo);
+					m_previewListModel.ExportData(m_previewSettings, progressInfo);
 					Console.WriteLine("End computation");
 				})).Start();
 
@@ -789,13 +788,15 @@ namespace subtitleMemorize
 			Action<UtilsCommon.LanguageType> onBufferChange = delegate(UtilsCommon.LanguageType languageType) {
 				if(m_ignoreBufferChanges) return;
 
+
 				var textview = GetTextViewByLanguageType(languageType);
-				var cardInfo = m_cardInfos[m_selectedPreviewIndex];
+				var cardInfo = m_previewListModel.GetCardClone(m_selectedPreviewIndex);
 				var settingsSuccessful = cardInfo.SetLineInfosByMultiLineString(languageType, textview.Buffer.Text);
 				if(!settingsSuccessful) {
 					// TODO: resetting text here would crash the application -> give user a signal this input is incorrect
 				} else {
-					UpdatePreviewListEntry(m_selectedPreviewIndex);
+					var changeList = m_previewListModel.SetCard(m_selectedPreviewIndex, cardInfo);
+					UpdatePreviewListViewByChangeList(changeList);
 				}
 			};
 
@@ -814,14 +815,8 @@ namespace subtitleMemorize
 			// ----------------------------------------------------------------------
 			// "merge line with next" or "merge selected"
 			m_toolbuttonMerge.Clicked += delegate(object sender, EventArgs e) {
-				TreePath[] selectedTreePaths = m_treeviewSelectionLines.GetSelectedRows();
-				if(selectedTreePaths.Length == 0) return;
-
-				// extract indices
-				List<int> selectedIndices = new List<int>(selectedTreePaths.Length);
-				foreach(var treePath in selectedTreePaths) { selectedIndices.Add(treePath.Indices[0]); }
-
-				MergeLines(selectedIndices, m_previewWindow_isControlPressed ? MergeMode.Prev : MergeMode.Next);
+				var changeList = m_previewListModel.MergeLines(GetSelectedRows(), m_previewWindow_isControlPressed ? PreviewListModel.MergeMode.Prev : PreviewListModel.MergeMode.Next);
+				UpdatePreviewListViewByChangeList(changeList);
 			};
 
 			m_eventboxImagePreview.ButtonReleaseEvent += delegate(object o, ButtonReleaseEventArgs args) {
@@ -829,13 +824,13 @@ namespace subtitleMemorize
 				var image = new Gtk.Image();
 
 				// do not select currently selected entry again
-				if (m_selectedPreviewIndex < 0 || m_selectedPreviewIndex >= m_cardInfos.Count)
+				if (!m_previewListModel.IsIndexInRange(m_selectedPreviewIndex))
 					return;
 
 				// get references to classes that describe the video file and stream
-				CardInfo cardInfo = m_cardInfos [m_selectedPreviewIndex];
-				UtilsInputFiles.FileDesc videoFilename = m_episodeInfo[cardInfo.episodeInfo.Index].VideoFileDesc;
-				StreamInfo videoStreamInfo = m_episodeInfo[cardInfo.episodeInfo.Index].VideoStreamInfo;
+				CardInfo cardInfo = m_previewListModel.GetCardClone(m_selectedPreviewIndex);
+				UtilsInputFiles.FileDesc videoFilename = cardInfo.episodeInfo.VideoFileDesc;
+				StreamInfo videoStreamInfo = cardInfo.episodeInfo.VideoStreamInfo;
 
 				// get right scaling
 				double scaling = UtilsVideo.GetMaxScalingByStreamInfo(videoStreamInfo, m_previewSettings.ImageMaxWidth, m_previewSettings.ImageMaxHeight);
@@ -853,77 +848,6 @@ namespace subtitleMemorize
 			return languageType == UtilsCommon.LanguageType.NATIVE ? m_textviewNativeLanguage : m_textviewTargetLanguage;
 		}
 
-		/// <summary>
-		/// There are three different modes for merging. Every selected line...
-		///		...will be merged with next line
-		///		...will be merged with previous line
-		///		...will be merged with all other selected lines
-		/// </summary>
-		private enum MergeMode {
-			Selected,
-			Next,
-			Prev,
-		}
-
-		private void MergeLines(List<int> selectedIndices, MergeMode mergeMode) {
-			// sort so consecutive indices can be recognized
-			selectedIndices.Sort();
-
-			// "merge prev" is like "merge next" for previous entry
-			if(mergeMode == MergeMode.Prev) {
-				for(int i = 0; i < selectedIndices.Count; i++) selectedIndices[i] -= 1;
-			}
-
-			// remove illegal indices
-			selectedIndices.RemoveAll(delegate(int i) { return i < 0 || i >= m_cardInfos.Count; });
-
-			// can't merge zero objects
-			if(selectedIndices.Count < 1) return;
-
-			// go through whole list and unify selected
-			int inSelectedIndicesListIndex = 0;
-			int numDeletedRows = 0; // every time a card information is deleted, all the following indices will decrease
-			TreeIter treeIter;
-			if(!m_liststoreLines.GetIterFirst(out treeIter)) return;
-			for(int currentListIndex = 0; currentListIndex <= selectedIndices[selectedIndices.Count - 1]; currentListIndex++) {
-				// skip if line was not selected for merging
-				if(currentListIndex < selectedIndices[inSelectedIndicesListIndex]) {
-					m_liststoreLines.IterNext(ref treeIter);
-					continue;
-				}
-
-				// get references and indices to current CardInfo and next CardInfo
-				int thisIndex = selectedIndices[inSelectedIndicesListIndex] - numDeletedRows;
-				var thisCardInfo = m_cardInfos[thisIndex];
-
-				// can't merge next if this entry is last
-				if(thisIndex == m_cardInfos.Count - 1) break;
-
-				int nextIndex = selectedIndices[inSelectedIndicesListIndex] - numDeletedRows + 1;
-				var nextCardInfo = m_cardInfos[nextIndex];
-
-				inSelectedIndicesListIndex++;
-
-				// only merge if merging is possible
-				if(!CardInfo.IsMergePossbile(thisCardInfo, nextCardInfo)) continue;
-				nextCardInfo = new CardInfo(thisCardInfo, nextCardInfo);
-
-				// "next entry" now contains both entries -> save this change
-				m_cardInfos[nextIndex] = nextCardInfo;
-
-				// remove entry that was unified into next
-				m_cardInfos.RemoveAt(thisIndex);
-				m_liststoreLines.Remove(ref treeIter); // this also moves treeIter to the next row
-				numDeletedRows++;
-
-				// update new entry which is now at index "thisIndex"
-				UpdatePreviewListEntry(thisIndex, treeIter);
-			}
-
-			// update entry selection
-			m_selectedPreviewIndex = -1;
-			SelectCard();
-		}
 
 		/// <summary>
 		/// Selects preview lines in Gtk.TreeView based on a condtion like "episode=3 and contains(sub1, 'Bye')".
@@ -932,146 +856,16 @@ namespace subtitleMemorize
 		/// <param name="isIncrementalSearch">Only change selection state for lines with matching expressions.</param>
 		/// <param name="selectAction">true -> select matching lines, false -> deselect matching lines</param>
 		public void PreviewWindowSelectLines(String conditionExpr, bool isIncrementalSearch, bool selectAction) {
-			// select all if expression is null
-			if(String.IsNullOrWhiteSpace(conditionExpr)) {
-				if(selectAction) m_treeviewSelectionLines.SelectAll();
-				else m_treeviewSelectionLines.UnselectAll();
-				return;
-			}
-
-			CardInfo infoSourceCard = null; // entry which will be used for evaluation an expression
-			Expression expr = new Expression (conditionExpr);
-
-			// resolve certain parameters in expression
-			expr.EvaluateParameter += delegate(string name, ParameterArgs args) {
-				switch(name) {
-					case "isActive": // fallthrough
-					case "active":   args.Result = infoSourceCard.isActive; break;
-
-					case "number":
-					case "episodeNumber":
-					case "episode":  args.Result = infoSourceCard.episodeInfo.Number; break;
-
-					case "text":
-					case "sub":      args.Result = infoSourceCard.ToSingleLine(UtilsCommon.LanguageType.TARGET) + " " + infoSourceCard.ToSingleLine(UtilsCommon.LanguageType.NATIVE); break;
-
-					case "sub1":
-					case "text1":    args.Result = infoSourceCard.ToSingleLine(UtilsCommon.LanguageType.TARGET); break;
-
-					case "sub2":
-					case "text2":    args.Result = infoSourceCard.ToSingleLine(UtilsCommon.LanguageType.NATIVE); break;
-
-					case "actor":
-					case "actors":
-					case "name":
-					case "names":    args.Result = infoSourceCard.GetActorString(); break;
-
-					case "start":    args.Result = infoSourceCard.startTimestamp; break;
-					case "end":      args.Result = infoSourceCard.endTimestamp; break;
-					case "duration": args.Result = infoSourceCard.Duration; break;
-				}
-			};
-			// resolve certain functions in expression
-			expr.EvaluateFunction += delegate(string name, FunctionArgs args) {
-				switch(name) {
-					// an exmple for this function is "contains(sub1, 'some text')" that selects all lines, where sub1 contains 'some text'
-					case "c":
-					case "contains": {
-						 // two string parameters are expected
-						 if(args.Parameters.Length < 1) return;
-						 object[] arguments = args.EvaluateParameters();
-						 foreach(var argument in arguments)
-							 if(!(argument is String)) return;
-
-						 String substring = (String)arguments[arguments.Length - 1];
-						 args.HasResult = true;
-						 args.Result = false;
-
-						 bool result = false;
-						 if(arguments.Length == 1) {
-							 result = infoSourceCard.ToSingleLine(UtilsCommon.LanguageType.NATIVE).Contains(substring);
-							 if(result) { args.Result = result; goto contains_finished; }
-
-							 result = infoSourceCard.ToSingleLine(UtilsCommon.LanguageType.TARGET).Contains(substring);
-							 if(result) { args.Result = result; goto contains_finished; }
-						 } else {
-							 // evaluate function
-							 for(int i = 0; i < arguments.Length - 1; i++) {
-								 String string0 = (String)arguments[i];
-								 result = string0.Contains(substring);
-								 if(result) { args.Result = result; goto contains_finished; }
-							 }
-						 }
-
-contains_finished:;
-
-					} break;
-
-					// search for regex; for example: "r(text1, 'hi|hello')"
-					// 'r('hi|hello')' searches both in sub1 and sub2
-					case "r":
-					case "regex": {
-						 // two string parameters are expected
-						 if(args.Parameters.Length < 1) return;
-						 object[] arguments = args.EvaluateParameters();
-						 foreach(var argument in arguments)
-							 if(!(argument is String)) return;
-
-						 String regex = (String)arguments[arguments.Length - 1];
-						 args.HasResult = true;
-						 args.Result = false;
-
-						 if(arguments.Length == 1) {
-							 try {
-								 var match = Regex.Match(infoSourceCard.ToSingleLine(UtilsCommon.LanguageType.NATIVE), regex, RegexOptions.Compiled | RegexOptions.IgnoreCase);
-								 args.Result = match.Success;
-								 if(match.Success) goto finish_regex;
-							 } catch { }
-
-							 try {
-								 var match = Regex.Match(infoSourceCard.ToSingleLine(UtilsCommon.LanguageType.TARGET), regex, RegexOptions.Compiled | RegexOptions.IgnoreCase);
-								 args.Result = match.Success;
-								 if(match.Success) goto finish_regex;
-							 } catch { }
-						 } else if(arguments.Length > 1) {
-							 // try to match any text before regex argument
-							 for(int i = 0; i < arguments.Length - 1; i++) {
-								 try {
-									 String str = (String)arguments[0];
-									 var match = Regex.Match(str, regex, RegexOptions.Compiled | RegexOptions.IgnoreCase);
-									 args.Result = match.Success;
-									 if(match.Success) goto finish_regex;
-								 } catch { }
-							 }
-						 }
-
-finish_regex:;
-
-					} break;
-
-					// example: time('25:10.50') returns the number of seconds of 25min 10secs 50hsecs
-					case "time": {
-						if(args.Parameters.Length != 1) return;
-						object argumentObject = args.EvaluateParameters()[0];
-						if(!(argumentObject is String)) return;
-						String timeString = (String) argumentObject;
-
-						args.Result = UtilsCommon.ParseTimeString(timeString);
-						args.HasResult = true;
-					} break;
-				}
-			};
+			var resultList = m_previewListModel.EvaluateForEveryLine(conditionExpr);
 
 
 			// go through whole list and evaluate the expression for every entry
+			int index = 0;
 			TreeIter treeIter;
 			if(!m_liststoreLines.GetIterFirst(out treeIter)) return;
-			foreach (CardInfo cardInfo in m_cardInfos) {
-				// provide info for exrp.Evaluate()
-				infoSourceCard = cardInfo;
-
+			do {
 				// select if expression is evaluated positive, deselect if negative
-				object result = expr.Evaluate();
+				object result = resultList[index++];
 				if(result is bool) {
 					if(selectAction) {
 						// standard action: select
@@ -1083,32 +877,29 @@ finish_regex:;
 						else if(!isIncrementalSearch) m_treeviewSelectionLines.SelectIter(treeIter);
 					}
 				}
-
-				if(!m_liststoreLines.IterNext(ref treeIter))
-					break; // error: the two list didn't have the same number of elements
-			}
-
+			} while(m_liststoreLines.IterNext(ref treeIter));
 		}
+
+		private List<int> GetSelectedRows() {
+			TreePath[] selectedTreePaths = m_treeviewSelectionLines.GetSelectedRows();
+			List<int> selectedRows = new List<int>();
+			foreach(TreePath tp in selectedTreePaths)
+				selectedRows.Add(tp.Indices[0]);
+			return selectedRows;
+		}
+
 
 		/// <summary>
 		/// Replace text in sub1 and/or sub2 by using regexes.
 		/// </summary>
 		private void PreviewWindowRegexReplace(bool inSub1, bool inSub2, bool onlyInSelected, String pattern, String replaceTo) {
-			if(onlyInSelected) {
-				TreePath[] selectedTreePaths = m_treeviewSelectionLines.GetSelectedRows();
-				foreach(TreePath treePath in selectedTreePaths) {
-					// replace in this entry
-					CardInfo cardInfo = m_cardInfos[treePath.Indices[0]];
-					if(inSub1) cardInfo.DoRegexReplace(UtilsCommon.LanguageType.TARGET, pattern, replaceTo);
-					if(inSub2) cardInfo.DoRegexReplace(UtilsCommon.LanguageType.NATIVE, pattern, replaceTo);
-				}
-			} else {
-				foreach (CardInfo cardInfo in m_cardInfos) {
-					if(inSub1) cardInfo.DoRegexReplace(UtilsCommon.LanguageType.TARGET, pattern, replaceTo);
-					if(inSub2) cardInfo.DoRegexReplace(UtilsCommon.LanguageType.NATIVE, pattern, replaceTo);
-				}
-			}
-			UpdatePreviewList();
+
+			List<int> indices = null;
+			if(onlyInSelected) indices = GetSelectedRows();
+			else indices = UtilsCommon.GetListFromTo(0, m_previewListModel.GetLength());
+
+			var changeList = m_previewListModel.RegexReplace(indices, inSub1, inSub2, pattern, replaceTo);
+			UpdatePreviewListViewByChangeList(changeList);
 		}
 
 		/// <summary>
@@ -1129,12 +920,10 @@ finish_regex:;
 		/// <summary>
 		/// XXX: documentation missing
 		/// </summary>
-		private void UpdatePreviewListEntry(int index, TreeIter? treeIter = null, bool updateSelectedEntryTextView=false) {
-			if(index < 0 || index >= m_cardInfos.Count) throw new ArgumentOutOfRangeException(); // nothing to update
+		private void UpdatePreviewListEntry(int index, CardInfo cardInfo, TreeIter? treeIter = null, bool updateSelectedEntryTextView=false) {
+			if(!m_previewListModel.IsIndexInRange(index)) throw new ArgumentOutOfRangeException(); // nothing to update
 			if(treeIter == null)
 				treeIter = GetTreeIterByIndex(index);  // TODO: cache this value
-
-			CardInfo cardInfo = m_cardInfos[index];
 
 			// if this entry is deactivated the line is colored grey with Pango's markup language
 			String beginString = cardInfo.isActive ? "" : "<span foreground=\"white\" background=\"grey\">";
@@ -1146,26 +935,49 @@ finish_regex:;
 			m_liststoreLines.SetValue(treeIter.Value, 2, beginString + GLib.Markup.EscapeText(cardInfo.GetActorString()) + endString);
 
 			if(updateSelectedEntryTextView && index == m_selectedPreviewIndex) {
-				m_ignoreBufferChanges = true;
-				m_textviewTargetLanguage.Buffer.Text = cardInfo.ToMultiLine(UtilsCommon.LanguageType.TARGET);
-				m_textviewNativeLanguage.Buffer.Text = cardInfo.ToMultiLine(UtilsCommon.LanguageType.NATIVE);
-				m_ignoreBufferChanges = false;
+				// regenerate image and set texts
+				m_selectedPreviewIndex = -1;
+				new Thread(new ThreadStart(delegate {
+					SelectCard(index);
+				})).Start();;
 			}
 		}
 
 		/// <summary>
 		/// This function sets all lines in the Gtk.TreeView to the values in m_cardInfos.
-		/// The TreeView has to contain exactly the same number of elements as the list.
 		/// </summary>
-		private void UpdatePreviewList() {
+		private void UpdatePreviewListViewByChangeList(List<PreviewListModel.AtomicChange> list) {
+			int currentLine = -1, currentChangeIndex = 0;
+			int numDeletions = 0;
+			bool isNextIter = false;
+
+			// Nothing to do?
+			if(list.Count == 0) return;
 
 			TreeIter treeIter;
 			if(!m_liststoreLines.GetIterFirst(out treeIter)) return;
-			for(int i = 0; i < m_cardInfos.Count; i++) {
-				UpdatePreviewListEntry(i, treeIter, true);
-				if(!m_liststoreLines.IterNext(ref treeIter))
-					break; // error: the two list didn't have the same number of elements
-			}
+			do {
+				currentLine++;
+				if(list[currentChangeIndex].line != currentLine) {
+					isNextIter = m_liststoreLines.IterNext(ref treeIter);
+					continue;
+				}
+
+				var change = list[currentChangeIndex];
+				switch(change.changeType) {
+					case PreviewListModel.ChangeType.DataUpdate:
+						UpdatePreviewListEntry(currentLine - numDeletions, change.cardInfo, treeIter, true);
+						isNextIter = m_liststoreLines.IterNext(ref treeIter);
+						break;
+					case PreviewListModel.ChangeType.LineDelete:
+						isNextIter = m_liststoreLines.Remove(ref treeIter);
+						numDeletions++;
+						break;
+					default: throw new NotImplementedException();
+				}
+
+				currentChangeIndex++;
+			} while(isNextIter && currentChangeIndex < list.Count);
 		}
 
 		private static List<EpisodeInfo> GenerateEpisodeInfos(Settings settings) {
@@ -1234,15 +1046,15 @@ finish_regex:;
 				m_progressAndCancellable = progressInfo;
 
 				// find sub1, sub2, audio and video file per episode
-				m_episodeInfo.Clear();
-				m_episodeInfo.AddRange(GenerateEpisodeInfos(settings));
+				var episodeInfo = new List<EpisodeInfo>();
+				episodeInfo.AddRange(GenerateEpisodeInfos(settings));
 
 				// fill in progress sections
-				for(int i = 0; i < m_episodeInfo.Count; i++)
+				for(int i = 0; i < episodeInfo.Count; i++)
 					progressInfo.AddSection(String.Format("Episode {0:00.}: Extracting Sub1", i + 1), 1);
-				for(int i = 0; i < m_episodeInfo.Count; i++)
+				for(int i = 0; i < episodeInfo.Count; i++)
 					progressInfo.AddSection(String.Format("Episode {0:00.}: Extracting Sub2", i + 1), 1);
-				for(int i = 0; i < m_episodeInfo.Count; i++)
+				for(int i = 0; i < episodeInfo.Count; i++)
 					progressInfo.AddSection(String.Format("Episode {0:00.}: Matching subtitles", i + 1), 1);
 
 				progressInfo.AddSection("Preparing data presentation", 1);
@@ -1250,8 +1062,10 @@ finish_regex:;
 
 
 				// read all sub-files, match them and create a list for user that can be presented in preview window
-				m_cardInfos.Clear();
-				m_cardInfos.AddRange(GenerateCardInfo(settings, m_episodeInfo, progressInfo) ?? new List<CardInfo>());
+				var cardInfos = new List<CardInfo>();
+				cardInfos.AddRange(GenerateCardInfo(settings, episodeInfo, progressInfo) ?? new List<CardInfo>());
+
+				m_previewListModel = new PreviewListModel(cardInfos);
 
 				if(!progressInfo.Cancelled) {
 
@@ -1263,7 +1077,7 @@ finish_regex:;
 					if(previewOrGo == PendingOperation.GENERATE_PREVIEW)
 						PopulatePreviewList();
 					else
-						ExportData(settings, progressInfo);
+						m_previewListModel.ExportData(settings, progressInfo);
 				}
 
 				// close progress window, free pending operation variable
@@ -1273,42 +1087,7 @@ finish_regex:;
 
 		}
 
-		private void ExportData(Settings settings, InfoProgress progressInfo) {
-			String tsvFilename = settings.OutputDirectoryPath + Path.DirectorySeparatorChar + settings.DeckName + ".tsv";
-			String snapshotsPath = settings.OutputDirectoryPath + Path.DirectorySeparatorChar + settings.DeckName + "_snapshots" + Path.DirectorySeparatorChar;
-			String audioPath = settings.OutputDirectoryPath + Path.DirectorySeparatorChar + settings.DeckName + "_audio" + Path.DirectorySeparatorChar;
-			Console.WriteLine (tsvFilename);
 
-			// remove all entries that are now deactivated
-			List<CardInfo> activeCardInfos = new List<CardInfo>();
-			activeCardInfos.AddRange (m_cardInfos);
-			activeCardInfos.RemoveAll ((CardInfo cardInfo) => !cardInfo.isActive);
-
-			// extract images
-			if(Directory.Exists(snapshotsPath)) Directory.Delete(snapshotsPath, true);
-		 	Directory.CreateDirectory(snapshotsPath);
-			List<String> snapshotFields = WorkerSnapshot.ExtractSnaphots(settings, snapshotsPath, activeCardInfos);
-
-			// extract audio
-			if(Directory.Exists(audioPath)) Directory.Delete(audioPath, true);
-			Directory.CreateDirectory(audioPath);
-			List<String> audioFields = WorkerAudio.ExtractAudio(settings, audioPath, activeCardInfos);
-
-
-			// TODO: normalize audio
-
-			using(var outputStream = new StreamWriter(tsvFilename)) {
-				for (int i = 0; i < activeCardInfos.Count; i++) {
-					CardInfo cardInfo = activeCardInfos[i];
-
-
-					String keyField = cardInfo.GetKey ();
-					String audioField = audioFields [i];
-					String imageField = snapshotFields [i];
-					outputStream.WriteLine (keyField + "\t" + imageField + "\t" + audioField + "\t" + cardInfo.ToSingleLine(UtilsCommon.LanguageType.TARGET) + "\t" + cardInfo.ToSingleLine(UtilsCommon.LanguageType.NATIVE));
-				}
-			}
-		}
 
 		private void PopulatePreviewList() {
 
@@ -1507,11 +1286,11 @@ finish_regex:;
 		private void SelectCard (int selectedIndex)
 		{
 			// do not select currently selected entry again
-			if (selectedIndex == m_selectedPreviewIndex || selectedIndex < 0 || selectedIndex >= m_cardInfos.Count)
+			if (selectedIndex == m_selectedPreviewIndex || !m_previewListModel.IsIndexInRange(selectedIndex))
 				return;
 
 			m_selectedPreviewIndex = selectedIndex;
-			CardInfo cardInfo = m_cardInfos [selectedIndex];
+			CardInfo cardInfo = m_previewListModel.GetCardClone(m_selectedPreviewIndex);
 
 			Gtk.Application.Invoke (delegate {
 				m_ignoreBufferChanges = true;
@@ -1520,10 +1299,12 @@ finish_regex:;
 				m_ignoreBufferChanges = false;
 			});
 
+			int previewImageID = ++m_previewImageID;
+
 			// wait and see if the selected image is still the same (if user scrolls through list, is highly unperformant to extract all images
-			// that are only selected like 10ms)
+			// that are discarded every 10ms)
 			Thread.Sleep (150);
-			if (selectedIndex != m_selectedPreviewIndex)
+			if (previewImageID != m_previewImageID)
 				return;
 
 			// preview image does not need to be in full size (saves computation time)
@@ -1531,8 +1312,8 @@ finish_regex:;
 			const int maxHeight = 300;
 
 			// get real scaling
-			UtilsInputFiles.FileDesc videoFilename = m_episodeInfo[cardInfo.episodeInfo.Index].VideoFileDesc;
-			var videoStreamInfo = m_episodeInfo[cardInfo.episodeInfo.Index].VideoStreamInfo;
+			UtilsInputFiles.FileDesc videoFilename = cardInfo.episodeInfo.VideoFileDesc;
+			var videoStreamInfo = cardInfo.episodeInfo.VideoStreamInfo;
 			double videoScaling = UtilsVideo.GetMaxScalingByStreamInfo(videoStreamInfo, maxWidth, maxHeight);
 
 			// extract small preview image
@@ -1549,21 +1330,11 @@ finish_regex:;
 			m_selectedPreviewIndex = -1;
 			m_treeviewSelectionLines.UnselectAll ();
 			m_liststoreLines.Clear ();
-			foreach (CardInfo cardInfo in m_cardInfos)
-				m_liststoreLines.AppendValues ( GLib.Markup.EscapeText(cardInfo.ToSingleLine(UtilsCommon.LanguageType.TARGET)),
-																				GLib.Markup.EscapeText(cardInfo.ToSingleLine(UtilsCommon.LanguageType.NATIVE)),
-																				GLib.Markup.EscapeText(cardInfo.GetActorString()));
+			for(int i = 0; i < m_previewListModel.GetLength(); i++)
+				m_liststoreLines.AppendValues ("", "", "");
 
-			// update all entries so activation of line gets properly displayed
-			TreeIter treeIter = new TreeIter ();
-			if (m_liststoreLines.GetIterFirst (out treeIter)) {
-				int index = 0;
-				do {
-					UpdatePreviewListEntry (index, treeIter);
-					index++;
-				} while(m_liststoreLines.IterNext (ref treeIter));
-				m_treeviewSelectionLines.SelectIter (treeIter); // select first entry
-			}
+			var updateList = m_previewListModel.GenerateFullUpdateList();
+			UpdatePreviewListViewByChangeList(updateList);
 		}
 
 

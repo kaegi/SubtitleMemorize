@@ -27,6 +27,7 @@ namespace subtitleMemorize
 	public class UtilsInputFiles
 	{
 
+		[Serializable]
 		public class FileDesc {
 			public readonly String filename; // can be whitespace
 			public readonly Dictionary<String, String> properties;

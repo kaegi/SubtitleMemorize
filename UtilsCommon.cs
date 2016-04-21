@@ -23,6 +23,7 @@ using System.IO;
 using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
+using System.Runtime.Serialization.Formatters.Binary;
 
 namespace subtitleMemorize
 {
@@ -384,6 +385,22 @@ namespace subtitleMemorize
 				seconds += Int32.Parse(splitByDot[1]) / Math.Pow(10, fracSeconds.Length);
 
 			return seconds;
+		}
+
+		public static T DeepClone<T>(T obj)
+		{
+			using (var ms = new MemoryStream())
+			{
+				var formatter = new BinaryFormatter();
+				formatter.Serialize(ms, obj);
+				ms.Position = 0;
+
+				return (T) formatter.Deserialize(ms);
+			}
+		}
+
+		public static List<int> GetListFromTo(int start, int end) {
+			return (from number in Enumerable.Range(start, end) select number).ToList();
 		}
 	}
 }

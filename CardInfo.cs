@@ -28,6 +28,7 @@ namespace subtitleMemorize
 	/// Every CardInfo-Instance, that isn't filtered away will be used
 	/// for exactly one card.
 	/// </summary>
+	[Serializable]
 	public class CardInfo : IComparable<ITimeSpan>, ITimeSpan {
 		public List<LineInfo> targetLanguageLines;
 		public List<LineInfo> nativeLanguageLines;

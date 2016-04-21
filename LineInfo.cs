@@ -19,6 +19,7 @@ using System;
 
 namespace subtitleMemorize
 {
+	[Serializable]
 	public class LineInfo : IComparable<ITimeSpan>, ITimeSpan
 	{
 		public double startTime;

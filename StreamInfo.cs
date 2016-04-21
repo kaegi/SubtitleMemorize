@@ -22,9 +22,11 @@ using System.Xml;
 
 namespace subtitleMemorize
 {
+	[Serializable]
 	public class StreamInfo
 	{
 
+		[Serializable]
 		public class StreamType {
 
 			public static readonly StreamType ST_SUBTITLE = new StreamType (0, "subtitle");
