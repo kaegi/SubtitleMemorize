@@ -148,7 +148,7 @@ namespace subtitleMemorize
 
 		private List<String> GetActors(UtilsCommon.LanguageType languageType) {
 			var result = new List<String>();
-			foreach(var line in targetLanguageLines) {
+			foreach(var line in GetListByLanguageType(languageType)) {
 				if(String.IsNullOrWhiteSpace(line.name)) continue;
 				result.Add(line.name);
 			}
