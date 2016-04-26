@@ -352,6 +352,14 @@ namespace subtitleMemorize
                 }
             };
 
+            for(int i = 0; i < m_cardInfos.Count; i++) {
+              // provide infos for expr.Evaluate()
+              infoSourceCard = m_cardInfos[i];
+              object result = expr.Evaluate();
+              if(result is bool && result != null)
+                resultsList[i] = (bool)result;
+            }
+
             return resultsList;
         }
 
