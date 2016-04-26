@@ -5,6 +5,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using NCalc;
 using System.Text.RegularExpressions;
+using System.Text;
 
 namespace subtitleMemorize
 {
@@ -62,7 +63,8 @@ namespace subtitleMemorize
 
         public PreviewListModel(List<CardInfo> cardInfos)
         {
-          m_cardInfos = cardInfos;
+            m_cardInfos = cardInfos;
+            m_cardInfos.Sort();
         }
 
         public CardInfo GetCardClone(int index)
@@ -172,10 +174,10 @@ namespace subtitleMemorize
 
                 // "next entry" now contains both entries -> save this change
                 m_cardInfos[nextIndex] = nextCardInfo;
-                if(changeList.Count > 0 && changeList.Last().line == currentListIndex)
-                  changeList[changeList.Count - 1] = new AtomicChange(currentListIndex, null, ChangeType.LineDelete);
+                if (changeList.Count > 0 && changeList.Last().line == currentListIndex)
+                    changeList[changeList.Count - 1] = new AtomicChange(currentListIndex, null, ChangeType.LineDelete);
                 else
-                  changeList.Add(new AtomicChange(currentListIndex, null, ChangeType.LineDelete));
+                    changeList.Add(new AtomicChange(currentListIndex, null, ChangeType.LineDelete));
                 changeList.Add(new AtomicChange(currentListIndex + 1, nextCardInfo, ChangeType.DataUpdate));
 
                 // remove entry that was unified into next
@@ -197,10 +199,10 @@ namespace subtitleMemorize
         public List<bool> EvaluateForEveryLine(String conditionExpr)
         {
             // select all if expression is null
-            var resultsList =  Enumerable.Repeat(false, m_cardInfos.Count).ToList();
+            var resultsList = Enumerable.Repeat(false, m_cardInfos.Count).ToList();
             if (String.IsNullOrWhiteSpace(conditionExpr))
             {
-              return resultsList;
+                return resultsList;
             }
 
 
@@ -404,22 +406,44 @@ namespace subtitleMemorize
                 {
                     CardInfo cardInfo = activeCardInfos[i];
 
+                    // TODO: generate a episode-filtered list for context card search (because it has O(n^2) steps)
+                    var contextCardsTuple = UtilsSubtitle.GetContextCards(cardInfo.episodeInfo.Index, cardInfo, activeCardInfos);
+                    var previousCards = contextCardsTuple.Item1;
+                    var nextCards = contextCardsTuple.Item2;
+
+                    var previousCardsNativeLanguage = UtilsSubtitle.CardListToMultilineString(previousCards, UtilsCommon.LanguageType.NATIVE);
+                    var previousCardsTargetLanguage = UtilsSubtitle.CardListToMultilineString(previousCards, UtilsCommon.LanguageType.TARGET);
+
+                    var nextCardsNativeLanguage = UtilsSubtitle.CardListToMultilineString(nextCards, UtilsCommon.LanguageType.NATIVE);
+                    var nextCardsTargetLanguage = UtilsSubtitle.CardListToMultilineString(nextCards, UtilsCommon.LanguageType.TARGET);
 
                     String keyField = cardInfo.GetKey();
                     String audioField = audioFields[i];
                     String imageField = snapshotFields[i];
-                    outputStream.WriteLine(keyField + "\t" + imageField + "\t" + audioField + "\t" + cardInfo.ToSingleLine(UtilsCommon.LanguageType.TARGET) + "\t" + cardInfo.ToSingleLine(UtilsCommon.LanguageType.NATIVE));
+                    String tags = String.Format("{0} ep{1}", settings.DeckNameModified, cardInfo.episodeInfo.Number);
+                    outputStream.WriteLine(UtilsCommon.HTMLify(keyField) + "\t" +
+                                           UtilsCommon.HTMLify(imageField) + "\t"+
+                                           UtilsCommon.HTMLify(audioField) + "\t" +
+                                           UtilsCommon.HTMLify(cardInfo.ToSingleLine(UtilsCommon.LanguageType.TARGET)) + "\t" +
+                                           UtilsCommon.HTMLify(cardInfo.ToSingleLine(UtilsCommon.LanguageType.NATIVE)) + "\t" +
+                                           UtilsCommon.HTMLify(previousCardsTargetLanguage) + "\t" +
+                                           UtilsCommon.HTMLify(previousCardsNativeLanguage) + "\t" +
+                                           UtilsCommon.HTMLify(nextCardsTargetLanguage) + "\t" +
+                                           UtilsCommon.HTMLify(nextCardsNativeLanguage) + "\t" + 
+                                           UtilsCommon.HTMLify(tags)
+                                           );
                 }
             }
         }
 
         public List<AtomicChange> GenerateFullUpdateList()
         {
-          var changeList = new List<AtomicChange>();
-          for(int i = 0; i < m_cardInfos.Count; i++) {
-            changeList.Add(new AtomicChange(i, m_cardInfos[i], ChangeType.DataUpdate));
-          }
-          return changeList;
+            var changeList = new List<AtomicChange>();
+            for (int i = 0; i < m_cardInfos.Count; i++)
+            {
+                changeList.Add(new AtomicChange(i, m_cardInfos[i], ChangeType.DataUpdate));
+            }
+            return changeList;
         }
     }
 }

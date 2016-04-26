@@ -29,7 +29,7 @@ namespace subtitleMemorize
 	/// for exactly one card.
 	/// </summary>
 	[Serializable]
-	public class CardInfo : IComparable<ITimeSpan>, ITimeSpan {
+	public class CardInfo : IComparable<CardInfo>, ITimeSpan {
 		public List<LineInfo> targetLanguageLines;
 		public List<LineInfo> nativeLanguageLines;
 		public EpisodeInfo episodeInfo;
@@ -117,7 +117,9 @@ namespace subtitleMemorize
 		/// <summary>
 		/// Compare lines based on their Start Times.
 		/// </summary>
-		public int CompareTo(ITimeSpan other) {
+		public int CompareTo(CardInfo other) {
+			if(this.episodeInfo.Index < other.episodeInfo.Index) return -1;
+			if(this.episodeInfo.Index > other.episodeInfo.Index) return 1;
 			if(StartTime == other.StartTime) return 0;
 			return StartTime < other.StartTime ? -1 : 1;
 		}

@@ -327,6 +327,22 @@ namespace subtitleMemorize
 			return b.EndTime - a.StartTime;
 		}
 
+		public static double GetMinTimeSpanDistance(ITimeSpan a, ITimeSpan b) {
+			if(IsOverlapping(a, b)) return 0;
+
+			if(a.EndTime <= b.StartTime) return b.StartTime - a.EndTime;
+			else return a.StartTime - b.EndTime;
+		}
+
+		public static bool DoesTimespanContain(ITimeSpan reference, ITimeSpan probablyContainedTimespan) {
+			return probablyContainedTimespan.StartTime >= reference.StartTime && probablyContainedTimespan.EndTime <= reference.EndTime;
+		}
+
+		// change format that it can be contained in a .tsv file and anki can use it
+		public static String HTMLify(String str) {
+			return str.Replace("\n", "<br/>").Replace("\t", " ");
+		}
+
 
 
 		/// <summary>

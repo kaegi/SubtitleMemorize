@@ -280,5 +280,51 @@ restartLoop:
 
 			return containers;
 		}
+
+		public static Tuple<List<CardInfo>, List<CardInfo>> GetContextCards(int episodeIndex, ITimeSpan timeSpan, List<CardInfo> list, int maxNumberCards = 3, int maxNumberOfLines = -1, double maxSeconds = 15)
+		{
+			var previousLines = new List<CardInfo>();
+			var nextLines = new List<CardInfo>();
+			foreach (var card in list)
+			{
+				if (episodeIndex != card.episodeInfo.Index) continue;
+
+				if (UtilsCommon.GetMinTimeSpanDistance(card, timeSpan) > maxSeconds) continue;
+				if (UtilsCommon.DoesTimespanContain(card, timeSpan) || UtilsCommon.DoesTimespanContain(timeSpan, card)) continue;
+
+				if(card.StartTime < timeSpan.StartTime) previousLines.Add(card);
+				else nextLines.Add(card);
+			}
+
+			Comparison<CardInfo> comparer = delegate (CardInfo a, CardInfo b) {
+				double aDistance = UtilsCommon.GetMinTimeSpanDistance(a, timeSpan);
+				double bDistance = UtilsCommon.GetMinTimeSpanDistance(b, timeSpan);
+				return aDistance < bDistance ? 1 : -1;
+			};
+			previousLines.Sort(comparer);
+			previousLines = previousLines.Take(maxNumberCards).ToList();
+
+			nextLines.Sort(comparer);
+			nextLines = nextLines.Take(maxNumberCards).ToList();
+
+			// sort by start times
+			previousLines.Sort();
+			nextLines.Sort();
+
+			return new Tuple<List<CardInfo>, List<CardInfo>>(previousLines, nextLines);
+		}
+
+		public static String CardListToMultilineString(List<CardInfo> cards, UtilsCommon.LanguageType languageType) {
+			var str = new StringBuilder();
+			if(cards.Count > 0) {
+				str.Append(cards[0].ToSingleLine(languageType));
+			}
+			foreach(var card in cards.Skip(1)) {
+				str.Append("\n");
+				str.Append(card.ToSingleLine(languageType));
+			}
+			return str.ToString();
+		}
+
 	}
 }
