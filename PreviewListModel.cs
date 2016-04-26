@@ -420,7 +420,7 @@ namespace subtitleMemorize
                     String keyField = cardInfo.GetKey();
                     String audioField = audioFields[i];
                     String imageField = snapshotFields[i];
-                    String tags = String.Format("{0} ep{1}", settings.DeckNameModified, cardInfo.episodeInfo.Number);
+                    String tags = String.Format("{0} ep{1:000}", settings.DeckNameModified, cardInfo.episodeInfo.Number);
                     outputStream.WriteLine(UtilsCommon.HTMLify(keyField) + "\t" +
                                            UtilsCommon.HTMLify(imageField) + "\t"+
                                            UtilsCommon.HTMLify(audioField) + "\t" +
@@ -429,7 +429,7 @@ namespace subtitleMemorize
                                            UtilsCommon.HTMLify(previousCardsTargetLanguage) + "\t" +
                                            UtilsCommon.HTMLify(previousCardsNativeLanguage) + "\t" +
                                            UtilsCommon.HTMLify(nextCardsTargetLanguage) + "\t" +
-                                           UtilsCommon.HTMLify(nextCardsNativeLanguage) + "\t" + 
+                                           UtilsCommon.HTMLify(nextCardsNativeLanguage) + "\t" +
                                            UtilsCommon.HTMLify(tags)
                                            );
                 }
