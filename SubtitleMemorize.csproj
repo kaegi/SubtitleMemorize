@@ -5,8 +5,8 @@
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <ProjectGuid>{9A9A6F79-CA58-42C5-A116-AC1A70F0E623}</ProjectGuid>
     <OutputType>Exe</OutputType>
-    <RootNamespace>subtitleMemorize</RootNamespace>
-    <AssemblyName>subtitleMemorize</AssemblyName>
+    <RootNamespace>SubtitleMemorize</RootNamespace>
+    <AssemblyName>SubtitleMemorize</AssemblyName>
     <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
     <ProductVersion>8.0.30703</ProductVersion>
     <SchemaVersion>2.0</SchemaVersion>

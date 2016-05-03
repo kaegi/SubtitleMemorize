@@ -445,7 +445,7 @@ namespace subtitleMemorize
 			GLib.ExceptionManager.UnhandledException += GlibUnhandledException;
 
 			Gtk.Application.Init ();
-			m_builder.AddFromString (ReadResourceString ("subtitleMemorize.Resources.gtk.glade"));
+			m_builder.AddFromString (ReadResourceString ("SubtitleMemorize.Resources.gtk.glade"));
 			m_builder.Autoconnect (this);
 
 			InitializeGtkObjects (m_builder);
