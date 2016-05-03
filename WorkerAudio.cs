@@ -39,8 +39,8 @@ namespace subtitleMemorize
 				String arguments = String.Format ("-v quiet -y -i \"{0}\" -map 0:{1} -ss \"{2}\" -to \"{3}\" -vn -c:a libvorbis \"{4}\"",
 					audioFileDesc.filename, // input file
 					audioStreamInfo.StreamIndex, // audio stream index
-					UtilsCommon.ToTimeArg(CardInfo.startTimestamp), // start time
-					UtilsCommon.ToTimeArg(CardInfo.endTimestamp), // end time
+					UtilsCommon.ToTimeArg(CardInfo.audioStartTimestamp), // start time
+					UtilsCommon.ToTimeArg(CardInfo.audioEndTimestamp), // end time
 					outputAudioFilepath // output file
 				);
 				Console.WriteLine ("ffmpeg " + arguments);
