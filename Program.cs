@@ -1,4 +1,4 @@
-﻿// Copyright (C) 2016    Chang Spivey
+// Copyright (C) 2016    Chang Spivey
 //
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -29,13 +29,15 @@ namespace subtitleMemorize
 	class MainClass
 	{
 		////////////////// AUTO-GENERATED CODE BEGIN //////////////////////
-#pragma warning disable 0414 // private field assigned but not used
+		#pragma warning disable 0414 // private field assigned but not used
 		private Gtk.Action m_action1;
 		private Gtk.Adjustment m_adjustmentAudioPaddingAfter;
 		private Gtk.Adjustment m_adjustmentAudioPaddingBefore;
-		private Gtk.Adjustment m_adjustmentImageSizePercentage;
+		private Gtk.Adjustment m_adjustmentMaxImageHeight;
+		private Gtk.Adjustment m_adjustmentMaxImageWidth;
 		private Gtk.Adjustment m_episodeAdjustment;
 		private Gtk.Image m_image1;
+		private Gtk.ListStore m_liststoreImageRescaleOptions;
 		private Gtk.ListStore m_liststoreLines;
 		private Gtk.Window m_previewWindow;
 		private Gtk.Box m_box5;
@@ -56,6 +58,8 @@ namespace subtitleMemorize
 		private Gtk.CellRendererText m_cellrenderertextTargetLanguage;
 		private Gtk.TreeViewColumn m_treeviewcolumnNativeLanguage;
 		private Gtk.CellRendererText m_cellrenderertextNativeLanguage;
+		private Gtk.TreeViewColumn m_treeviewcolumnActors;
+		private Gtk.CellRendererText m_cellrenderertextActors;
 		private Gtk.Frame m_frame10;
 		private Gtk.Alignment m_alignment10;
 		private Gtk.Grid m_grid4;
@@ -185,24 +189,17 @@ namespace subtitleMemorize
 		private Gtk.Box m_box17;
 		private Gtk.Frame m_frame19;
 		private Gtk.Alignment m_alignment16;
-		private Gtk.Box m_box18;
-		private Gtk.SpinButton m_spinbutton1;
-		private Gtk.Label m_label25;
-		private Gtk.Label m_label18;
+		private Gtk.SpinButton m_spinbuttonMaxImageWidth;
+		private Gtk.SpinButton m_spinbuttonMaxImageHeight;
 		private Gtk.Label m_label13;
 		private Gtk.Label m_label2;
 		private Gtk.Box m_box4;
 		private Gtk.Frame m_frame7;
 		private Gtk.Alignment m_alignment7;
-		private Gtk.Box m_box8;
-		private Gtk.Frame m_frame8;
-		private Gtk.Alignment m_alignment8;
+		private Gtk.Label m_label16;
+		private Gtk.SpinButton m_spinbuttonEpisodeNumber;
 		private Gtk.Entry m_entryDeckName;
 		private Gtk.Label m_label15;
-		private Gtk.Frame m_frame6;
-		private Gtk.Alignment m_alignment6;
-		private Gtk.SpinButton m_spinbuttonEpisodeNumber;
-		private Gtk.Label m_label16;
 		private Gtk.Label m_label14;
 		private Gtk.Frame m_frame9;
 		private Gtk.Alignment m_alignment9;
@@ -220,9 +217,11 @@ namespace subtitleMemorize
 			m_action1 = (Gtk.Action) b.GetObject("action1");
 			m_adjustmentAudioPaddingAfter = (Gtk.Adjustment) b.GetObject("adjustment_audio_padding_after");
 			m_adjustmentAudioPaddingBefore = (Gtk.Adjustment) b.GetObject("adjustment_audio_padding_before");
-			m_adjustmentImageSizePercentage = (Gtk.Adjustment) b.GetObject("adjustment_image_size_percentage");
+			m_adjustmentMaxImageHeight = (Gtk.Adjustment) b.GetObject("adjustment_max_image_height");
+			m_adjustmentMaxImageWidth = (Gtk.Adjustment) b.GetObject("adjustment_max_image_width");
 			m_episodeAdjustment = (Gtk.Adjustment) b.GetObject("episode_adjustment");
 			m_image1 = (Gtk.Image) b.GetObject("image1");
+			m_liststoreImageRescaleOptions = (Gtk.ListStore) b.GetObject("liststore_image_rescale_options");
 			m_liststoreLines = (Gtk.ListStore) b.GetObject("liststore_lines");
 			m_previewWindow = (Gtk.Window) b.GetObject("preview_window");
 			m_box5 = (Gtk.Box) b.GetObject("box5");
@@ -243,6 +242,8 @@ namespace subtitleMemorize
 			m_cellrenderertextTargetLanguage = (Gtk.CellRendererText) b.GetObject("cellrenderertext_target_language");
 			m_treeviewcolumnNativeLanguage = (Gtk.TreeViewColumn) b.GetObject("treeviewcolumn_native_language");
 			m_cellrenderertextNativeLanguage = (Gtk.CellRendererText) b.GetObject("cellrenderertext_native_language");
+			m_treeviewcolumnActors = (Gtk.TreeViewColumn) b.GetObject("treeviewcolumn_actors");
+			m_cellrenderertextActors = (Gtk.CellRendererText) b.GetObject("cellrenderertext_actors");
 			m_frame10 = (Gtk.Frame) b.GetObject("frame10");
 			m_alignment10 = (Gtk.Alignment) b.GetObject("alignment10");
 			m_grid4 = (Gtk.Grid) b.GetObject("grid4");
@@ -372,24 +373,17 @@ namespace subtitleMemorize
 			m_box17 = (Gtk.Box) b.GetObject("box17");
 			m_frame19 = (Gtk.Frame) b.GetObject("frame19");
 			m_alignment16 = (Gtk.Alignment) b.GetObject("alignment16");
-			m_box18 = (Gtk.Box) b.GetObject("box18");
-			m_spinbutton1 = (Gtk.SpinButton) b.GetObject("spinbutton1");
-			m_label25 = (Gtk.Label) b.GetObject("label25");
-			m_label18 = (Gtk.Label) b.GetObject("label18");
+			m_spinbuttonMaxImageWidth = (Gtk.SpinButton) b.GetObject("spinbutton_max_image_width");
+			m_spinbuttonMaxImageHeight = (Gtk.SpinButton) b.GetObject("spinbutton_max_image_height");
 			m_label13 = (Gtk.Label) b.GetObject("label13");
 			m_label2 = (Gtk.Label) b.GetObject("label2");
 			m_box4 = (Gtk.Box) b.GetObject("box4");
 			m_frame7 = (Gtk.Frame) b.GetObject("frame7");
 			m_alignment7 = (Gtk.Alignment) b.GetObject("alignment7");
-			m_box8 = (Gtk.Box) b.GetObject("box8");
-			m_frame8 = (Gtk.Frame) b.GetObject("frame8");
-			m_alignment8 = (Gtk.Alignment) b.GetObject("alignment8");
+			m_label16 = (Gtk.Label) b.GetObject("label16");
+			m_spinbuttonEpisodeNumber = (Gtk.SpinButton) b.GetObject("spinbutton_episode_number");
 			m_entryDeckName = (Gtk.Entry) b.GetObject("entry_deck_name");
 			m_label15 = (Gtk.Label) b.GetObject("label15");
-			m_frame6 = (Gtk.Frame) b.GetObject("frame6");
-			m_alignment6 = (Gtk.Alignment) b.GetObject("alignment6");
-			m_spinbuttonEpisodeNumber = (Gtk.SpinButton) b.GetObject("spinbutton_episode_number");
-			m_label16 = (Gtk.Label) b.GetObject("label16");
 			m_label14 = (Gtk.Label) b.GetObject("label14");
 			m_frame9 = (Gtk.Frame) b.GetObject("frame9");
 			m_alignment9 = (Gtk.Alignment) b.GetObject("alignment9");
@@ -403,9 +397,9 @@ namespace subtitleMemorize
 			m_progressbarProgressInfo = (Gtk.ProgressBar) b.GetObject("progressbar_progress_info");
 			m_buttonCancelOperation = (Gtk.Button) b.GetObject("button_cancel_operation");
 		}
-#pragma warning restore 0414
-
+		#pragma warning restore 0414
 		////////////////// AUTO-GENERATED CODE END //////////////////////
+
 		private readonly Settings m_defaultSettings = new Settings();
 		private readonly Gtk.Builder m_builder = new Builder();
 		private int m_numberOfInfobarLabelMarkupChanges = 0;
