@@ -80,6 +80,12 @@ namespace subtitleMemorize
 	[Serializable]
 	public class Settings
 	{
+		public enum RescaleModeEnum {
+			NoRescaling,
+			Downscale,
+			UpscaleAndDownscale,
+		}
+
 		private string m_targetFilePath;
 		private string m_outputDirectoryPath;
 		private string m_nativeFilePath;
@@ -98,8 +104,10 @@ namespace subtitleMemorize
 		private bool m_exportAudio = true;
 		private bool m_exportImages = true;
 
-		private int m_imageMaxWidth = 800;
-		private int m_imageMaxHeight = 600;
+		private RescaleModeEnum m_rescaleMode = RescaleModeEnum.Downscale;
+		
+		private int m_imageRescaleWidth = 640;
+		private int m_imageRescaleHeight = 360;
 
 		private double m_audioPaddingBefore = 0;
 		private double m_audioPaddingAfter = 0;
@@ -115,14 +123,19 @@ namespace subtitleMemorize
 			set { m_audioPaddingAfter = value; }
 		}
 
-		public int ImageMaxHeight {
-			get { return m_imageMaxHeight;  }
-			set { m_imageMaxHeight = value; }
+		public int RescaleHeight {
+			get { return m_imageRescaleHeight;  }
+			set { m_imageRescaleHeight = value; }
 		}
 
-		public int ImageMaxWidth {
-			get { return m_imageMaxWidth;  }
-			set { m_imageMaxWidth = value; }
+		public int RescaleWidth {
+			get { return m_imageRescaleWidth;  }
+			set { m_imageRescaleWidth = value; }
+		}
+
+		public RescaleModeEnum RescaleMode {
+			get { return m_rescaleMode; }
+			set { m_rescaleMode = value; }
 		}
 
 		public bool NormalizeAudio {

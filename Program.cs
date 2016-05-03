@@ -833,7 +833,7 @@ namespace subtitleMemorize
 				StreamInfo videoStreamInfo = cardInfo.episodeInfo.VideoStreamInfo;
 
 				// get right scaling
-				double scaling = UtilsVideo.GetMaxScalingByStreamInfo(videoStreamInfo, m_previewSettings.ImageMaxWidth, m_previewSettings.ImageMaxHeight);
+				double scaling = UtilsVideo.GetMaxScalingByStreamInfo(videoStreamInfo, m_previewSettings.RescaleWidth, m_previewSettings.RescaleHeight, m_previewSettings.RescaleMode);
 
 				// extract big image from video
 				UtilsImage.GetImage(videoFilename.filename, UtilsCommon.GetMiddleTime(cardInfo), InstanceSettings.temporaryFilesPath + "subtitleMemorize_real.jpg", scaling);
@@ -1314,7 +1314,7 @@ namespace subtitleMemorize
 			// get real scaling
 			UtilsInputFiles.FileDesc videoFilename = cardInfo.episodeInfo.VideoFileDesc;
 			var videoStreamInfo = cardInfo.episodeInfo.VideoStreamInfo;
-			double videoScaling = UtilsVideo.GetMaxScalingByStreamInfo(videoStreamInfo, maxWidth, maxHeight);
+			double videoScaling = UtilsVideo.GetMaxScalingByStreamInfo(videoStreamInfo, maxWidth, maxHeight, Settings.RescaleModeEnum.UpscaleAndDownscale);
 
 			// extract small preview image
 			UtilsImage.GetImage(videoFilename.filename, UtilsCommon.GetMiddleTime(cardInfo), InstanceSettings.temporaryFilesPath + "subtitleMemorize.jpg", videoScaling);
