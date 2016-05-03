@@ -24,12 +24,14 @@ namespace subtitleMemorize
 	{
 		public static List<String> ExtractAudio(Settings settings, String path, List<CardInfo> allEntries) {
 			List<String> audioFieldValues = new List<string>(allEntries.Count);
+			List<String> audioFilepaths = new List<string>(allEntries.Count);
 			for(int i = 0; i < allEntries.Count; i++) {
 				CardInfo CardInfo = allEntries[i];
 
 				String outputAudioFilename = CardInfo.GetKey () + ".ogg";
 				String outputAudioFilepath = path + Path.DirectorySeparatorChar + outputAudioFilename;
 				audioFieldValues.Add("[sound:" + outputAudioFilename + "]");
+				audioFilepaths.Add(outputAudioFilepath);
 
 				UtilsInputFiles.FileDesc audioFileDesc = CardInfo.episodeInfo.AudioFileDesc;
 				var audioStreamInfo = CardInfo.episodeInfo.AudioStreamInfo;
@@ -43,6 +45,22 @@ namespace subtitleMemorize
 				);
 				Console.WriteLine ("ffmpeg " + arguments);
 				UtilsCommon.StartProcessAndGetOutput(InstanceSettings.systemSettings.formatConvertCommand, arguments);
+			}
+			if(settings.NormalizeAudio) {
+				foreach(String filepath in audioFilepaths) {
+					var audioStreamInfos = StreamInfo.ReadAllStreams(filepath);
+					audioStreamInfos.RemoveAll(streamInfo => streamInfo.StreamTypeValue != StreamInfo.StreamType.ST_AUDIO);
+					if(audioStreamInfos.Count != 1) {
+						Console.WriteLine("Skipped normalizing file \"{0}\" because it contains {1} audio streams", filepath, audioStreamInfos.Count);
+						continue;
+					}
+					try {
+						UtilsAudio.NormalizeAudio(filepath, audioStreamInfos[0]);
+					} catch(Exception e) {
+						Console.WriteLine(e.ToString());
+						continue;
+					}
+				}
 			}
 			return audioFieldValues;
 		}

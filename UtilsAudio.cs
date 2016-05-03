@@ -15,34 +15,53 @@
 // Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301  USA
 //
 using System;
+using System.Globalization;
+using System.IO;
 using System.Text.RegularExpressions;
 
 namespace subtitleMemorize
 {
 	public static class UtilsAudio
 	{
-		public static double GetMaxVolume(String audioFile, StreamInfo audioStreamInfo, double fromSeconds, double timeSpanSeconds) {
+		public static double GetMaxVolume(String audioFile, StreamInfo audioStreamInfo) {
 			if(audioStreamInfo.StreamTypeValue !=  StreamInfo.StreamType.ST_AUDIO)
 				throw new Exception("Tried to get volume of non-audio-stream");
 
-			String arguments = String.Format("-ss {0} -t {1} -i \"{2}\" -map 0:{3} -af volumedetect -vn -f null /dev/null",
-					UtilsCommon.ToTimeArg(fromSeconds),
-					UtilsCommon.ToTimeArg(timeSpanSeconds),
+			String arguments = String.Format("-i \"{0}\" -map 0:{1} -af volumedetect -vn -f null /dev/null",
 					audioFile,
 					audioStreamInfo.StreamIndex);
 
+			Console.WriteLine ("ffmpeg " + arguments);
 			String stderr = UtilsCommon.StartProcessAndGetOutput(InstanceSettings.systemSettings.formatConvertCommand, arguments, true);
 			String[] lines = stderr.Split('\n');
 			for(int i = lines.Length - 1; i >= 0; i--) {
 				String line = lines[i];
-				if(line.Contains("mean_volume")) {
-					Match match = Regex.Match(line.Trim(), @"\[Parsed_volumedetect_0 @ (.*?)\] max_volume: (?<volume>.*) dB$", RegexOptions.IgnoreCase | RegexOptions.Compiled);
+				if(line.Contains("max_volume")) {
+					Match match = Regex.Match(line.Trim(), @"\[Parsed_volumedetect_0 @ (.*?)\] max_volume: (?<volume>[-.,0-9]+) dB$", RegexOptions.IgnoreCase | RegexOptions.Compiled);
 					if(!match.Success) throw new Exception("Output of \"" + InstanceSettings.systemSettings.formatConvertCommand + "\" with filter \"volumedetect\" could not be parsed");
-					return Double.Parse(match.Groups["volume"].ToString());
+					return Double.Parse(match.Groups["volume"].ToString(), CultureInfo.InvariantCulture);
 				}
 			}
 
 			throw new Exception("Output of \"" + InstanceSettings.systemSettings.formatConvertCommand + "\" with filter \"volumedetect\" could not be parsed");
+		}
+
+		public static void NormalizeAudio(String filename, StreamInfo audioStreamInfo) {
+			if(!filename.EndsWith("ogg")) throw new Exception("Only .ogg files are currently supported for normalizing!");
+			double maxVolume = GetMaxVolume(filename, audioStreamInfo);
+			const double targetVolume = -16; // in dB TODO: make audio normalize target configurable in settings
+
+			String tmpFilename = InstanceSettings.temporaryFilesPath + Path.GetFileName(filename);
+			String arguments = String.Format("-y -i \"{0}\" -af \"volume={1}dB\" -c:a libvorbis -vn \"{2}\"", filename, (-maxVolume + targetVolume).ToString(System.Globalization.CultureInfo.InvariantCulture), tmpFilename);
+			Console.WriteLine ("ffmpeg " + arguments);
+
+			UtilsCommon.StartProcessAndGetOutput(InstanceSettings.systemSettings.formatConvertCommand, arguments);
+
+			// move new file to original position
+			if(File.Exists(tmpFilename)) {
+				File.Delete(filename);
+				File.Move(tmpFilename, filename);
+			}
 		}
 	}
 }
