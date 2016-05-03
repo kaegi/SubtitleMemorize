@@ -39,11 +39,11 @@ namespace subtitleMemorize
 				UtilsInputFiles.FileDesc videoFileDesc = CardInfo.episodeInfo.VideoFileDesc;
 
 				// extract image
+				double scaling = UtilsVideo.GetMaxScalingByStreamInfo(CardInfo.episodeInfo.VideoStreamInfo, settings.RescaleWidth, settings.RescaleHeight, settings.RescaleMode);
 				double timeStamp = UtilsCommon.GetMiddleTime (CardInfo);
-				UtilsImage.GetImage (videoFileDesc.filename, timeStamp, outputSnapshotFilepath, 1);
+				UtilsImage.GetImage (videoFileDesc.filename, timeStamp, outputSnapshotFilepath, scaling);
 			}
 			return snapshotFieldValues;
 		}
 	}
 }
-
