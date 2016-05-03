@@ -21,7 +21,7 @@ namespace subtitleMemorize
 {
 	public static class UtilsAudio
 	{
-		public static double GetVolume(String audioFile, StreamInfo audioStreamInfo, double fromSeconds, double timeSpanSeconds) {
+		public static double GetMaxVolume(String audioFile, StreamInfo audioStreamInfo, double fromSeconds, double timeSpanSeconds) {
 			if(audioStreamInfo.StreamTypeValue !=  StreamInfo.StreamType.ST_AUDIO)
 				throw new Exception("Tried to get volume of non-audio-stream");
 
@@ -36,7 +36,7 @@ namespace subtitleMemorize
 			for(int i = lines.Length - 1; i >= 0; i--) {
 				String line = lines[i];
 				if(line.Contains("mean_volume")) {
-					Match match = Regex.Match(line.Trim(), @"\[Parsed_volumedetect_0 @ (.*?)\] mean_volume: (?<volume>.*) dB$", RegexOptions.IgnoreCase | RegexOptions.Compiled);
+					Match match = Regex.Match(line.Trim(), @"\[Parsed_volumedetect_0 @ (.*?)\] max_volume: (?<volume>.*) dB$", RegexOptions.IgnoreCase | RegexOptions.Compiled);
 					if(!match.Success) throw new Exception("Output of \"" + InstanceSettings.systemSettings.formatConvertCommand + "\" with filter \"volumedetect\" could not be parsed");
 					return Double.Parse(match.Groups["volume"].ToString());
 				}
