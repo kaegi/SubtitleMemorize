@@ -17,9 +17,15 @@
     <property name="step_increment">1</property>
     <property name="page_increment">10</property>
   </object>
-  <object class="GtkAdjustment" id="adjustment_image_size_percentage">
-    <property name="upper">100</property>
-    <property name="value">100</property>
+  <object class="GtkAdjustment" id="adjustment_max_image_height">
+    <property name="upper">9999999</property>
+    <property name="value">360</property>
+    <property name="step_increment">1</property>
+    <property name="page_increment">10</property>
+  </object>
+  <object class="GtkAdjustment" id="adjustment_max_image_width">
+    <property name="upper">9999999</property>
+    <property name="value">640</property>
     <property name="step_increment">1</property>
     <property name="page_increment">10</property>
   </object>
@@ -33,6 +39,23 @@
     <property name="visible">True</property>
     <property name="can_focus">False</property>
     <property name="stock">gtk-media-play</property>
+  </object>
+  <object class="GtkListStore" id="liststore_image_rescale_options">
+    <columns>
+      <!-- column-name OptionNameMarkup -->
+      <column type="gchararray"/>
+    </columns>
+    <data>
+      <row>
+        <col id="0" translatable="yes">No rescaling</col>
+      </row>
+      <row>
+        <col id="0" translatable="yes">Downscaling only</col>
+      </row>
+      <row>
+        <col id="0" translatable="yes">Upscaling and downscaling</col>
+      </row>
+    </data>
   </object>
   <object class="GtkListStore" id="liststore_lines">
     <columns>
@@ -1582,37 +1605,88 @@ Of course you can press Shift and Control at the same time which will deselect a
                                         <property name="left_padding">4</property>
                                         <property name="right_padding">5</property>
                                         <child>
-                                          <object class="GtkBox" id="box18">
+                                          <object class="GtkGrid">
                                             <property name="visible">True</property>
                                             <property name="can_focus">False</property>
-                                            <property name="orientation">vertical</property>
-                                            <property name="homogeneous">True</property>
+                                            <property name="column_spacing">8</property>
                                             <child>
-                                              <object class="GtkSpinButton" id="spinbutton1">
+                                              <object class="GtkSpinButton" id="spinbutton_max_image_width">
                                                 <property name="visible">True</property>
                                                 <property name="can_focus">True</property>
                                                 <property name="text" translatable="yes">100</property>
-                                                <property name="adjustment">adjustment_image_size_percentage</property>
-                                                <property name="value">100</property>
+                                                <property name="adjustment">adjustment_max_image_width</property>
+                                                <property name="value">640</property>
                                               </object>
                                               <packing>
-                                                <property name="expand">False</property>
-                                                <property name="fill">True</property>
-                                                <property name="position">0</property>
+                                                <property name="left_attach">1</property>
+                                                <property name="top_attach">1</property>
                                               </packing>
                                             </child>
                                             <child>
-                                              <object class="GtkLabel" id="label25">
+                                              <object class="GtkSpinButton" id="spinbutton_max_image_height">
                                                 <property name="visible">True</property>
-                                                <property name="can_focus">False</property>
-                                                <property name="xpad">8</property>
-                                                <property name="label" translatable="yes">= 100x500</property>
-                                                <property name="xalign">0</property>
+                                                <property name="can_focus">True</property>
+                                                <property name="text" translatable="yes">640</property>
+                                                <property name="adjustment">adjustment_max_image_height</property>
+                                                <property name="value">360</property>
                                               </object>
                                               <packing>
-                                                <property name="expand">False</property>
-                                                <property name="fill">True</property>
-                                                <property name="position">1</property>
+                                                <property name="left_attach">1</property>
+                                                <property name="top_attach">2</property>
+                                              </packing>
+                                            </child>
+                                            <child>
+                                              <object class="GtkLabel">
+                                                <property name="visible">True</property>
+                                                <property name="can_focus">False</property>
+                                                <property name="halign">start</property>
+                                                <property name="label" translatable="yes">Width:</property>
+                                              </object>
+                                              <packing>
+                                                <property name="left_attach">0</property>
+                                                <property name="top_attach">1</property>
+                                              </packing>
+                                            </child>
+                                            <child>
+                                              <object class="GtkLabel">
+                                                <property name="visible">True</property>
+                                                <property name="can_focus">False</property>
+                                                <property name="halign">start</property>
+                                                <property name="label" translatable="yes">Height:</property>
+                                              </object>
+                                              <packing>
+                                                <property name="left_attach">0</property>
+                                                <property name="top_attach">2</property>
+                                              </packing>
+                                            </child>
+                                            <child>
+                                              <object class="GtkComboBox">
+                                                <property name="visible">True</property>
+                                                <property name="can_focus">False</property>
+                                                <property name="model">liststore_image_rescale_options</property>
+                                                <property name="active">1</property>
+                                                <child>
+                                                  <object class="GtkCellRendererText"/>
+                                                  <attributes>
+                                                    <attribute name="markup">0</attribute>
+                                                  </attributes>
+                                                </child>
+                                              </object>
+                                              <packing>
+                                                <property name="left_attach">1</property>
+                                                <property name="top_attach">0</property>
+                                              </packing>
+                                            </child>
+                                            <child>
+                                              <object class="GtkLabel">
+                                                <property name="visible">True</property>
+                                                <property name="can_focus">False</property>
+                                                <property name="halign">start</property>
+                                                <property name="label" translatable="yes">Rescale mode:</property>
+                                              </object>
+                                              <packing>
+                                                <property name="left_attach">0</property>
+                                                <property name="top_attach">0</property>
                                               </packing>
                                             </child>
                                           </object>
@@ -1620,10 +1694,10 @@ Of course you can press Shift and Control at the same time which will deselect a
                                       </object>
                                     </child>
                                     <child type="label">
-                                      <object class="GtkLabel" id="label18">
+                                      <object class="GtkLabel">
                                         <property name="visible">True</property>
                                         <property name="can_focus">False</property>
-                                        <property name="label" translatable="yes">Image size in %</property>
+                                        <property name="label" translatable="yes">Rescaling</property>
                                       </object>
                                     </child>
                                   </object>
