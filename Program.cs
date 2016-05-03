@@ -748,6 +748,7 @@ namespace subtitleMemorize
 						UtilsCommon.ToTimeArg(cardInfo.audioStartTimestamp),
 						UtilsCommon.ToTimeArg(cardInfo.audioEndTimestamp),
 						episodeInfo.VideoFileDesc.filename);
+				// TODO: normalize audio for live audio play
 
 
 				Thread thr = new Thread (new ThreadStart (delegate() {
