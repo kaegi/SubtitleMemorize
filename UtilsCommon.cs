@@ -204,6 +204,7 @@ namespace subtitleMemorize
 		public static String ToTimeArg (double seconds)
 		{
 			String sign = seconds < 0 ? "-" : "";
+			seconds = Math.Abs(seconds);
 			int milliseconds 	= (int)(seconds * 1000.0) % 1000;
 			int iseconds 		= (int)(seconds * 1.0) % 60;
 			int minutes 		= (int)(seconds / 60.0) % 60;
