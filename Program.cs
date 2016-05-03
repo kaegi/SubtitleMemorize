@@ -191,6 +191,7 @@ namespace subtitleMemorize
 		private Gtk.Alignment m_alignment16;
 		private Gtk.SpinButton m_spinbuttonMaxImageWidth;
 		private Gtk.SpinButton m_spinbuttonMaxImageHeight;
+		private Gtk.ComboBox m_comboboxtextRescaleMode;
 		private Gtk.Label m_label13;
 		private Gtk.Label m_label2;
 		private Gtk.Box m_box4;
@@ -375,6 +376,7 @@ namespace subtitleMemorize
 			m_alignment16 = (Gtk.Alignment) b.GetObject("alignment16");
 			m_spinbuttonMaxImageWidth = (Gtk.SpinButton) b.GetObject("spinbutton_max_image_width");
 			m_spinbuttonMaxImageHeight = (Gtk.SpinButton) b.GetObject("spinbutton_max_image_height");
+			m_comboboxtextRescaleMode = (Gtk.ComboBox) b.GetObject("comboboxtext_rescale_mode");
 			m_label13 = (Gtk.Label) b.GetObject("label13");
 			m_label2 = (Gtk.Label) b.GetObject("label2");
 			m_box4 = (Gtk.Box) b.GetObject("box4");
@@ -399,7 +401,6 @@ namespace subtitleMemorize
 		}
 		#pragma warning restore 0414
 		////////////////// AUTO-GENERATED CODE END //////////////////////
-
 		private readonly Settings m_defaultSettings = new Settings();
 		private readonly Gtk.Builder m_builder = new Builder();
 		private int m_numberOfInfobarLabelMarkupChanges = 0;
@@ -1442,6 +1443,10 @@ namespace subtitleMemorize
 
 			settings.NormalizeAudio = m_checkbuttonNormalizeAudio.Active;
 			settings.ExportAudio = !m_checkbuttonDeactivateAudioClips.Active;
+
+			settings.RescaleWidth = (int)m_spinbuttonMaxImageWidth.Value;
+			settings.RescaleHeight = (int)m_spinbuttonMaxImageHeight.Value;
+			settings.RescaleMode = (Settings.RescaleModeEnum) m_comboboxtextRescaleMode.Active;
 
 			// read episode number
 			int firstEpisodeNumber = 1;

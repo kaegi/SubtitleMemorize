@@ -1660,7 +1660,7 @@ Of course you can press Shift and Control at the same time which will deselect a
                                               </packing>
                                             </child>
                                             <child>
-                                              <object class="GtkComboBox">
+                                              <object class="GtkComboBox" id="comboboxtext_rescale_mode">
                                                 <property name="visible">True</property>
                                                 <property name="can_focus">False</property>
                                                 <property name="model">liststore_image_rescale_options</property>
