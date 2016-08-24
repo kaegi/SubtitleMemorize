@@ -314,7 +314,7 @@ namespace subtitleMemorize
 				fileDescs.Add (new FileDesc (filePath, new Dictionary<string, string> (dictionary)));
 			} else {
 				// TODO: more regex features
-				String regex = "^" + filename.Replace ("*", "(.*)") + "$";
+				String regex = "^" + Regex.Escape(filename).Replace ("\\*", "(.*)") + "$";
 				String[] allDirFilenames = Directory.GetFiles (dirPath);
 				foreach (String thisFilePath in allDirFilenames) {
 					String thisFilename = Path.GetFileName (thisFilePath);
