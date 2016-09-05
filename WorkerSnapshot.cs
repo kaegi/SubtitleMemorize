@@ -22,28 +22,23 @@ namespace subtitleMemorize
 {
 	public static class WorkerSnapshot
 	{
-		public static List<String> ExtractSnaphots(Settings settings, String path, List<CardInfo> allEntries) {
-			List<String> snapshotFieldValues = new List<string>(allEntries.Count);
-			for(int i = 0; i < allEntries.Count; i++) {
-				CardInfo CardInfo = allEntries[i];
+		public static void ExtractSnaphots(Settings settings, String path, List<Tuple<CardInfo, String>> allEntries) {
+			foreach(var entry in allEntries) {
+				var cardInfoNameTuple = entry;
+				var cardInfo = cardInfoNameTuple.Item1;
 
 				// create file at given path
-				String outputSnapshotFilename = CardInfo.GetKey () + ".jpg";
+				String outputSnapshotFilename = cardInfoNameTuple.Item2;
 				String outputSnapshotFilepath = path + Path.DirectorySeparatorChar + outputSnapshotFilename;
 
-				// value that will be imported into Anki/SRS-Programs-Field
-				// TODO: make this flexible
-				snapshotFieldValues.Add("<img src=\"" + outputSnapshotFilename + "\"/>");
-
 				// get file with snapshot information -> video
-				UtilsInputFiles.FileDesc videoFileDesc = CardInfo.episodeInfo.VideoFileDesc;
+				UtilsInputFiles.FileDesc videoFileDesc = cardInfo.episodeInfo.VideoFileDesc;
 
 				// extract image
-				double scaling = UtilsVideo.GetMaxScalingByStreamInfo(CardInfo.episodeInfo.VideoStreamInfo, settings.RescaleWidth, settings.RescaleHeight, settings.RescaleMode);
-				double timeStamp = UtilsCommon.GetMiddleTime (CardInfo);
+				double scaling = UtilsVideo.GetMaxScalingByStreamInfo(cardInfo.episodeInfo.VideoStreamInfo, settings.RescaleWidth, settings.RescaleHeight, settings.RescaleMode);
+				double timeStamp = UtilsCommon.GetMiddleTime (cardInfo);
 				UtilsImage.GetImage (videoFileDesc.filename, timeStamp, outputSnapshotFilepath, scaling);
 			}
-			return snapshotFieldValues;
 		}
 	}
 }

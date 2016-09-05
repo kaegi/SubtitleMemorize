@@ -395,18 +395,21 @@ namespace subtitleMemorize
             activeCardInfos.AddRange(m_cardInfos);
             activeCardInfos.RemoveAll((CardInfo cardInfo) => !cardInfo.isActive);
 
-            // extract images
-            if (Directory.Exists(snapshotsPath)) Directory.Delete(snapshotsPath, true);
-            Directory.CreateDirectory(snapshotsPath);
-            List<String> snapshotFields = WorkerSnapshot.ExtractSnaphots(settings, snapshotsPath, activeCardInfos);
+            // value that will be imported into Anki/SRS-Programs-Field => [sound:???.ogg] and <img src="???.jpg"/>
+            var snapshotFields = new List<String>(activeCardInfos.Count);
+            var audioFields = new List<String>(activeCardInfos.Count);
+            var cardSnapshotNameTupleList = new List<Tuple<CardInfo, String>>(activeCardInfos.Count);
+            var cardAudioNameTupleList = new List<Tuple<CardInfo, String>>(activeCardInfos.Count);
 
-            // extract audio
-            if (Directory.Exists(audioPath)) Directory.Delete(audioPath, true);
-            Directory.CreateDirectory(audioPath);
-            List<String> audioFields = WorkerAudio.ExtractAudio(settings, audioPath, activeCardInfos);
+            foreach(var cardInfo in activeCardInfos) {
+              var outputSnapshotFilename = settings.DeckNameModified + "__" + cardInfo.GetKey() + ".jpg";
+              snapshotFields.Add("<img src=\"" + outputSnapshotFilename + "\"/>"); // TODO: make this flexible
+              cardSnapshotNameTupleList.Add(new Tuple<CardInfo, String>(cardInfo, outputSnapshotFilename));
 
-
-            // TODO: normalize audio
+              var outputAudioFilename = settings.DeckNameModified + "__" + cardInfo.GetKey() + ".ogg";
+              audioFields.Add("[sound:" + outputAudioFilename + "]"); // TODO: make this flexible
+              cardAudioNameTupleList.Add(new Tuple<CardInfo, String>(cardInfo, outputAudioFilename));
+            }
 
             using (var outputStream = new StreamWriter(tsvFilename))
             {
@@ -442,6 +445,18 @@ namespace subtitleMemorize
                                            );
                 }
             }
+
+            // extract images
+            if (Directory.Exists(snapshotsPath)) Directory.Delete(snapshotsPath, true);
+            Directory.CreateDirectory(snapshotsPath);
+            WorkerSnapshot.ExtractSnaphots(settings, snapshotsPath, cardSnapshotNameTupleList);
+
+            // extract audio
+            if (Directory.Exists(audioPath)) Directory.Delete(audioPath, true);
+            Directory.CreateDirectory(audioPath);
+            WorkerAudio.ExtractAudio(settings, audioPath, cardAudioNameTupleList);
+
+            // TODO: normalize audio here instead of WorkerAudio
         }
 
         public List<AtomicChange> GenerateFullUpdateList()
