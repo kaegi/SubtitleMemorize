@@ -739,6 +739,12 @@ namespace subtitleMemorize
 				PreviewWindowSelectLines(m_entryLinesSearch.Text, m_previewWindow_isShiftPressed, !m_previewWindow_isControlPressed);
 			};
 
+			m_entryLinesSearch.KeyReleaseEvent += delegate(object sender, KeyReleaseEventArgs e) {
+				if(e.Event.KeyValue == Gdk.Keyval.FromName("Return")) {
+					PreviewWindowSelectLines(m_entryLinesSearch.Text, m_previewWindow_isShiftPressed, !m_previewWindow_isControlPressed);
+				}
+			};
+
 			m_buttonPlayContent.Clicked += delegate(object sender, EventArgs e) {
 				if(m_selectedPreviewIndex < 0) return;
 
