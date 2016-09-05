@@ -64,17 +64,25 @@
       <column type="gchararray"/>
       <!-- column-name Actors -->
       <column type="gchararray"/>
+      <!-- column-name Start -->
+      <column type="gchararray"/>
+      <!-- column-name Duration -->
+      <column type="gchararray"/>
     </columns>
     <data>
       <row>
         <col id="0" translatable="yes">試す</col>
         <col id="1" translatable="yes">(to) test</col>
         <col id="2" translatable="yes">Mia</col>
+        <col id="3" translatable="yes">00:10:59</col>
+        <col id="4" translatable="yes">00:00:05</col>
       </row>
       <row>
         <col id="0" translatable="yes">これはなんでここにある</col>
         <col id="1" translatable="yes">Why is that here?</col>
         <col id="2" translatable="yes">Carlos</col>
+        <col id="3" translatable="yes">00:11:07</col>
+        <col id="4" translatable="yes">00:01:10</col>
       </row>
     </data>
   </object>
@@ -262,6 +270,29 @@
                       <object class="GtkCellRendererText" id="cellrenderertext_actors"/>
                       <attributes>
                         <attribute name="markup">2</attribute>
+                      </attributes>
+                    </child>
+                  </object>
+                </child>
+                <child>
+                  <object class="GtkTreeViewColumn" id="treeviewcolumn_start">
+                    <property name="resizable">True</property>
+                    <property name="title" translatable="yes">Start</property>
+                    <child>
+                      <object class="GtkCellRendererText" id="cellrendertext_start"/>
+                      <attributes>
+                        <attribute name="markup">3</attribute>
+                      </attributes>
+                    </child>
+                  </object>
+                </child>
+                <child>
+                  <object class="GtkTreeViewColumn">
+                    <property name="title" translatable="yes">Duration</property>
+                    <child>
+                      <object class="GtkCellRendererText" id="cellrendertext_duration"/>
+                      <attributes>
+                        <attribute name="markup">4</attribute>
                       </attributes>
                     </child>
                   </object>

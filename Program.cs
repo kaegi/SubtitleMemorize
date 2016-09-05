@@ -929,6 +929,8 @@ namespace subtitleMemorize
 			m_liststoreLines.SetValue(treeIter.Value, 0, beginString + GLib.Markup.EscapeText(cardInfo.ToSingleLine(UtilsCommon.LanguageType.TARGET)) + endString);
 			m_liststoreLines.SetValue(treeIter.Value, 1, beginString + GLib.Markup.EscapeText(cardInfo.ToSingleLine(UtilsCommon.LanguageType.NATIVE)) + endString);
 			m_liststoreLines.SetValue(treeIter.Value, 2, beginString + GLib.Markup.EscapeText(cardInfo.GetActorString()) + endString);
+			m_liststoreLines.SetValue(treeIter.Value, 3, beginString + GLib.Markup.EscapeText(UtilsCommon.ToTimeArg(cardInfo.StartTime)) + endString);
+			m_liststoreLines.SetValue(treeIter.Value, 4, beginString + GLib.Markup.EscapeText(UtilsCommon.ToTimeArg(cardInfo.Duration)) + endString);
 
 			if(updateSelectedEntryTextView && index == m_selectedPreviewIndex) {
 				// regenerate image and set texts
@@ -1327,7 +1329,7 @@ namespace subtitleMemorize
 			m_treeviewSelectionLines.UnselectAll ();
 			m_liststoreLines.Clear ();
 			for(int i = 0; i < m_previewListModel.GetLength(); i++)
-				m_liststoreLines.AppendValues ("", "", "");
+				m_liststoreLines.AppendValues ("", "", "", "", "");
 
 			var updateList = m_previewListModel.GenerateFullUpdateList();
 			UpdatePreviewListViewByChangeList(updateList);
