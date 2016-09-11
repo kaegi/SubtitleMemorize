@@ -38,6 +38,7 @@ namespace subtitleMemorize
 			}
 		};
 
+		/** A bundle of a filename and a dictionary of properties */
 		private class DataEntry {
 			public String filename;
 
@@ -310,11 +311,10 @@ namespace subtitleMemorize
 
 
 
-			if (!filename.Contains ("*") || !Directory.Exists (dirPath)) {
+			if (!filename.Contains ("*") && !filename.Contains("?") || !Directory.Exists (dirPath)) {
 				fileDescs.Add (new FileDesc (filePath, new Dictionary<string, string> (dictionary)));
 			} else {
-				// TODO: more regex features
-				String regex = "^" + Regex.Escape(filename).Replace ("\\*", "(.*)") + "$";
+				String regex = "^" + Regex.Escape(filename).Replace ("\\*", "(.*)").Replace("\\?", "(.)") + "$";
 				String[] allDirFilenames = Directory.GetFiles (dirPath);
 				foreach (String thisFilePath in allDirFilenames) {
 					String thisFilename = Path.GetFileName (thisFilePath);
@@ -323,8 +323,6 @@ namespace subtitleMemorize
 						fileDescs.Add (new FileDesc (thisFilePath, new Dictionary<string, string> (dictionary)));
 					}
 				}
-
-
 			}
 			return fileDescs;
 		}
