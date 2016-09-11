@@ -452,29 +452,46 @@ namespace subtitleMemorize
 
         public void ExportData(Settings settings, InfoProgress progressInfo)
         {
-            var activeCardList = GetActiveCards();
+          var activeCardList = GetActiveCards();
 
-            ExportTextFile(activeCardList, settings, progressInfo);
+          ExportTextFile(activeCardList, settings, progressInfo);
 
-            var cardSnapshotNameTupleList = new List<Tuple<CardInfo, String>>(activeCardList.Count);
-            var cardAudioNameTupleList = new List<Tuple<CardInfo, String>>(activeCardList.Count);
-            foreach(var cardInfo in activeCardList) {
-              cardSnapshotNameTupleList.Add(new Tuple<CardInfo, String>(cardInfo, GetSnapshotFileName(settings, cardInfo)));
-              cardAudioNameTupleList.Add(new Tuple<CardInfo, String>(cardInfo, GetAudioFileName(settings, cardInfo)));
+          var cardSnapshotNameTupleList = new List<Tuple<CardInfo, String>>(activeCardList.Count);
+          var cardAudioNameTupleList = new List<Tuple<CardInfo, String>>(activeCardList.Count);
+          foreach(var cardInfo in activeCardList) {
+            cardSnapshotNameTupleList.Add(new Tuple<CardInfo, String>(cardInfo, GetSnapshotFileName(settings, cardInfo)));
+            cardAudioNameTupleList.Add(new Tuple<CardInfo, String>(cardInfo, GetAudioFileName(settings, cardInfo)));
+          }
+
+
+          // extract images
+          String snapshotsPath = settings.OutputDirectoryPath + Path.DirectorySeparatorChar + settings.DeckName + "_snapshots" + Path.DirectorySeparatorChar;
+          UtilsCommon.ClearDirectory(snapshotsPath);
+          WorkerSnapshot.ExtractSnaphots(settings, snapshotsPath, cardSnapshotNameTupleList);
+
+          // extract audio
+          String audioPath = settings.OutputDirectoryPath + Path.DirectorySeparatorChar + settings.DeckName + "_audio" + Path.DirectorySeparatorChar;
+          UtilsCommon.ClearDirectory(audioPath);
+          WorkerAudio.ExtractAudio(settings, audioPath, cardAudioNameTupleList);
+
+          if(settings.NormalizeAudio) {
+            // normalize all audio files
+            foreach(var entry in cardAudioNameTupleList) {
+              var filepath = entry.Item2;
+              var audioStreamInfos = StreamInfo.ReadAllStreams(filepath);
+              audioStreamInfos.RemoveAll(streamInfo => streamInfo.StreamTypeValue != StreamInfo.StreamType.ST_AUDIO);
+              if(audioStreamInfos.Count != 1) {
+                Console.WriteLine("Skipped normalizing file \"{0}\" because it contains {1} audio streams", filepath, audioStreamInfos.Count);
+                continue;
+              }
+              try {
+                UtilsAudio.NormalizeAudio(filepath, audioStreamInfos[0]);
+              } catch(Exception e) {
+                Console.WriteLine(e.ToString());
+                continue;
+              }
             }
-
-            String snapshotsPath = settings.OutputDirectoryPath + Path.DirectorySeparatorChar + settings.DeckName + "_snapshots" + Path.DirectorySeparatorChar;
-            String audioPath = settings.OutputDirectoryPath + Path.DirectorySeparatorChar + settings.DeckName + "_audio" + Path.DirectorySeparatorChar;
-
-            // extract images
-            UtilsCommon.ClearDirectory(snapshotsPath);
-            WorkerSnapshot.ExtractSnaphots(settings, snapshotsPath, cardSnapshotNameTupleList);
-
-            // extract audio
-            UtilsCommon.ClearDirectory(audioPath);
-            WorkerAudio.ExtractAudio(settings, audioPath, cardAudioNameTupleList);
-
-            // TODO: normalize audio here instead of WorkerAudio
+          }
         }
 
         public List<AtomicChange> GenerateFullUpdateList()

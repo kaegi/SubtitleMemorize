@@ -121,7 +121,7 @@ namespace subtitleMemorize
 		/// <returns>Full language string.</returns>
 		/// <param name="l">L.</param>
 		private String GetLanguageByLanguageCode(String l) {
-			return l; // TODO
+			return l; // TODO: implement GetLanguageByLanguageCode()
 		}
 
 

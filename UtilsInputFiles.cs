@@ -286,7 +286,6 @@ namespace subtitleMemorize
 		/// </summary>
 		/// <returns>The file descriptions.</returns>
 		public List<FileDesc> GetFileDescriptions() {
-			// TODO: Glob files
 			Dictionary<String, String> currentDictionary = new Dictionary<String, String>();
 			List<FileDesc> fileDescs = new List<FileDesc>();
 			foreach (DataEntry dataEntry in m_dataEntries) {
