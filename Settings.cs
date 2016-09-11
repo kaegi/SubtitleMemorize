@@ -41,6 +41,8 @@ namespace subtitleMemorize
 		public String formatProberCommand = "ffprobe";
 		public String formatConvertCommand = "ffmpeg";
 
+		public double normalizeTargetVolume = -16;
+
 		public String preLoadedSettings = null;
 
 		public double subToSubAlign_minGoodMatchingThreshold = 0.6;
@@ -105,7 +107,7 @@ namespace subtitleMemorize
 		private bool m_exportImages = true;
 
 		private RescaleModeEnum m_rescaleMode = RescaleModeEnum.Downscale;
-		
+
 		private int m_imageRescaleWidth = 640;
 		private int m_imageRescaleHeight = 360;
 

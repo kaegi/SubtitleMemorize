@@ -419,7 +419,7 @@ namespace subtitleMemorize
                 {
                     CardInfo cardInfo = cardInfoList[i];
 
-                    // TODO: generate a episode-filtered list for context card search (because it has O(n^2) steps)
+                    // XXX: performance analasys then --- generate a episode-filtered list for context card search (because it has O(n^2) steps)
                     var contextCardsTuple = UtilsSubtitle.GetContextCards(cardInfo.episodeInfo.Index, cardInfo, m_cardInfos);
                     var previousCards = contextCardsTuple.Item1;
                     var nextCards = contextCardsTuple.Item2;

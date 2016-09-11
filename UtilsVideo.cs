@@ -23,11 +23,11 @@ namespace subtitleMemorize
 {
 	public static class UtilsVideo
 	{
-		public static bool ExtractStream(String videoFilePath, StreamInfo streamInfo, String newSubtitleFilePath) {
+		public static void ExtractStream(String videoFilePath, StreamInfo streamInfo, String newSubtitleFilePath) {
 
 			String argumentString = String.Format ("-y -v quiet -i \"{0}\" -map 0:{1} \"{2}\"", videoFilePath, streamInfo.StreamIndex, newSubtitleFilePath);
-			UtilsCommon.StartProcessAndGetOutput("ffmpeg", argumentString);
-			return true; // TODO: exception instead of return value
+			if(UtilsCommon.StartProcessAndGetOutput("ffmpeg", argumentString) == null)
+				throw new ApplicationException();
 		}
 
 

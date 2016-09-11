@@ -69,6 +69,7 @@ namespace subtitleMemorize
 				}
 				m_startTime = minTime - ms_bucket_size;
 
+				// TODO: use interval trees
 				// TODO: upper bound so a wrong value can't lead to allocation of all memory
 
 				// create buckets

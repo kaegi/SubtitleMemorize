@@ -72,26 +72,10 @@ namespace subtitleMemorize
 		}
 
 		/// <summary>
-		/// Filler function (possible future use). Try to find path by executable name.
-		/// This includes relative paths and absolute/system directory paths.
-		///
-		/// TODO: search for executables by name in /usr/bin/... and other directories
-		///
-		/// This function does nothing else besides returning the initial "exeName" because
-		/// calling a process by name already searches the system directories ("/usr/bin/", ...).
-		/// </summary>
-		/// <returns>The exe path.</returns>
-		/// <param name="exeName">Exe name.</param>
-		public static string FindExePath(String exeName) {
-			return exeName;
-		}
-
-		/// <summary>
-		/// Finds the executable file by name and then executes it.
+		/// Executes a command with arguments.
 		/// </summary>
 		public static string StartProcessAndGetOutput(String exeName, String args, bool stderrInsteadOfStdout=false) {
-			String exePath = FindExePath (exeName);
-			return CallExeAndGetOutput (exePath, args, stderrInsteadOfStdout);
+			return CallExeAndGetOutput (exeName, args, stderrInsteadOfStdout);
 		}
 
 		/// <summary>

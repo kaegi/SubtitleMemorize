@@ -45,7 +45,7 @@ namespace subtitleMemorize
 			string formatRegex = GetFormatRegex (rawLines);
 			if (formatRegex == null)
 				return null;
-			
+
 			// parse every line with format regex and save lines in LineInfo
 			foreach(string rawLine in rawLines) {
 				Match lineMatch = Regex.Match(rawLine, formatRegex, RegexOptions.IgnoreCase | RegexOptions.Compiled);
@@ -59,7 +59,7 @@ namespace subtitleMemorize
 				string textString = lineMatch.Groups ["Text"].ToString ().Trim ();
 
 				if (settings.IgnoreStyledSubLines &&
-						textString.StartsWith ("{") // TODO: this is a really big hint for styled subtitles but might create false-negatives
+						textString.StartsWith ("{") // NOTE: this is a really big hint for styled subtitles but might create false-negatives -- research common patterns in subtitle files
 						&& !textString.StartsWith ("{\\b1}") // bold
 						&& !textString.StartsWith ("{\\u1}") // underline
 						&& !textString.StartsWith ("{\\i1}") // italics
@@ -78,7 +78,7 @@ namespace subtitleMemorize
 				// generate line info
 				LineInfo li = new LineInfo(parseTime(startTimeString), parseTime(endTimeString), nameString, textString);
 				lines.Add(li);
-				
+
 
 
 			}
@@ -118,7 +118,7 @@ namespace subtitleMemorize
 		/// <returns>The format regex.</returns>
 		/// <param name="rawLines">Raw lines.</param>
 		public string GetFormatRegex(LinkedList<String> rawLines) {
-		
+
 			// find "Format: ..." line in "[Event]" Section
 			bool eventSection = false;
 			string formatLine = null;
@@ -181,4 +181,3 @@ namespace subtitleMemorize
 		}
 	}
 }
-

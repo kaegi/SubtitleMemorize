@@ -925,13 +925,13 @@ namespace subtitleMemorize
 		private void UpdatePreviewListEntry(int index, CardInfo cardInfo, TreeIter? treeIter = null, bool updateSelectedEntryTextView=false) {
 			if(!m_previewListModel.IsIndexInRange(index)) throw new ArgumentOutOfRangeException(); // nothing to update
 			if(treeIter == null)
-				treeIter = GetTreeIterByIndex(index);  // TODO: cache this value
+				treeIter = GetTreeIterByIndex(index);
 
 			// if this entry is deactivated the line is colored grey with Pango's markup language
 			String beginString = cardInfo.isActive ? "" : "<span foreground=\"white\" background=\"grey\">";
 			String endString = cardInfo.isActive ? "" : "</span>";
 
-			// set values in list TODO: can there be an index change?
+			// set values in list
 			m_liststoreLines.SetValue(treeIter.Value, 0, beginString + GLib.Markup.EscapeText(cardInfo.ToSingleLine(UtilsCommon.LanguageType.TARGET)) + endString);
 			m_liststoreLines.SetValue(treeIter.Value, 1, beginString + GLib.Markup.EscapeText(cardInfo.ToSingleLine(UtilsCommon.LanguageType.NATIVE)) + endString);
 			m_liststoreLines.SetValue(treeIter.Value, 2, beginString + GLib.Markup.EscapeText(cardInfo.GetActorString()) + endString);
@@ -991,7 +991,6 @@ namespace subtitleMemorize
 			UtilsInputFiles sub2Files = new UtilsInputFiles (settings.NativeFilePath);
 			UtilsInputFiles videoFiles = new UtilsInputFiles (settings.VideoFilePath);
 
-			// TODO: Handle different list lengths
 			List<UtilsInputFiles.FileDesc> sub1FileDescs = sub1Files.GetFileDescriptions();
 			List<UtilsInputFiles.FileDesc> sub2FileDescs = sub2Files.GetFileDescriptions();
 			List<UtilsInputFiles.FileDesc> videoFileDescs = videoFiles.GetFileDescriptions();

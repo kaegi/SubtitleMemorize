@@ -163,9 +163,6 @@ namespace subtitleMemorize
 		public static List<LineInfo> ParseSubtitleWithPostProcessing(Settings settings, PerSubtitleSettings perSubtitleSettings, string filename, Dictionary<String, String> properties) {
 			List<LineInfo> lines = ParseSubtitle (settings, filename, properties);
 			BeautifyLines (lines);
-			// TODO: remove lines with filler characters like notes etc.
-			// TODO: unify lines with "->", etc. character
-
 			return lines;
 		}
 
@@ -227,7 +224,7 @@ namespace subtitleMemorize
 		/// Returns the longest list of line containers, for which no line containers overlap. Addtionaly
 		/// these containers are sorted by start time.
 		/// </summary>
-		public static LinkedList<LineContainer<T>> GetNonOverlappingTimeSpans<T>(LinkedList<T> lines, double threshold=0) where T : ITimeSpan {
+		public static List<LineContainer<T>> GetNonOverlappingTimeSpans<T>(LinkedList<T> lines, double threshold=0) where T : ITimeSpan {
 			var containers = new LinkedList<LineContainer<T>>();
 			var lineAlreadyAdded = new bool[lines.Count];
 			var lineANode = lines.First;
@@ -276,9 +273,11 @@ restartLoop:
 				lineANode = lineANode.Next;
 			}
 
-			// TODO sort
+			// XXX: is sort necessary
+			var containerList = containers.ToList();
+			containerList.Sort();
 
-			return containers;
+			return containerList;
 		}
 
 		public static Tuple<List<CardInfo>, List<CardInfo>> GetContextCards(int episodeIndex, ITimeSpan timeSpan, List<CardInfo> list, int maxNumberCards = 3, int maxNumberOfLines = -1, double maxSeconds = 15)

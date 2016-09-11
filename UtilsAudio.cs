@@ -49,7 +49,7 @@ namespace subtitleMemorize
 		public static void NormalizeAudio(String filename, StreamInfo audioStreamInfo) {
 			if(!filename.EndsWith("ogg")) throw new Exception("Only .ogg files are currently supported for normalizing!");
 			double maxVolume = GetMaxVolume(filename, audioStreamInfo);
-			const double targetVolume = -16; // in dB TODO: make audio normalize target configurable in settings
+			double targetVolume = InstanceSettings.systemSettings.normalizeTargetVolume;
 
 			String tmpFilename = InstanceSettings.temporaryFilesPath + Path.GetFileName(filename);
 			String arguments = String.Format("-y -i \"{0}\" -af \"volume={1}dB\" -c:a libvorbis -vn \"{2}\"", filename, (-maxVolume + targetVolume).ToString(System.Globalization.CultureInfo.InvariantCulture), tmpFilename);
