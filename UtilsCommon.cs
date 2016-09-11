@@ -419,5 +419,11 @@ namespace subtitleMemorize
 		public static List<int> GetListFromTo(int start, int end) {
 			return (from number in Enumerable.Range(start, end) select number).ToList();
 		}
+
+		public static void ClearDirectory(string path)
+		{
+			if (Directory.Exists(path)) Directory.Delete(path, true);
+			Directory.CreateDirectory(path);
+		}
 	}
 }

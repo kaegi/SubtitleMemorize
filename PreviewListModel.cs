@@ -2,10 +2,8 @@ using System;
 using System.IO;
 using System.Collections.Generic;
 using System.Linq;
-using System.Threading.Tasks;
 using NCalc;
 using System.Text.RegularExpressions;
-using System.Text;
 
 namespace subtitleMemorize
 {
@@ -382,40 +380,44 @@ namespace subtitleMemorize
             return m_cardInfos.Count;
         }
 
+        public String GetSnapshotFileName(Settings settings, CardInfo cardInfo) {
+            return settings.DeckNameModified + "__" + cardInfo.GetKey() + ".jpg";
+        }
 
-        public void ExportData(Settings settings, InfoProgress progressInfo)
-        {
-            String tsvFilename = settings.OutputDirectoryPath + Path.DirectorySeparatorChar + settings.DeckName + ".tsv";
-            String snapshotsPath = settings.OutputDirectoryPath + Path.DirectorySeparatorChar + settings.DeckName + "_snapshots" + Path.DirectorySeparatorChar;
-            String audioPath = settings.OutputDirectoryPath + Path.DirectorySeparatorChar + settings.DeckName + "_audio" + Path.DirectorySeparatorChar;
-            Console.WriteLine(tsvFilename);
+        public String GetAudioFileName(Settings settings, CardInfo cardInfo) {
+            return settings.DeckNameModified + "__" + cardInfo.GetKey() + ".ogg";
+        }
 
-            // remove all entries that are now deactivated
+        /** Returns a list of all cards that are activated -> all cards that are exported */
+        public List<CardInfo> GetActiveCards() {
+            // remove all entries that are deactivated
             List<CardInfo> activeCardInfos = new List<CardInfo>();
             activeCardInfos.AddRange(m_cardInfos);
             activeCardInfos.RemoveAll((CardInfo cardInfo) => !cardInfo.isActive);
+            return activeCardInfos;
+        }
+
+        /** Generates a .tsv file */
+        public void ExportTextFile(List<CardInfo> cardInfoList, Settings settings, InfoProgress progressInfo) {
+            String tsvFilename = settings.OutputDirectoryPath + Path.DirectorySeparatorChar + settings.DeckName + ".tsv";
+            Console.WriteLine(tsvFilename);
 
             // value that will be imported into Anki/SRS-Programs-Field => [sound:???.ogg] and <img src="???.jpg"/>
-            var snapshotFields = new List<String>(activeCardInfos.Count);
-            var audioFields = new List<String>(activeCardInfos.Count);
-            var cardSnapshotNameTupleList = new List<Tuple<CardInfo, String>>(activeCardInfos.Count);
-            var cardAudioNameTupleList = new List<Tuple<CardInfo, String>>(activeCardInfos.Count);
+            var snapshotFields = new List<String>(cardInfoList.Count);
+            var audioFields = new List<String>(cardInfoList.Count);
 
-            foreach(var cardInfo in activeCardInfos) {
-              var outputSnapshotFilename = settings.DeckNameModified + "__" + cardInfo.GetKey() + ".jpg";
+            foreach(var cardInfo in cardInfoList) {
+              var outputSnapshotFilename = GetSnapshotFileName(settings, cardInfo);
+              var outputAudioFilename = GetAudioFileName(settings, cardInfo);
               snapshotFields.Add("<img src=\"" + outputSnapshotFilename + "\"/>"); // TODO: make this flexible
-              cardSnapshotNameTupleList.Add(new Tuple<CardInfo, String>(cardInfo, outputSnapshotFilename));
-
-              var outputAudioFilename = settings.DeckNameModified + "__" + cardInfo.GetKey() + ".ogg";
               audioFields.Add("[sound:" + outputAudioFilename + "]"); // TODO: make this flexible
-              cardAudioNameTupleList.Add(new Tuple<CardInfo, String>(cardInfo, outputAudioFilename));
             }
 
             using (var outputStream = new StreamWriter(tsvFilename))
             {
-                for (int i = 0; i < activeCardInfos.Count; i++)
+                for (int i = 0; i < cardInfoList.Count; i++)
                 {
-                    CardInfo cardInfo = activeCardInfos[i];
+                    CardInfo cardInfo = cardInfoList[i];
 
                     // TODO: generate a episode-filtered list for context card search (because it has O(n^2) steps)
                     var contextCardsTuple = UtilsSubtitle.GetContextCards(cardInfo.episodeInfo.Index, cardInfo, m_cardInfos);
@@ -445,15 +447,31 @@ namespace subtitleMemorize
                                            );
                 }
             }
+        }
+
+
+        public void ExportData(Settings settings, InfoProgress progressInfo)
+        {
+            var activeCardList = GetActiveCards();
+
+            ExportTextFile(activeCardList, settings, progressInfo);
+
+            var cardSnapshotNameTupleList = new List<Tuple<CardInfo, String>>(activeCardList.Count);
+            var cardAudioNameTupleList = new List<Tuple<CardInfo, String>>(activeCardList.Count);
+            foreach(var cardInfo in activeCardList) {
+              cardSnapshotNameTupleList.Add(new Tuple<CardInfo, String>(cardInfo, GetSnapshotFileName(settings, cardInfo)));
+              cardAudioNameTupleList.Add(new Tuple<CardInfo, String>(cardInfo, GetAudioFileName(settings, cardInfo)));
+            }
+
+            String snapshotsPath = settings.OutputDirectoryPath + Path.DirectorySeparatorChar + settings.DeckName + "_snapshots" + Path.DirectorySeparatorChar;
+            String audioPath = settings.OutputDirectoryPath + Path.DirectorySeparatorChar + settings.DeckName + "_audio" + Path.DirectorySeparatorChar;
 
             // extract images
-            if (Directory.Exists(snapshotsPath)) Directory.Delete(snapshotsPath, true);
-            Directory.CreateDirectory(snapshotsPath);
+            UtilsCommon.ClearDirectory(snapshotsPath);
             WorkerSnapshot.ExtractSnaphots(settings, snapshotsPath, cardSnapshotNameTupleList);
 
             // extract audio
-            if (Directory.Exists(audioPath)) Directory.Delete(audioPath, true);
-            Directory.CreateDirectory(audioPath);
+            UtilsCommon.ClearDirectory(audioPath);
             WorkerAudio.ExtractAudio(settings, audioPath, cardAudioNameTupleList);
 
             // TODO: normalize audio here instead of WorkerAudio
