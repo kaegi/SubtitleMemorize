@@ -30,7 +30,6 @@ namespace subtitleMemorize
 	{
 		////////////////// AUTO-GENERATED CODE BEGIN //////////////////////
 		#pragma warning disable 0414 // private field assigned but not used
-		private Gtk.Action m_action1;
 		private Gtk.Adjustment m_adjustmentAudioPaddingAfter;
 		private Gtk.Adjustment m_adjustmentAudioPaddingBefore;
 		private Gtk.Adjustment m_adjustmentMaxImageHeight;
@@ -60,6 +59,9 @@ namespace subtitleMemorize
 		private Gtk.CellRendererText m_cellrenderertextNativeLanguage;
 		private Gtk.TreeViewColumn m_treeviewcolumnActors;
 		private Gtk.CellRendererText m_cellrenderertextActors;
+		private Gtk.TreeViewColumn m_treeviewcolumnStart;
+		private Gtk.CellRendererText m_cellrendertextStart;
+		private Gtk.CellRendererText m_cellrendertextDuration;
 		private Gtk.Frame m_frame10;
 		private Gtk.Alignment m_alignment10;
 		private Gtk.Grid m_grid4;
@@ -194,7 +196,6 @@ namespace subtitleMemorize
 		private Gtk.ComboBox m_comboboxtextRescaleMode;
 		private Gtk.Label m_label13;
 		private Gtk.Label m_label2;
-		private Gtk.Box m_box4;
 		private Gtk.Frame m_frame7;
 		private Gtk.Alignment m_alignment7;
 		private Gtk.Label m_label16;
@@ -206,7 +207,6 @@ namespace subtitleMemorize
 		private Gtk.Alignment m_alignment9;
 		private Gtk.Box m_box10;
 		private Gtk.Button m_buttonPreview;
-		private Gtk.Button m_buttonGo;
 		private Gtk.Label m_label19;
 		private Gtk.Window m_windowProgressInfo;
 		private Gtk.Alignment m_alignment12;
@@ -215,7 +215,6 @@ namespace subtitleMemorize
 		private Gtk.Button m_buttonCancelOperation;
 
 		private void InitializeGtkObjects(Gtk.Builder b) {
-			m_action1 = (Gtk.Action) b.GetObject("action1");
 			m_adjustmentAudioPaddingAfter = (Gtk.Adjustment) b.GetObject("adjustment_audio_padding_after");
 			m_adjustmentAudioPaddingBefore = (Gtk.Adjustment) b.GetObject("adjustment_audio_padding_before");
 			m_adjustmentMaxImageHeight = (Gtk.Adjustment) b.GetObject("adjustment_max_image_height");
@@ -245,6 +244,9 @@ namespace subtitleMemorize
 			m_cellrenderertextNativeLanguage = (Gtk.CellRendererText) b.GetObject("cellrenderertext_native_language");
 			m_treeviewcolumnActors = (Gtk.TreeViewColumn) b.GetObject("treeviewcolumn_actors");
 			m_cellrenderertextActors = (Gtk.CellRendererText) b.GetObject("cellrenderertext_actors");
+			m_treeviewcolumnStart = (Gtk.TreeViewColumn) b.GetObject("treeviewcolumn_start");
+			m_cellrendertextStart = (Gtk.CellRendererText) b.GetObject("cellrendertext_start");
+			m_cellrendertextDuration = (Gtk.CellRendererText) b.GetObject("cellrendertext_duration");
 			m_frame10 = (Gtk.Frame) b.GetObject("frame10");
 			m_alignment10 = (Gtk.Alignment) b.GetObject("alignment10");
 			m_grid4 = (Gtk.Grid) b.GetObject("grid4");
@@ -379,7 +381,6 @@ namespace subtitleMemorize
 			m_comboboxtextRescaleMode = (Gtk.ComboBox) b.GetObject("comboboxtext_rescale_mode");
 			m_label13 = (Gtk.Label) b.GetObject("label13");
 			m_label2 = (Gtk.Label) b.GetObject("label2");
-			m_box4 = (Gtk.Box) b.GetObject("box4");
 			m_frame7 = (Gtk.Frame) b.GetObject("frame7");
 			m_alignment7 = (Gtk.Alignment) b.GetObject("alignment7");
 			m_label16 = (Gtk.Label) b.GetObject("label16");
@@ -391,7 +392,6 @@ namespace subtitleMemorize
 			m_alignment9 = (Gtk.Alignment) b.GetObject("alignment9");
 			m_box10 = (Gtk.Box) b.GetObject("box10");
 			m_buttonPreview = (Gtk.Button) b.GetObject("button_preview");
-			m_buttonGo = (Gtk.Button) b.GetObject("button_go");
 			m_label19 = (Gtk.Label) b.GetObject("label19");
 			m_windowProgressInfo = (Gtk.Window) b.GetObject("window_progress_info");
 			m_alignment12 = (Gtk.Alignment) b.GetObject("alignment12");
@@ -401,6 +401,7 @@ namespace subtitleMemorize
 		}
 		#pragma warning restore 0414
 		////////////////// AUTO-GENERATED CODE END //////////////////////
+
 		private readonly Settings m_defaultSettings = new Settings();
 		private readonly Gtk.Builder m_builder = new Builder();
 		private int m_numberOfInfobarLabelMarkupChanges = 0;
@@ -431,7 +432,6 @@ namespace subtitleMemorize
 		// Variables for Progress-Window
 		private enum PendingOperation{
 			GENERATE_PREVIEW, // "Preview"/"Refresh"
-			GENERATE_OUTPUT, // "Go"
 			NOTHING
 		}
 		private PendingOperation m_pendingOperation = PendingOperation.NOTHING;
@@ -606,12 +606,6 @@ namespace subtitleMemorize
 			// ----------------------------------------------------------------------------------------------------
 			m_buttonPreview.Clicked += delegate(object o, EventArgs args) {
 				GoOrPreviewClicked(PendingOperation.GENERATE_PREVIEW);
-			};
-
-
-			// ----------------------------------------------------------------------------------------------------
-			m_buttonGo.Clicked += delegate(object o, EventArgs args) {
-				GoOrPreviewClicked(PendingOperation.GENERATE_OUTPUT);
 			};
 
 			// ----------------------------------------------------------------------------------------------------
