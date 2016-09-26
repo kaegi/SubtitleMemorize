@@ -1192,7 +1192,7 @@ Of course you can press Shift and Control at the same time which will deselect a
                                               <object class="GtkLabel" id="label9">
                                                 <property name="visible">True</property>
                                                 <property name="can_focus">False</property>
-                                                <property name="label" translatable="yes">Shift value:</property>
+                                                <property name="label" translatable="yes">Milliseconds:</property>
                                                 <property name="use_markup">True</property>
                                               </object>
                                               <packing>
@@ -1206,7 +1206,7 @@ Of course you can press Shift and Control at the same time which will deselect a
                                                 <property name="can_focus">False</property>
                                                 <property name="active">0</property>
                                                 <items>
-                                                  <item id="align_sub1_by_offset" translatable="yes">Shift by constant value</item>
+                                                  <item id="align_sub1_by_offset" translatable="yes">Shift by constant time</item>
                                                   <item id="align_sub1_to_sub2" translatable="yes">Align to Sub2</item>
                                                   <item id="align_sub1_to_audio" translatable="yes">Align to Audio</item>
                                                 </items>
@@ -1282,7 +1282,7 @@ Of course you can press Shift and Control at the same time which will deselect a
                                               <object class="GtkLabel" id="label10">
                                                 <property name="visible">True</property>
                                                 <property name="can_focus">False</property>
-                                                <property name="label" translatable="yes">Shift value:</property>
+                                                <property name="label" translatable="yes">Milliseconds:</property>
                                                 <property name="use_markup">True</property>
                                               </object>
                                               <packing>
@@ -1296,9 +1296,9 @@ Of course you can press Shift and Control at the same time which will deselect a
                                                 <property name="can_focus">False</property>
                                                 <property name="active">0</property>
                                                 <items>
-                                                  <item id="align_sub2_by_offset" translatable="yes">Shift by constant value</item>
-                                                  <item id="align_sub2_to_sub1" translatable="yes">Align to Sub1</item>
-                                                  <item id="align_sub2_to_audio" translatable="yes">Align to Audio</item>
+                                                  <item id="align_sub1_by_offset" translatable="yes">Shift by constant time</item>
+                                                  <item id="align_sub1_to_sub2" translatable="yes">Align to Sub2</item>
+                                                  <item id="align_sub1_to_audio" translatable="yes">Align to Audio</item>
                                                 </items>
                                               </object>
                                               <packing>
