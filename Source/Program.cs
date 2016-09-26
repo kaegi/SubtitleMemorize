@@ -605,7 +605,7 @@ namespace subtitleMemorize
 
 			// ----------------------------------------------------------------------------------------------------
 			m_buttonPreview.Clicked += delegate(object o, EventArgs args) {
-				GoOrPreviewClicked(PendingOperation.GENERATE_PREVIEW);
+				PreviewButtonClicked();
 			};
 
 			// ----------------------------------------------------------------------------------------------------
@@ -1011,12 +1011,63 @@ namespace subtitleMemorize
 			return episodeFiles;
 		}
 
-		private void GoOrPreviewClicked(PendingOperation previewOrGo) {
+		private void ComputationThread(Settings settings) {
+
+			InfoProgress progressInfo = new InfoProgress(ProgressHandler);
+			m_progressAndCancellable = progressInfo;
+
+			// find sub1, sub2, audio and video file per episode
+			var episodeInfo = new List<EpisodeInfo>();
+			episodeInfo.AddRange(GenerateEpisodeInfos(settings));
+
+			// fill in progress sections
+			for(int i = 0; i < episodeInfo.Count; i++)
+			progressInfo.AddSection(String.Format("Episode {0:00.}: Extracting Sub1", i + 1), 1);
+			for(int i = 0; i < episodeInfo.Count; i++)
+			progressInfo.AddSection(String.Format("Episode {0:00.}: Extracting Sub2", i + 1), 1);
+			for(int i = 0; i < episodeInfo.Count; i++)
+			progressInfo.AddSection(String.Format("Episode {0:00.}: Matching subtitles", i + 1), 1);
+
+			progressInfo.AddSection("Preparing data presentation", 1);
+			progressInfo.StartProgressing();
 
 
-			// because this function/delegate is synchronized in gtk-thread -> guard with simple variable against pressing button two times
-			if (!OpenProgressWindow (previewOrGo))
+			// read all sub-files, match them and create a list for user that can be presented in preview window
+			var cardInfos = new List<CardInfo>();
+			cardInfos.AddRange(GenerateCardInfo(settings, episodeInfo, progressInfo) ?? new List<CardInfo>());
+
+			m_previewListModel = new PreviewListModel(cardInfos);
+
+			if(!progressInfo.Cancelled) {
+
+				// finish this last step
+				progressInfo.ProcessedSteps(1);
+
+				PopulatePreviewList();
+			}
+
+			// close progress window, free pending operation variable
+			CloseProgressWindow ();
+
+		}
+
+		private void ComputationThreadSafe(Settings settings) {
+			try {
+				ComputationThread(settings);
+			} catch(Exception e) {
+				Gtk.Application.Invoke(delegate {
+					SetErrorMessage(e.Message);
+					CloseProgressWindow();
+					m_previewWindow.Hide();
+				});
+			}
+		}
+
+		private void PreviewButtonClicked() {
+			if(this.m_pendingOperation != PendingOperation.NOTHING)
 				return;
+			this.m_pendingOperation = PendingOperation.GENERATE_PREVIEW;
+			m_windowProgressInfo.Show();
 
 			// read settings while handling errors
 			Settings settings = new Settings ();
@@ -1037,49 +1088,7 @@ namespace subtitleMemorize
 			m_previewSettings = settings;
 
 
-			Thread compuationThread = new Thread(new ThreadStart(delegate {
-
-				InfoProgress progressInfo = new InfoProgress(ProgressHandler);
-				m_progressAndCancellable = progressInfo;
-
-				// find sub1, sub2, audio and video file per episode
-				var episodeInfo = new List<EpisodeInfo>();
-				episodeInfo.AddRange(GenerateEpisodeInfos(settings));
-
-				// fill in progress sections
-				for(int i = 0; i < episodeInfo.Count; i++)
-					progressInfo.AddSection(String.Format("Episode {0:00.}: Extracting Sub1", i + 1), 1);
-				for(int i = 0; i < episodeInfo.Count; i++)
-					progressInfo.AddSection(String.Format("Episode {0:00.}: Extracting Sub2", i + 1), 1);
-				for(int i = 0; i < episodeInfo.Count; i++)
-					progressInfo.AddSection(String.Format("Episode {0:00.}: Matching subtitles", i + 1), 1);
-
-				progressInfo.AddSection("Preparing data presentation", 1);
-				progressInfo.StartProgressing();
-
-
-				// read all sub-files, match them and create a list for user that can be presented in preview window
-				var cardInfos = new List<CardInfo>();
-				cardInfos.AddRange(GenerateCardInfo(settings, episodeInfo, progressInfo) ?? new List<CardInfo>());
-
-				m_previewListModel = new PreviewListModel(cardInfos);
-
-				if(!progressInfo.Cancelled) {
-
-					// finish this last step
-					progressInfo.ProcessedSteps(1);
-
-					//infoProgress.ProcessedSteps(1);
-
-					if(previewOrGo == PendingOperation.GENERATE_PREVIEW)
-						PopulatePreviewList();
-					else
-						m_previewListModel.ExportData(settings, progressInfo);
-				}
-
-				// close progress window, free pending operation variable
-				CloseProgressWindow ();
-			}));
+			Thread compuationThread = new Thread(() => ComputationThreadSafe(settings));
 			compuationThread.Start();
 
 		}
