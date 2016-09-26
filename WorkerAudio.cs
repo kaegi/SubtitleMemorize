@@ -43,23 +43,7 @@ namespace subtitleMemorize
 				UtilsCommon.StartProcessAndGetOutput(InstanceSettings.systemSettings.formatConvertCommand, arguments);
 			}
 
-			if(settings.NormalizeAudio) {
-				foreach(var entry in allEntries) {
-					var filepath = entry.Item2;
-					var audioStreamInfos = StreamInfo.ReadAllStreams(filepath);
-					audioStreamInfos.RemoveAll(streamInfo => streamInfo.StreamTypeValue != StreamInfo.StreamType.ST_AUDIO);
-					if(audioStreamInfos.Count != 1) {
-						Console.WriteLine("Skipped normalizing file \"{0}\" because it contains {1} audio streams", filepath, audioStreamInfos.Count);
-						continue;
-					}
-					try {
-						UtilsAudio.NormalizeAudio(filepath, audioStreamInfos[0]);
-					} catch(Exception e) {
-						Console.WriteLine(e.ToString());
-						continue;
-					}
-				}
-			}
+
 		}
 	}
 }
