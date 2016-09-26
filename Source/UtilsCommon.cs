@@ -23,6 +23,7 @@ using System.IO;
 using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
+using System.Runtime.Serialization.Formatters.Binary;
 
 namespace subtitleMemorize
 {
@@ -71,26 +72,10 @@ namespace subtitleMemorize
 		}
 
 		/// <summary>
-		/// Filler function (possible future use). Try to find path by executable name.
-		/// This includes relative paths and absolute/system directory paths.
-		///
-		/// TODO: search for executables by name in /usr/bin/... and other directories
-		///
-		/// This function does nothing else besides returning the initial "exeName" because
-		/// calling a process by name already searches the system directories ("/usr/bin/", ...).
-		/// </summary>
-		/// <returns>The exe path.</returns>
-		/// <param name="exeName">Exe name.</param>
-		public static string FindExePath(String exeName) {
-			return exeName;
-		}
-
-		/// <summary>
-		/// Finds the executable file by name and then executes it.
+		/// Executes a command with arguments.
 		/// </summary>
 		public static string StartProcessAndGetOutput(String exeName, String args, bool stderrInsteadOfStdout=false) {
-			String exePath = FindExePath (exeName);
-			return CallExeAndGetOutput (exePath, args, stderrInsteadOfStdout);
+			return CallExeAndGetOutput (exeName, args, stderrInsteadOfStdout);
 		}
 
 		/// <summary>
@@ -203,6 +188,7 @@ namespace subtitleMemorize
 		public static String ToTimeArg (double seconds)
 		{
 			String sign = seconds < 0 ? "-" : "";
+			seconds = Math.Abs(seconds);
 			int milliseconds 	= (int)(seconds * 1000.0) % 1000;
 			int iseconds 		= (int)(seconds * 1.0) % 60;
 			int minutes 		= (int)(seconds / 60.0) % 60;
@@ -326,6 +312,22 @@ namespace subtitleMemorize
 			return b.EndTime - a.StartTime;
 		}
 
+		public static double GetMinTimeSpanDistance(ITimeSpan a, ITimeSpan b) {
+			if(IsOverlapping(a, b)) return 0;
+
+			if(a.EndTime <= b.StartTime) return b.StartTime - a.EndTime;
+			else return a.StartTime - b.EndTime;
+		}
+
+		public static bool DoesTimespanContain(ITimeSpan reference, ITimeSpan probablyContainedTimespan) {
+			return probablyContainedTimespan.StartTime >= reference.StartTime && probablyContainedTimespan.EndTime <= reference.EndTime;
+		}
+
+		// change format that it can be contained in a .tsv file and anki can use it
+		public static String HTMLify(String str) {
+			return str.Replace("\n", "<br/>").Replace("\t", " ");
+		}
+
 
 
 		/// <summary>
@@ -384,6 +386,28 @@ namespace subtitleMemorize
 				seconds += Int32.Parse(splitByDot[1]) / Math.Pow(10, fracSeconds.Length);
 
 			return seconds;
+		}
+
+		public static T DeepClone<T>(T obj)
+		{
+			using (var ms = new MemoryStream())
+			{
+				var formatter = new BinaryFormatter();
+				formatter.Serialize(ms, obj);
+				ms.Position = 0;
+
+				return (T) formatter.Deserialize(ms);
+			}
+		}
+
+		public static List<int> GetListFromTo(int start, int end) {
+			return (from number in Enumerable.Range(start, end) select number).ToList();
+		}
+
+		public static void ClearDirectory(string path)
+		{
+			if (Directory.Exists(path)) Directory.Delete(path, true);
+			Directory.CreateDirectory(path);
 		}
 	}
 }

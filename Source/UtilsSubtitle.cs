@@ -57,10 +57,10 @@ namespace subtitleMemorize
 		}
 
 		/// <summary>
-		/// Creates an entry information for every BiMatchedLine object.
+		/// Creates an card information for every BiMatchedLine object.
 		/// </summary>
-		public static List<UtilsSubtitle.EntryInformation> GetEntryInformation(Settings settings, EpisodeInfo episodeInfo, IEnumerable<SubtitleMatcher.BiMatchedLines> matchedLinesList) {
-			var returnList = new LinkedList<UtilsSubtitle.EntryInformation> ();
+		public static List<CardInfo> GetCardInfo(Settings settings, EpisodeInfo episodeInfo, IEnumerable<SubtitleMatcher.BiMatchedLines> matchedLinesList) {
+			var returnList = new LinkedList<CardInfo> ();
 
 			foreach (SubtitleMatcher.BiMatchedLines matchedLines in matchedLinesList) {
 
@@ -96,19 +96,19 @@ namespace subtitleMemorize
 				catenateString (matchedLines.listlines [0]);
 				catenateString (matchedLines.listlines [1]);
 
-				var entryInfo = new UtilsSubtitle.EntryInformation (
+				var cardInfo = new CardInfo (
 																	matchedLines.listlines[0].ToList(),
 																	matchedLines.listlines[1].ToList(),
 																	episodeInfo,
 																	startTimestamp, endTimestamp,
 																	startTimestamp - settings.AudioPaddingBefore,
 																	endTimestamp + settings.AudioPaddingAfter);
-				entryInfo.isActive = !deactivated;
-				returnList.AddLast (entryInfo);
+				cardInfo.isActive = !deactivated;
+				returnList.AddLast (cardInfo);
 			}
 
 
-			var retList = new List<UtilsSubtitle.EntryInformation>(returnList);
+			var retList = new List<CardInfo>(returnList);
 			retList.Sort();
 			return retList;
 		}
@@ -163,9 +163,6 @@ namespace subtitleMemorize
 		public static List<LineInfo> ParseSubtitleWithPostProcessing(Settings settings, PerSubtitleSettings perSubtitleSettings, string filename, Dictionary<String, String> properties) {
 			List<LineInfo> lines = ParseSubtitle (settings, filename, properties);
 			BeautifyLines (lines);
-			// TODO: remove lines with filler characters like notes etc.
-			// TODO: unify lines with "->", etc. character
-
 			return lines;
 		}
 
@@ -227,7 +224,7 @@ namespace subtitleMemorize
 		/// Returns the longest list of line containers, for which no line containers overlap. Addtionaly
 		/// these containers are sorted by start time.
 		/// </summary>
-		public static LinkedList<LineContainer<T>> GetNonOverlappingTimeSpans<T>(LinkedList<T> lines, double threshold=0) where T : ITimeSpan {
+		public static List<LineContainer<T>> GetNonOverlappingTimeSpans<T>(LinkedList<T> lines, double threshold=0) where T : ITimeSpan {
 			var containers = new LinkedList<LineContainer<T>>();
 			var lineAlreadyAdded = new bool[lines.Count];
 			var lineANode = lines.First;
@@ -276,165 +273,57 @@ restartLoop:
 				lineANode = lineANode.Next;
 			}
 
-			// TODO sort
+			// XXX: is sort necessary
+			var containerList = containers.ToList();
+			containerList.Sort();
 
-			return containers;
+			return containerList;
 		}
 
-		/// <summary>
-		/// This class is closely related to the cards that will be generated.
-		/// Every EntryInformation-Instance, that isn't filtered away will be used
-		/// for exactly one card.
-		/// </summary>
-		public class EntryInformation : IComparable<ITimeSpan>, ITimeSpan {
-			public List<LineInfo> targetLanguageLines;
-			public List<LineInfo> nativeLanguageLines;
-			public EpisodeInfo episodeInfo;
-			public double startTimestamp;
-			public double endTimestamp;
-			public double audioStartTimestamp;
-			public double audioEndTimestamp;
-			public bool isActive;
+		public static Tuple<List<CardInfo>, List<CardInfo>> GetContextCards(int episodeIndex, ITimeSpan timeSpan, List<CardInfo> list, int maxNumberCards = 3, int maxNumberOfLines = -1, double maxSeconds = 15)
+		{
+			var previousLines = new List<CardInfo>();
+			var nextLines = new List<CardInfo>();
+			foreach (var card in list)
+			{
+				if (episodeIndex != card.episodeInfo.Index) continue;
 
-			public double Duration {
-				get { return UtilsCommon.GetTimeSpanLength(this); }
+				if (UtilsCommon.GetMinTimeSpanDistance(card, timeSpan) > maxSeconds) continue;
+				if (UtilsCommon.DoesTimespanContain(card, timeSpan) || UtilsCommon.DoesTimespanContain(timeSpan, card)) continue;
+
+				if(card.StartTime < timeSpan.StartTime) previousLines.Add(card);
+				else nextLines.Add(card);
 			}
 
-			public EntryInformation(List<LineInfo> targetLanguageLines,
-									List<LineInfo> nativeLanguageLines,
-									EpisodeInfo episodeInfo,
-									double startTimestamp,
-									double endTimestamp,
-									double audioStartTimestamp,
-									double audioEndTimestamp) {
-				this.targetLanguageLines = targetLanguageLines;
-				this.nativeLanguageLines = nativeLanguageLines;
-				this.episodeInfo         = episodeInfo;
-				this.startTimestamp      = startTimestamp;
-				this.endTimestamp        = endTimestamp;
-				this.audioStartTimestamp = audioStartTimestamp;
-				this.audioEndTimestamp   = audioEndTimestamp;
-				this.isActive            = true;
-			}
+			Comparison<CardInfo> comparer = delegate (CardInfo a, CardInfo b) {
+				double aDistance = UtilsCommon.GetMinTimeSpanDistance(a, timeSpan);
+				double bDistance = UtilsCommon.GetMinTimeSpanDistance(b, timeSpan);
+				return aDistance < bDistance ? 1 : -1;
+			};
+			previousLines.Sort(comparer);
+			previousLines = previousLines.Take(maxNumberCards).ToList();
 
-			/// <summary>
-			/// Unifies two EntryInformation into one (merging). The two EntryInformation have to be compatible
-			/// which can be checked with IsMergePossbile().
-			/// </summary>
-			public EntryInformation(EntryInformation first, EntryInformation second) {
-				this.targetLanguageLines = first.targetLanguageLines.Concat(second.targetLanguageLines).ToList();
-				this.nativeLanguageLines = first.nativeLanguageLines.Concat(second.nativeLanguageLines).ToList();
-				this.episodeInfo          = first.episodeInfo;
-				this.startTimestamp       = Math.Min(first.startTimestamp, second.startTimestamp);
-				this.endTimestamp         = Math.Max(first.endTimestamp, second.endTimestamp);
-				this.isActive             = first.isActive || second.isActive;
-			}
+			nextLines.Sort(comparer);
+			nextLines = nextLines.Take(maxNumberCards).ToList();
 
-			public List<LineInfo> GetListByLanguageType(UtilsCommon.LanguageType languageType) {
-				return languageType == UtilsCommon.LanguageType.NATIVE ? nativeLanguageLines : targetLanguageLines;
-			}
+			// sort by start times
+			previousLines.Sort();
+			nextLines.Sort();
 
-			/// <summary>
-			/// Replaces strings in line infos by regex.
-			/// </summary>
-			public void DoRegexReplace(UtilsCommon.LanguageType languageType, String pattern, String to) {
-				foreach(var line in GetListByLanguageType(languageType)) {
-					line.text = Regex.Replace(line.text, pattern, to);
-				}
-			}
-
-			/// <summary>
-			/// Checks whether two EntryInformation instances can be merged. (If they
-			/// are not in the same episode, in which episode is the new EntryInformation?)
-			/// </summary>
-			public static bool IsMergePossbile(EntryInformation a, EntryInformation b) {
-				if(a.episodeInfo != b.episodeInfo) return false;
-				return true;
-			}
-
-			/// <summary>
-			/// Returns some string that identifies this entry information.
-			/// </summary>
-			/// <returns>The key.</returns>
-			public String GetKey() {
-				String str = String.Format ("{0:000.}", episodeInfo.Number) + "__" + UtilsCommon.ToTimeArg (startTimestamp) + "__" + UtilsCommon.ToTimeArg (endTimestamp);
-				return Regex.Replace (str, "[^a-zA-Z0-9]", "_");
-			}
-
-			public double StartTime {
-				get { return startTimestamp; }
-			}
-
-			public double EndTime {
-				get { return endTimestamp; }
-			}
-
-			/// <summary>
-			/// Compare lines based on their Start Times.
-			/// </summary>
-			public int CompareTo(ITimeSpan other) {
-				if(StartTime == other.StartTime) return 0;
-				return StartTime < other.StartTime ? -1 : 1;
-			}
-
-			private string ToString(UtilsCommon.LanguageType languageType, String separator="\n") {
-				String str = "";
-				bool isFirst = true;
-				foreach(var line in GetListByLanguageType(languageType)) {
-					if(isFirst) {
-						str += line.text;
-						isFirst = false;
-					} else {
-						str += separator + line.text;
-					}
-				}
-				return str;
-			}
-
-			public string ToMultiLine(UtilsCommon.LanguageType languageType) {
-				return ToString(languageType, "\n");
-			}
-
-			public string ToSingleLine(UtilsCommon.LanguageType languageType) {
-				return ToString(languageType, " ");
-			}
-
-			private List<String> GetActors(UtilsCommon.LanguageType languageType) {
-				var result = new List<String>();
-				foreach(var line in targetLanguageLines) {
-					result.Add(line.name);
-				}
-				return result;
-			}
-
-			public List<String> GetActors() {
-				var list = GetActors(UtilsCommon.LanguageType.TARGET).Concat(GetActors(UtilsCommon.LanguageType.NATIVE)).Distinct().ToList();
-				list.Sort();
-				return list;
-			}
-
-			public String GetActorString() {
-				StringBuilder stringBuilder = new StringBuilder();
-				var actors = GetActors();
-				if(actors.Count > 0) stringBuilder.Append(actors[0]);
-				foreach(var actor in actors.Skip(1)) {
-					stringBuilder.Append(", ");
-					stringBuilder.Append(actor);
-				}
-				return stringBuilder.ToString();
-			}
-
-			/// <summary>
-			/// Updates LineInfos. Strings for different LineInfos are separated by '\n'.
-			/// Returns false if text could not be parsed.
-			/// </summary>
-			public bool SetLineInfosByMultiLineString(UtilsCommon.LanguageType languageType, string text) {
-				var lines = GetListByLanguageType(languageType);
-				var stringsRows = text.Split('\n').ToList();
-				if(stringsRows.Count != lines.Count()) { return false; }
-				for(int i = 0; i < lines.Count(); i++) { lines[i].text = stringsRows[i]; }
-				return true;
-			}
+			return new Tuple<List<CardInfo>, List<CardInfo>>(previousLines, nextLines);
 		}
+
+		public static String CardListToMultilineString(List<CardInfo> cards, UtilsCommon.LanguageType languageType) {
+			var str = new StringBuilder();
+			if(cards.Count > 0) {
+				str.Append(cards[0].ToSingleLine(languageType));
+			}
+			foreach(var card in cards.Skip(1)) {
+				str.Append("\n");
+				str.Append(card.ToSingleLine(languageType));
+			}
+			return str.ToString();
+		}
+
 	}
 }

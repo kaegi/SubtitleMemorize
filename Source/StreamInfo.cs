@@ -22,9 +22,11 @@ using System.Xml;
 
 namespace subtitleMemorize
 {
+	[Serializable]
 	public class StreamInfo
 	{
 
+		[Serializable]
 		public class StreamType {
 
 			public static readonly StreamType ST_SUBTITLE = new StreamType (0, "subtitle");
@@ -119,7 +121,7 @@ namespace subtitleMemorize
 		/// <returns>Full language string.</returns>
 		/// <param name="l">L.</param>
 		private String GetLanguageByLanguageCode(String l) {
-			return l; // TODO
+			return l; // TODO: implement GetLanguageByLanguageCode()
 		}
 
 

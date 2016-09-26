@@ -27,6 +27,7 @@ namespace subtitleMemorize
 	public class UtilsInputFiles
 	{
 
+		[Serializable]
 		public class FileDesc {
 			public readonly String filename; // can be whitespace
 			public readonly Dictionary<String, String> properties;
@@ -37,6 +38,7 @@ namespace subtitleMemorize
 			}
 		};
 
+		/** A bundle of a filename and a dictionary of properties */
 		private class DataEntry {
 			public String filename;
 
@@ -284,7 +286,6 @@ namespace subtitleMemorize
 		/// </summary>
 		/// <returns>The file descriptions.</returns>
 		public List<FileDesc> GetFileDescriptions() {
-			// TODO: Glob files
 			Dictionary<String, String> currentDictionary = new Dictionary<String, String>();
 			List<FileDesc> fileDescs = new List<FileDesc>();
 			foreach (DataEntry dataEntry in m_dataEntries) {
@@ -309,11 +310,10 @@ namespace subtitleMemorize
 
 
 
-			if (!filename.Contains ("*") || !Directory.Exists (dirPath)) {
+			if (!filename.Contains ("*") && !filename.Contains("?") || !Directory.Exists (dirPath)) {
 				fileDescs.Add (new FileDesc (filePath, new Dictionary<string, string> (dictionary)));
 			} else {
-				// TODO: more regex features
-				String regex = "^" + filename.Replace ("*", "(.*)") + "$";
+				String regex = "^" + Regex.Escape(filename).Replace ("\\*", "(.*)").Replace("\\?", "(.)") + "$";
 				String[] allDirFilenames = Directory.GetFiles (dirPath);
 				foreach (String thisFilePath in allDirFilenames) {
 					String thisFilename = Path.GetFileName (thisFilePath);
@@ -322,8 +322,6 @@ namespace subtitleMemorize
 						fileDescs.Add (new FileDesc (thisFilePath, new Dictionary<string, string> (dictionary)));
 					}
 				}
-
-
 			}
 			return fileDescs;
 		}

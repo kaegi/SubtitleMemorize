@@ -27,8 +27,7 @@ namespace subtitleMemorize {
 #pragma warning restore 0414, 0169
 
 		public UtilsAlignSubToAudio(List<LineInfo> lines, UtilsInputFiles.FileDesc audioFile) {
-			// TODO: m_lineContainers = UtilsSubtitle.GetNonOverlappingTimeSpans<LineInfo>(lines);
-			//m_audioStreamInfo = UtilsVideo.ChooseStreamInfo(audioFile.filename, audioFile.properties, StreamInfo.StreamType.ST_AUDIO);
+			// TODO: implement align sub to audio 
 			m_audioFileDesc = audioFile;
 		}
 

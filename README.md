@@ -11,6 +11,15 @@ This tool currently only runs on Linux and is a similar to
 [subs2srs](http://subs2srs.sourceforge.net/), which is Windows-only. These two projects
 share some code, but otherwise they are independent.
 
+![Image](/Images/SubtitleMemorize_In_Action.png)
+
+Installation
+============
+This program heavily relies on `ffmpeg` to do media-related work (splitting video, extracting images/audio from video, rescaling images, normalizing audio, etc.). Because of that, a recent version of `ffmpeg` has to be installed.
+
+Building can be done with `xbuild`. In the future I am going to provide Linux binaries.
+
+
 Related Projects
 ============
 Projects that have similar goals and were updated recently:
@@ -18,7 +27,7 @@ Projects that have similar goals and were updated recently:
 - [substudy](https://github.com/emk/substudy)
 - [movies2anki](https://github.com/kelciour/movies2anki)
 
+
 Status
 ============
-This software is currently under development. Do not file any bugs until the first official
-version was released and this paragraph deleted.
+This software has been successfully used to create a high-quality Anki deck. Because it is still in beta, some rough edges and unfinished features are nonetheless remaining. Any help, especially on documentation, would be greatly appreciated!

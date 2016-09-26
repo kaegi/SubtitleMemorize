@@ -19,6 +19,7 @@ using System;
 
 namespace subtitleMemorize
 {
+	[Serializable]
 	public class EpisodeInfo
 	{
 		private readonly int m_index; // ranges from [0..numberOfEpisodes-1]
@@ -52,7 +53,7 @@ namespace subtitleMemorize
 			get {
 				return m_audioFileDesc;
 			}
-		}	
+		}
 
 		public UtilsInputFiles.FileDesc[] SubsFileDesc {
 			get {
@@ -104,4 +105,3 @@ namespace subtitleMemorize
 		}
 	}
 }
-

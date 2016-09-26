@@ -23,11 +23,11 @@ namespace subtitleMemorize
 {
 	public static class UtilsVideo
 	{
-		public static bool ExtractStream(String videoFilePath, StreamInfo streamInfo, String newSubtitleFilePath) {
+		public static void ExtractStream(String videoFilePath, StreamInfo streamInfo, String newSubtitleFilePath) {
 
 			String argumentString = String.Format ("-y -v quiet -i \"{0}\" -map 0:{1} \"{2}\"", videoFilePath, streamInfo.StreamIndex, newSubtitleFilePath);
-			UtilsCommon.StartProcessAndGetOutput("ffmpeg", argumentString);
-			return true; // TODO: exception instead of return value
+			if(UtilsCommon.StartProcessAndGetOutput("ffmpeg", argumentString) == null)
+				throw new ApplicationException();
 		}
 
 
@@ -36,9 +36,9 @@ namespace subtitleMemorize
 		/// a file with two audio streams. To identify the right one, the key "stream" is searched in "properties". The
 		/// value for this key should be an index (this index refers to an entry of an array created by "StreamInfo.ReadAllStreams()",
 		/// but not to the actual in-file stream for ffmpeg).
-		/// 
+		///
 		/// In case there is no property given, the first stream of this type is selected (in array from "StreamInfo.ReadAllStreams()").
-		/// 
+		///
 		/// </summary>
 		/// <returns>The stream info describing the requested stream</returns>
 		/// <param name="filename">Filename.</param>
@@ -83,14 +83,16 @@ namespace subtitleMemorize
 		/// <summary>
 		/// Gets width and height of video from video StreamInfo, then applies <see cref="UtilsCommon.GetMaxScaling">.
 		/// </summary>
-		public static double GetMaxScalingByStreamInfo(StreamInfo videoStreamInfo, double maxWidth, double maxHeight) {
+		public static double GetMaxScalingByStreamInfo(StreamInfo videoStreamInfo, double maxWidth, double maxHeight, Settings.RescaleModeEnum rescaleMode) {
+				if(rescaleMode == Settings.RescaleModeEnum.NoRescaling) return 1;
+
 				// get size of image in video streams
 				Int32? videoWidth = videoStreamInfo.GetAttributeInt("width");
 				Int32? videoHeight = videoStreamInfo.GetAttributeInt("height");
 				if(videoWidth == null) videoWidth = -1; // ignore this dimension
 				if(videoHeight == null) videoHeight = -1; // ignore this dimension
 
-				return UtilsCommon.GetMaxScaling(videoWidth.Value, videoHeight.Value, maxWidth, maxHeight);
+				return UtilsCommon.GetMaxScaling(videoWidth.Value, videoHeight.Value, maxWidth, maxHeight, rescaleMode == Settings.RescaleModeEnum.Downscale);
 		}
 	}
 }
