@@ -1204,7 +1204,7 @@ Of course you can press Shift and Control at the same time which will deselect a
                                               <object class="GtkComboBoxText" id="comboboxtext_correct_timings_mode_sub1">
                                                 <property name="visible">True</property>
                                                 <property name="can_focus">False</property>
-                                                <property name="active">2</property>
+                                                <property name="active">0</property>
                                                 <items>
                                                   <item id="align_sub1_by_offset" translatable="yes">Shift by constant value</item>
                                                   <item id="align_sub1_to_sub2" translatable="yes">Align to Sub2</item>
@@ -1294,7 +1294,7 @@ Of course you can press Shift and Control at the same time which will deselect a
                                               <object class="GtkComboBoxText" id="comboboxtext_correct_timings_mode_sub2">
                                                 <property name="visible">True</property>
                                                 <property name="can_focus">False</property>
-                                                <property name="active">1</property>
+                                                <property name="active">0</property>
                                                 <items>
                                                   <item id="align_sub2_by_offset" translatable="yes">Shift by constant value</item>
                                                   <item id="align_sub2_to_sub1" translatable="yes">Align to Sub1</item>
