@@ -11,6 +11,8 @@ This tool currently only runs on Linux and is a similar to
 [subs2srs](http://subs2srs.sourceforge.net/), which is Windows-only. These two projects
 share some code, but otherwise they are independent.
 
+![Image](/Images/SubtitleMemorize_In_Action.png)
+
 Installation
 ============
 This program heavily relies on `ffmpeg` to do media-related work (splitting video, extracting images/audio from video, rescaling images, normalizing audio, etc.). Because of that, a recent version of `ffmpeg` has to be installed.
