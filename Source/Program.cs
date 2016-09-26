@@ -1588,6 +1588,7 @@ namespace subtitleMemorize
 				}
 			} catch {
 				Console.WriteLine ("WARNING: failed to read \"{0}\" so default settings are used", InstanceSettings.systemSettingFilePath);
+				InstanceSettings.systemSettings.AdjustFirstTimeSettings();
 			}
 
 			new MainClass ();

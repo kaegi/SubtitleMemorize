@@ -409,5 +409,18 @@ namespace subtitleMemorize
 			if (Directory.Exists(path)) Directory.Delete(path, true);
 			Directory.CreateDirectory(path);
 		}
+
+		public static bool IsFfmpegAvailable() {
+			var output = UtilsCommon.StartProcessAndGetOutput("ffmpeg", "-version");
+			Console.WriteLine(output);
+			if(output == null) return false;
+			return output.StartsWith("ffmpeg version");
+		}
+
+		public static bool IsAvconvAvailable() {
+			var output = UtilsCommon.StartProcessAndGetOutput("avconv", "-version");
+			if(output == null) return false;
+			return output.StartsWith("avconv version");
+		}
 	}
 }

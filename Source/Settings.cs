@@ -38,17 +38,26 @@ namespace subtitleMemorize
 	/// </summary>
 	[Serializable]
 	public class SystemSettings {
-		public float overlappingThreshold_InterSub = 0.4f;
-		public float overlappingThreshold_InSub = 0.01f;
 
-		public String formatProberCommand = "ffprobe";
 		public String formatConvertCommand = "ffmpeg";
+		public String formatProberCommand = "ffprobe";
 
 		public double normalizeTargetVolume = -16;
 
 		public String preLoadedSettings = null;
 
+		public float overlappingThreshold_InterSub = 0.4f;
+		public float overlappingThreshold_InSub = 0.01f;
 		public double subToSubAlign_minGoodMatchingThreshold = 0.6;
+
+		internal void AdjustFirstTimeSettings()
+		{
+			// some users might use libav instead of ffmpeg
+			if(!UtilsCommon.IsFfmpegAvailable() && UtilsCommon.IsAvconvAvailable()) {
+				this.formatConvertCommand = "avconv";
+				this.formatProberCommand = "avprobe";
+			}
+		}
 	}
 
 	[Serializable]
@@ -226,5 +235,6 @@ namespace subtitleMemorize
 				return (Settings) formatter.Deserialize(ms);
 			}
 		}
+
 	}
 }
