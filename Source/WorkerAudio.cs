@@ -39,7 +39,6 @@ namespace subtitleMemorize
 					UtilsCommon.ToTimeArg(cardInfo.audioEndTimestamp), // end time
 					outputAudioFilepath // output file
 				);
-				Console.WriteLine ("ffmpeg " + arguments);
 				UtilsCommon.StartProcessAndGetOutput(InstanceSettings.systemSettings.formatConvertCommand, arguments);
 			}
 

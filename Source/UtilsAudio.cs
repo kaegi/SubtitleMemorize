@@ -31,7 +31,6 @@ namespace subtitleMemorize
 					audioFile,
 					audioStreamInfo.StreamIndex);
 
-			Console.WriteLine ("ffmpeg " + arguments);
 			String stderr = UtilsCommon.StartProcessAndGetOutput(InstanceSettings.systemSettings.formatConvertCommand, arguments, true);
 			String[] lines = stderr.Split('\n');
 			for(int i = lines.Length - 1; i >= 0; i--) {
@@ -53,7 +52,6 @@ namespace subtitleMemorize
 
 			String tmpFilename = InstanceSettings.temporaryFilesPath + Path.GetFileName(filename);
 			String arguments = String.Format("-y -i \"{0}\" -af \"volume={1}dB\" -c:a libvorbis -vn \"{2}\"", filename, (-maxVolume + targetVolume).ToString(System.Globalization.CultureInfo.InvariantCulture), tmpFilename);
-			Console.WriteLine ("ffmpeg " + arguments);
 
 			UtilsCommon.StartProcessAndGetOutput(InstanceSettings.systemSettings.formatConvertCommand, arguments);
 

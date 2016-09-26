@@ -26,7 +26,7 @@ namespace subtitleMemorize
 		public static void ExtractStream(String videoFilePath, StreamInfo streamInfo, String newSubtitleFilePath) {
 
 			String argumentString = String.Format ("-y -v quiet -i \"{0}\" -map 0:{1} \"{2}\"", videoFilePath, streamInfo.StreamIndex, newSubtitleFilePath);
-			if(UtilsCommon.StartProcessAndGetOutput("ffmpeg", argumentString) == null)
+			if(UtilsCommon.StartProcessAndGetOutput(InstanceSettings.systemSettings.formatConvertCommand, argumentString) == null)
 				throw new ApplicationException();
 		}
 
