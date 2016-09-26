@@ -15,17 +15,33 @@ share some code, but otherwise they are independent.
 
 Installation
 ============
-This program heavily relies on `ffmpeg` to do media-related work (splitting video, extracting images/audio from video, rescaling images, normalizing audio, etc.). Because of that, a recent version of `ffmpeg` has to be installed.
+Dependencies:
 
-Building can be done with `xbuild`. In the future I am going to provide Linux binaries.
+-   `mono` to run C# code (and `xbuild` for compiling)
+-   `ffmpeg` for do media-related work (splitting video, extracting images/audio from video, rescaling images, normalizing audio, etc.). Because of that, a recent version of `ffmpeg` has to be installed.
+
+After installing these dependencies run following commands:
+
+```bash
+# building
+git clone https://github.com/ChangSpivey/SubtitleMemorize
+cd SubtitleMemorize
+xbuild /p:Configuration=Release
+
+# running
+cd bin/Release
+mono SubtitleMemorize.exe
+```
+
+In the future I am going to provide Linux binaries.
 
 
 Related Projects
 ============
 Projects that have similar goals and were updated recently:
 
-- [substudy](https://github.com/emk/substudy)
-- [movies2anki](https://github.com/kelciour/movies2anki)
+-   [substudy](https://github.com/emk/substudy)
+-   [movies2anki](https://github.com/kelciour/movies2anki)
 
 
 Status
