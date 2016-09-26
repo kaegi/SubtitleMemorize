@@ -463,7 +463,7 @@ namespace subtitleMemorize
 			m_subtitleOptionsWindow.HideOnDelete ();
 
 
-			if (InstanceSettings.systemSettings.preLoadedSettings != null)
+			if (!String.IsNullOrWhiteSpace(InstanceSettings.systemSettings.preLoadedSettings))
 				LoadSaveStateFromFile (InstanceSettings.systemSettings.preLoadedSettings);
 
 			// this has to be after "mainWindow.Show()", because otherwise the width of the window

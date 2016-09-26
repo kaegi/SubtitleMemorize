@@ -44,7 +44,7 @@ namespace subtitleMemorize
 
 		public double normalizeTargetVolume = -16;
 
-		public String preLoadedSettings = null;
+		public String preLoadedSettings = "";
 
 		public float overlappingThreshold_InterSub = 0.4f;
 		public float overlappingThreshold_InSub = 0.01f;
