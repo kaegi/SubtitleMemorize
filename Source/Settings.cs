@@ -27,6 +27,9 @@ namespace subtitleMemorize
 	public static class InstanceSettings {
 		public static String temporaryFilesPath = System.IO.Path.GetTempPath() + "subtitleMemorize/";
 
+		public static String settingsFolder = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "SubtitileMemorize");
+		public static String systemSettingFilePath = Path.Combine(settingsFolder, "settings.smem");
+
 		public static SystemSettings systemSettings = new SystemSettings();
 	}
 

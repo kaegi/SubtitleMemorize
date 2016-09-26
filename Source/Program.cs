@@ -1580,35 +1580,27 @@ namespace subtitleMemorize
 			// ensure that the temporary path ("/tmp/subtitleMemorize") exists
 			Directory.CreateDirectory(InstanceSettings.temporaryFilesPath);
 
-			// find exe path so there we can load settings from there
-			String exeDir = null;
-			try {
-				exeDir = (new FileInfo(System.Reflection.Assembly.GetEntryAssembly().Location)).Directory.FullName + Path.DirectorySeparatorChar;
-			} catch {}
-
 			// read system settings
-			if(exeDir != null) {
-				try {
-					XmlSerializer ser = new XmlSerializer(typeof(SystemSettings));
-					using(TextReader writer = new StreamReader (exeDir + "settings.s2s4l")) {
-						InstanceSettings.systemSettings = (SystemSettings) ser.Deserialize(writer);
-					}
-				} catch {
-					Console.WriteLine ("WARNING: failed to read \"setttings.s2s4l\" so default settings are used");
+			try {
+				XmlSerializer ser = new XmlSerializer(typeof(SystemSettings));
+				using(TextReader writer = new StreamReader (InstanceSettings.systemSettingFilePath)) {
+					InstanceSettings.systemSettings = (SystemSettings) ser.Deserialize(writer);
 				}
+			} catch {
+				Console.WriteLine ("WARNING: failed to read \"{0}\" so default settings are used", InstanceSettings.systemSettingFilePath);
 			}
 
 			new MainClass ();
 
 			// write system settings (could be write protected -> ignore)
-			if(exeDir != null) {
-				try {
-					XmlSerializer ser = new XmlSerializer (typeof(SystemSettings));
-					using (TextWriter writer = new StreamWriter (exeDir + "settings.s2s4l", false)) {
-						ser.Serialize (writer, InstanceSettings.systemSettings);
-					}
-				} catch(Exception) {
+			try {
+				XmlSerializer ser = new XmlSerializer (typeof(SystemSettings));
+				Directory.CreateDirectory(InstanceSettings.settingsFolder);
+				using (TextWriter writer = new StreamWriter (InstanceSettings.systemSettingFilePath, false)) {
+					ser.Serialize (writer, InstanceSettings.systemSettings);
 				}
+			} catch(Exception) {
+				Console.WriteLine ("WARNING: failed to write \"{0}\"", InstanceSettings.systemSettingFilePath);
 			}
 		}
 	}
