@@ -17,8 +17,9 @@ Installation
 ============
 Dependencies:
 
--   `mono` to run C# code (and `xbuild` for compiling)
--   `ffmpeg` for do media-related work (splitting video, extracting images/audio from video, rescaling images, normalizing audio, etc.). Because of that, a recent version of `ffmpeg` has to be installed.
+-   `mono` to run C# code
+-   `ffmpeg` for do media-related work (splitting video, extracting images/audio from video, rescaling images, normalizing audio, etc.)
+-   `GTK+ 3` for the GUI
 
 After installing these dependencies run following commands:
 
