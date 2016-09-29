@@ -25,6 +25,7 @@ namespace subtitleMemorize
 		public static void ExtractAudio(Settings settings, String path, List<Tuple<CardInfo, String>> allEntries) {
 			foreach(var entry in allEntries) {
 				CardInfo cardInfo = entry.Item1;
+				if(!cardInfo.HasAudio()) continue;
 
 				String outputAudioFilename = entry.Item2;
 				String outputAudioFilepath = path + Path.DirectorySeparatorChar + outputAudioFilename;

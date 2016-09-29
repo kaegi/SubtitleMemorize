@@ -407,10 +407,15 @@ namespace subtitleMemorize
             var audioFields = new List<String>(cardInfoList.Count);
 
             foreach(var cardInfo in cardInfoList) {
-              var outputSnapshotFilename = GetSnapshotFileName(settings, cardInfo);
-              var outputAudioFilename = GetAudioFileName(settings, cardInfo);
-              snapshotFields.Add("<img src=\"" + outputSnapshotFilename + "\"/>"); // TODO: make this flexible
-              audioFields.Add("[sound:" + outputAudioFilename + "]"); // TODO: make this flexible
+              if(cardInfo.HasImage()) {
+                var outputSnapshotFilename = GetSnapshotFileName(settings, cardInfo);
+                snapshotFields.Add("<img src=\"" + outputSnapshotFilename + "\"/>"); // TODO: make this flexible
+              } else snapshotFields.Add("");
+
+              if(cardInfo.HasAudio()) {
+                var outputAudioFilename = GetAudioFileName(settings, cardInfo);
+                audioFields.Add("[sound:" + outputAudioFilename + "]"); // TODO: make this flexible
+              } else audioFields.Add("");
             }
 
             using (var outputStream = new StreamWriter(tsvFilename))
@@ -477,6 +482,8 @@ namespace subtitleMemorize
           if(settings.NormalizeAudio) {
             // normalize all audio files
             foreach(var entry in cardAudioNameTupleList) {
+              var cardInfo = entry.Item1;
+              if(!cardInfo.HasAudio()) continue;
               var filepath = entry.Item2;
               var audioStreamInfos = StreamInfo.ReadAllStreams(filepath);
               audioStreamInfos.RemoveAll(streamInfo => streamInfo.StreamTypeValue != StreamInfo.StreamType.ST_AUDIO);
