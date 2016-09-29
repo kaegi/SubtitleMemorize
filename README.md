@@ -20,6 +20,7 @@ Dependencies:
 -   `mono` to run C# code
 -   `ffmpeg` for do media-related work (splitting video, extracting images/audio from video, rescaling images, normalizing audio, etc.)
 -   `GTK+ 3` for the GUI
+-   `mpv` for live audio preview
 
 After installing these dependencies run following commands:
 
