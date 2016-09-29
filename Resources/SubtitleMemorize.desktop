@@ -1,0 +1,9 @@
+[Desktop Entry]
+Name=SubtitleMemorize
+Comment=A tool to generate cards for spaced repetition software from movies and series
+Icon=SubtitleMemorize
+Exec=SubtitleMemorize.exe
+Terminal=false
+Type=Application
+Categories=AudioVideo;GTK;Utilities;
+StartupNotify=true
