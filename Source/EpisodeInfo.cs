@@ -103,5 +103,9 @@ namespace subtitleMemorize
 			m_subStreamInfos[0] = sub1StreamInfo;
 			m_subStreamInfos[1] = sub2StreamInfo;
 		}
+
+		internal bool HasImage() { return m_videoFileDesc != null; }
+		internal bool HasAudio() { return m_audioFileDesc != null; }
+		internal bool HasSub2() { return m_subsFileDesc[1] != null; }
 	}
 }

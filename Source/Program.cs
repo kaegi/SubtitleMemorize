@@ -486,7 +486,7 @@ namespace subtitleMemorize
 			List<List<LineInfo>> lineInfosPerEpisode = new List<List<LineInfo>> ();
 			foreach (EpisodeInfo episodeInfo in episodeInfos) {
 				UtilsInputFiles.FileDesc fileDesc = episodeInfo.SubsFileDesc [subtileIndex];
-				if (String.IsNullOrWhiteSpace (fileDesc.filename))
+				if (fileDesc == null || String.IsNullOrWhiteSpace (fileDesc.filename))
 					lineInfosPerEpisode.Add (null);
 				else
 					lineInfosPerEpisode.Add (UtilsSubtitle.ParseSubtitleWithPostProcessing (settings, thisSubtitleSettings, fileDesc.filename, fileDesc.properties));
@@ -743,6 +743,7 @@ namespace subtitleMemorize
 				if(m_selectedPreviewIndex < 0) return;
 
 				CardInfo cardInfo = m_previewListModel.GetCardClone(m_selectedPreviewIndex);
+				if(!cardInfo.HasAudio()) return;
 				EpisodeInfo episodeInfo = cardInfo.episodeInfo;
 				String arguments = String.Format("--really-quiet --no-video --start={0} --end={1} \"{2}\"",
 						UtilsCommon.ToTimeArg(cardInfo.audioStartTimestamp),
@@ -772,10 +773,15 @@ namespace subtitleMemorize
 
 			m_toolbuttonGo.Clicked += delegate {
 				new Thread(new ThreadStart(delegate {
-					Console.WriteLine("Start computation");
-					InfoProgress progressInfo = new InfoProgress(ProgressHandler);
-					m_previewListModel.ExportData(m_previewSettings, progressInfo);
-					Console.WriteLine("End computation");
+					try {
+						Console.WriteLine("Start computation");
+						InfoProgress progressInfo = new InfoProgress(ProgressHandler);
+						m_previewListModel.ExportData(m_previewSettings, progressInfo);
+						Console.WriteLine("End computation");
+					} catch(Exception e) {
+						Console.WriteLine(e);
+						SetErrorMessage(e.Message);
+					}
 				})).Start();
 
 			};
@@ -989,22 +995,28 @@ namespace subtitleMemorize
 			List<UtilsInputFiles.FileDesc> sub2FileDescs = sub2Files.GetFileDescriptions();
 			List<UtilsInputFiles.FileDesc> videoFileDescs = videoFiles.GetFileDescriptions();
 
+			bool noSub2 = sub2FileDescs.Count == 0; // no subtitles in native language available
+			bool noVideos = videoFileDescs.Count == 0; // no video files available
+			bool noAudio = noVideos; // TODO
+
 			int numberOfEpisodes = sub1FileDescs.Count;
-			if(numberOfEpisodes != sub2FileDescs.Count || numberOfEpisodes != videoFileDescs.Count)
+			if(numberOfEpisodes != sub2FileDescs.Count && !noSub2)
 				throw new Exception("Number of files in target languages and number of files in native language does not match.");
+			if(numberOfEpisodes != videoFileDescs.Count && !noVideos)
+				throw new Exception("Number of files in target languages and number of video files does not match.");
 
 			// fill episode info
 			List<EpisodeInfo> episodeFiles = new List<EpisodeInfo>();
 			for(int episodeIndex = 0; episodeIndex < numberOfEpisodes; episodeIndex++) {
 				int episodeNumber = episodeIndex + settings.FirstEpisodeNumber;
-				var videoFileDesc = videoFileDescs[episodeIndex];
-				var audioFileDesc = videoFileDescs[episodeIndex];
+				var videoFileDesc = noVideos ? null : videoFileDescs[episodeIndex];
+				var audioFileDesc = noAudio ? null : videoFileDescs[episodeIndex];
 				var sub1FileDesc = sub1FileDescs[episodeIndex];
-				var sub2FileDesc = sub2FileDescs[episodeIndex];
-				var videoStreamInfo = UtilsVideo.ChooseStreamInfo(videoFileDesc.filename, videoFileDesc.properties, StreamInfo.StreamType.ST_VIDEO);
-				var audioStreamInfo = UtilsVideo.ChooseStreamInfo(audioFileDesc.filename, audioFileDesc.properties, StreamInfo.StreamType.ST_AUDIO);
+				var sub2FileDesc = noSub2 ? null : sub2FileDescs[episodeIndex];
+				var videoStreamInfo = noVideos ? null : UtilsVideo.ChooseStreamInfo(videoFileDesc.filename, videoFileDesc.properties, StreamInfo.StreamType.ST_VIDEO);
+				var audioStreamInfo = noAudio ? null : UtilsVideo.ChooseStreamInfo(audioFileDesc.filename, audioFileDesc.properties, StreamInfo.StreamType.ST_AUDIO);
 				var sub1StreamInfo = UtilsVideo.ChooseStreamInfo(sub1FileDesc.filename, sub1FileDesc.properties, StreamInfo.StreamType.ST_SUBTITLE);
-				var sub2StreamInfo = UtilsVideo.ChooseStreamInfo(sub2FileDesc.filename, sub2FileDesc.properties, StreamInfo.StreamType.ST_SUBTITLE);
+				var sub2StreamInfo = noSub2 ? null : UtilsVideo.ChooseStreamInfo(sub2FileDesc.filename, sub2FileDesc.properties, StreamInfo.StreamType.ST_SUBTITLE);
 				episodeFiles.Add(new EpisodeInfo(episodeIndex, episodeNumber, videoFileDesc, audioFileDesc, sub1FileDesc, sub2FileDesc, videoStreamInfo, audioStreamInfo, sub1StreamInfo, sub2StreamInfo));
 			}
 
@@ -1056,6 +1068,7 @@ namespace subtitleMemorize
 				ComputationThread(settings);
 			} catch(Exception e) {
 				Gtk.Application.Invoke(delegate {
+					Console.WriteLine(e);
 					SetErrorMessage(e.Message);
 					CloseProgressWindow();
 					m_previewWindow.Hide();
@@ -1131,12 +1144,17 @@ namespace subtitleMemorize
 				List<LineInfo> list2 = lineInfosPerEpisode_NativeLanguage[episodeIndex];
 
 				UtilsCommon.AlignSub(list1, list2, episodeInfos[episodeIndex], settings, settings.PerSubtitleSettings[0]);
-				UtilsCommon.AlignSub(list2, list1, episodeInfos[episodeIndex], settings, settings.PerSubtitleSettings[1]);
+				if(episodeInfos[episodeIndex].HasSub2()) {
+					UtilsCommon.AlignSub(list2, list1, episodeInfos[episodeIndex], settings, settings.PerSubtitleSettings[1]);
+					var subtitleMatcherParameters = SubtitleMatcher.GetParameterCache (list1, list2);
+					var matchedLinesList = SubtitleMatcher.MatchSubtitles(subtitleMatcherParameters);
+					var thisEpisodeCardInfos = UtilsSubtitle.GetCardInfo(settings, episodeInfos[episodeIndex], matchedLinesList);
+					allCardInfos.AddRange(thisEpisodeCardInfos);
+				} else {
 
-				var subtitleMatcherParameters = SubtitleMatcher.GetParameterCache (list1, list2);
-				var matchedLinesList = SubtitleMatcher.MatchSubtitles(subtitleMatcherParameters);
-				var thisEpisodeCardInfos = UtilsSubtitle.GetCardInfo(settings, episodeInfos[episodeIndex], matchedLinesList);
-				allCardInfos.AddRange(thisEpisodeCardInfos);
+					allCardInfos.AddRange(UtilsSubtitle.GetCardInfo(settings, episodeInfos[episodeIndex], list1));
+
+				}
 
 				progressInfo.ProcessedSteps (1);
 
@@ -1284,6 +1302,27 @@ namespace subtitleMemorize
 			}
 		}
 
+
+		private void UpdatePreviewImage(int selectedIndex, CardInfo cardInfo) {
+
+			// preview image does not need to be in full size (saves computation time)
+			const int maxWidth = 300;
+			const int maxHeight = 300;
+
+			// get real scaling
+			UtilsInputFiles.FileDesc videoFilename = cardInfo.episodeInfo.VideoFileDesc;
+			var videoStreamInfo = cardInfo.episodeInfo.VideoStreamInfo;
+			double videoScaling = UtilsVideo.GetMaxScalingByStreamInfo(videoStreamInfo, maxWidth, maxHeight, Settings.RescaleModeEnum.UpscaleAndDownscale);
+
+			// extract small preview image
+			UtilsImage.GetImage(videoFilename.filename, UtilsCommon.GetMiddleTime(cardInfo), InstanceSettings.temporaryFilesPath + "subtitleMemorize.jpg", videoScaling);
+
+			Gtk.Application.Invoke (delegate {
+				if(selectedIndex == m_selectedPreviewIndex) // selection could have changed during the creation of the snapshot
+					m_imagePreview.Pixbuf = new Gdk.Pixbuf (InstanceSettings.temporaryFilesPath + "subtitleMemorize.jpg", maxWidth, maxHeight);
+			});
+
+		}
 		/// <summary>
 		/// Update image and text view to match "selectedIndex". Can be in a different thread then Gtk-Thread. It will extract the image, so
 		/// it can take 1-2 seconds.
@@ -1307,28 +1346,16 @@ namespace subtitleMemorize
 
 			int previewImageID = ++m_previewImageID;
 
-			// wait and see if the selected image is still the same (if user scrolls through list, is highly unperformant to extract all images
-			// that are discarded every 10ms)
-			Thread.Sleep (150);
-			if (previewImageID != m_previewImageID)
+			if(cardInfo.HasImage()) {
+				// wait and see if the selected image is still the same (if user scrolls through list, is highly unperformant to extract all images
+				// that are discarded every 10ms)
+				Thread.Sleep (150);
+				if (previewImageID != m_previewImageID)
 				return;
 
-			// preview image does not need to be in full size (saves computation time)
-			const int maxWidth = 300;
-			const int maxHeight = 300;
+				UpdatePreviewImage(selectedIndex, cardInfo);
 
-			// get real scaling
-			UtilsInputFiles.FileDesc videoFilename = cardInfo.episodeInfo.VideoFileDesc;
-			var videoStreamInfo = cardInfo.episodeInfo.VideoStreamInfo;
-			double videoScaling = UtilsVideo.GetMaxScalingByStreamInfo(videoStreamInfo, maxWidth, maxHeight, Settings.RescaleModeEnum.UpscaleAndDownscale);
-
-			// extract small preview image
-			UtilsImage.GetImage(videoFilename.filename, UtilsCommon.GetMiddleTime(cardInfo), InstanceSettings.temporaryFilesPath + "subtitleMemorize.jpg", videoScaling);
-
-			Gtk.Application.Invoke (delegate {
-				if(selectedIndex == m_selectedPreviewIndex) // selection could have changed during the creation of the snapshot
-					m_imagePreview.Pixbuf = new Gdk.Pixbuf (InstanceSettings.temporaryFilesPath + "subtitleMemorize.jpg", maxWidth, maxHeight);
-			});
+			}
 		}
 
 		void ShowAllSelectedCardInfos ()

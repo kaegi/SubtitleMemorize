@@ -183,5 +183,10 @@ namespace subtitleMemorize
 			for(int i = 0; i < lines.Count(); i++) { lines[i].text = stringsRows[i]; }
 			return true;
 		}
+
+		// cards might be missing some information
+		internal bool HasImage() { return this.episodeInfo.HasImage(); }
+		internal bool HasAudio() { return this.episodeInfo.HasAudio(); }
+		internal bool HasSub2() { return this.episodeInfo.HasSub2(); }
 	}
 }

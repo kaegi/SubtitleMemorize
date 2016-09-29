@@ -57,6 +57,22 @@ namespace subtitleMemorize
 		}
 
 		/// <summary>
+		/// Creates an card information for LineInfo (without matching/without native language LineInfos).
+		/// </summary>
+		public static List<CardInfo> GetCardInfo(Settings settings, EpisodeInfo episodeInfo, List<LineInfo> lines) {
+			var cardInfos = new List<CardInfo>();
+			foreach(var line in lines) {
+				var thisCardLineInfos = new List<LineInfo>();
+				thisCardLineInfos.Add(line);
+				cardInfos.Add(new CardInfo(thisCardLineInfos, new List<LineInfo>(), episodeInfo,
+																	line.StartTime, line.EndTime,
+																	line.StartTime - settings.AudioPaddingBefore,
+																	line.EndTime + settings.AudioPaddingAfter));
+			}
+			return cardInfos;
+		}
+
+		/// <summary>
 		/// Creates an card information for every BiMatchedLine object.
 		/// </summary>
 		public static List<CardInfo> GetCardInfo(Settings settings, EpisodeInfo episodeInfo, IEnumerable<SubtitleMatcher.BiMatchedLines> matchedLinesList) {

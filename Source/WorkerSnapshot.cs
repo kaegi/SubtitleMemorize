@@ -26,6 +26,7 @@ namespace subtitleMemorize
 			foreach(var entry in allEntries) {
 				var cardInfoNameTuple = entry;
 				var cardInfo = cardInfoNameTuple.Item1;
+				if(!cardInfo.HasImage()) continue;
 
 				// create file at given path
 				String outputSnapshotFilename = cardInfoNameTuple.Item2;
