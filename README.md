@@ -15,14 +15,33 @@ share some code, but otherwise they are independent.
 
 Installation
 ============
-Dependencies:
+To make `SubtitleMemorize` work, following dependencies are needed:
 
--   `mono` to run C# code
+-   `mono` to run .NET executable
 -   `ffmpeg` for do media-related work (splitting video, extracting images/audio from video, rescaling images, normalizing audio, etc.)
 -   `GTK+ 3` for the GUI
 -   `mpv` for live audio preview
 
-After installing these dependencies run following commands:
+Scroll down to find the necessary installation commands for your distribution.
+
+After that, download and extract the latest version of SubtitleMemorize from [here](https://github.com/ChangSpivey/SubtitleMemorize/releases). To start the program, execute the file `SubtitleMemorize.sh` or `bin/SubtitleMemorize.exe` in the extracted directory.
+
+###### Ubuntu 16.04 LTS
+```bash
+sudo apt-get install libav-tools libavcodec-extra mono-complete mpv
+```
+
+###### Arch Linux
+
+```bash
+sudo pacman -S mono ffmpeg gtk3 mpv
+```
+
+Building From Source
+------------
+
+
+After installing the above mentioned dependencies for your distribution run following commands:
 
 ```bash
 # building
@@ -34,9 +53,6 @@ xbuild /p:Configuration=Release
 cd bin/Release
 mono SubtitleMemorize.exe
 ```
-
-In the future I am going to provide Linux binaries.
-
 
 Related Projects
 ============
