@@ -34,62 +34,65 @@
     <Reference Include="System" />
     <Reference Include="System.Drawing" />
     <Reference Include="System.Xml" />
-    <Reference Include="atk-sharp">
-      <HintPath>packages\GtkSharp.3.1.3\lib\net45\atk-sharp.dll</HintPath>
-    </Reference>
-    <Reference Include="cairo-sharp">
-      <HintPath>packages\GtkSharp.3.1.3\lib\net45\cairo-sharp.dll</HintPath>
-    </Reference>
-    <Reference Include="gdk-sharp">
-      <HintPath>packages\GtkSharp.3.1.3\lib\net45\gdk-sharp.dll</HintPath>
-    </Reference>
-    <Reference Include="gio-sharp">
-      <HintPath>packages\GtkSharp.3.1.3\lib\net45\gio-sharp.dll</HintPath>
-    </Reference>
-    <Reference Include="glib-sharp">
-      <HintPath>packages\GtkSharp.3.1.3\lib\net45\glib-sharp.dll</HintPath>
-    </Reference>
-    <Reference Include="gtk-sharp">
-      <HintPath>packages\GtkSharp.3.1.3\lib\net45\gtk-sharp.dll</HintPath>
-    </Reference>
-    <Reference Include="pango-sharp">
-      <HintPath>packages\GtkSharp.3.1.3\lib\net45\pango-sharp.dll</HintPath>
-    </Reference>
     <Reference Include="NCalc">
       <HintPath>packages\ncalc.1.3.8\lib\NCalc.dll</HintPath>
     </Reference>
+    <Reference Include="atk-sharp">
+      <HintPath>packages\gtk-sharp3.3.20.6.0\lib\net40\atk-sharp.dll</HintPath>
+    </Reference>
+    <Reference Include="cairo-sharp">
+      <HintPath>packages\gtk-sharp3.3.20.6.0\lib\net40\cairo-sharp.dll</HintPath>
+    </Reference>
+    <Reference Include="gdk-sharp">
+      <HintPath>packages\gtk-sharp3.3.20.6.0\lib\net40\gdk-sharp.dll</HintPath>
+    </Reference>
+    <Reference Include="gio-sharp">
+      <HintPath>packages\gtk-sharp3.3.20.6.0\lib\net40\gio-sharp.dll</HintPath>
+    </Reference>
+    <Reference Include="glib-sharp">
+      <HintPath>packages\gtk-sharp3.3.20.6.0\lib\net40\glib-sharp.dll</HintPath>
+    </Reference>
+    <Reference Include="gtk-sharp">
+      <HintPath>packages\gtk-sharp3.3.20.6.0\lib\net40\gtk-sharp.dll</HintPath>
+    </Reference>
+    <Reference Include="gtk-dotnet">
+      <HintPath>packages\gtk-sharp3.3.20.6.0\lib\net40\gtk-dotnet.dll</HintPath>
+    </Reference>
+    <Reference Include="pango-sharp">
+      <HintPath>packages\gtk-sharp3.3.20.6.0\lib\net40\pango-sharp.dll</HintPath>
+    </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Source/Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="Source/Settings.cs" />
-    <Compile Include="Source/LineInfo.cs" />
-    <Compile Include="Source/SubtitleParserASS.cs" />
-    <Compile Include="Source/ISubtitleParser.cs" />
-    <Compile Include="Source/StreamInfo.cs" />
-    <Compile Include="Source/UtilsSubtitle.cs" />
-    <Compile Include="Source/UtilsCommon.cs" />
-    <Compile Include="Source/UtilsInputFiles.cs" />
-    <Compile Include="Source/UtilsVideo.cs" />
-    <Compile Include="Source/SubtitleMatcher.cs" />
-    <Compile Include="Source/UtilsImage.cs" />
-    <Compile Include="Source/EpisodeInfo.cs" />
-    <Compile Include="Source/SubtitleParserSRT.cs" />
-    <Compile Include="Source/InfoEncoding.cs" />
-    <Compile Include="Source/InfoProgress.cs" />
-    <Compile Include="Source/WorkerAudio.cs" />
-    <Compile Include="Source/WorkerSnapshot.cs" />
-    <Compile Include="Source/ITimeSpan.cs" />
-    <Compile Include="Source/UtilsAlignSubToAudio.cs" />
-    <Compile Include="Source/UtilsAudio.cs" />
-    <Compile Include="Source/UtilsAlignSubToSub.cs" />
-    <Compile Include="Source/CardInfo.cs" />
-    <Compile Include="Source/PreviewListModel.cs" />
+    <Compile Include="Source\Program.cs" />
+    <Compile Include="Source\Settings.cs" />
+    <Compile Include="Source\LineInfo.cs" />
+    <Compile Include="Source\SubtitleParserASS.cs" />
+    <Compile Include="Source\ISubtitleParser.cs" />
+    <Compile Include="Source\StreamInfo.cs" />
+    <Compile Include="Source\UtilsSubtitle.cs" />
+    <Compile Include="Source\UtilsCommon.cs" />
+    <Compile Include="Source\UtilsInputFiles.cs" />
+    <Compile Include="Source\UtilsVideo.cs" />
+    <Compile Include="Source\SubtitleMatcher.cs" />
+    <Compile Include="Source\UtilsImage.cs" />
+    <Compile Include="Source\EpisodeInfo.cs" />
+    <Compile Include="Source\SubtitleParserSRT.cs" />
+    <Compile Include="Source\InfoEncoding.cs" />
+    <Compile Include="Source\InfoProgress.cs" />
+    <Compile Include="Source\WorkerAudio.cs" />
+    <Compile Include="Source\WorkerSnapshot.cs" />
+    <Compile Include="Source\ITimeSpan.cs" />
+    <Compile Include="Source\UtilsAlignSubToAudio.cs" />
+    <Compile Include="Source\UtilsAudio.cs" />
+    <Compile Include="Source\UtilsAlignSubToSub.cs" />
+    <Compile Include="Source\CardInfo.cs" />
+    <Compile Include="Source\PreviewListModel.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <Import Project="..\packages\GtkSharp.Win32.3.1.2\build\net45\GtkSharp.Win32.targets" Condition="Exists('..\packages\GtkSharp.Win32.3.1.2\build\net45\GtkSharp.Win32.targets')" />
   <Import Project="..\packages\GtkSharp.3.1.3\build\net45\GtkSharp.targets" Condition="Exists('..\packages\GtkSharp.3.1.3\build\net45\GtkSharp.targets')" />
-  <Import Project="packages\GtkSharp.3.1.3\build\net45\GtkSharp.targets" Condition="Exists('packages\GtkSharp.3.1.3\build\net45\GtkSharp.targets')" />
+  <Import Project="packages\gtk-sharp3.3.20.6.0\build\gtk-sharp3.targets" Condition="Exists('packages\gtk-sharp3.3.20.6.0\build\gtk-sharp3.targets')" />
   <ItemGroup>
     <Folder Include="Resources\" />
   </ItemGroup>
