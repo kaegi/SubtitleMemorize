@@ -204,12 +204,13 @@ namespace subtitleMemorize
             }
 
 
-            CardInfo infoSourceCard = null; // entry which will be used for evaluation an expression
+            int currentCardIndex = 0; // card index which will be used for evaluation an expression in delegate
             Expression expr = new Expression(conditionExpr);
 
             // resolve certain parameters in expression
             expr.EvaluateParameter += delegate (string name, ParameterArgs args)
             {
+                CardInfo infoSourceCard = m_cardInfos[currentCardIndex];
                 switch (name)
                 {
                     case "isActive": // fallthrough
@@ -236,11 +237,37 @@ namespace subtitleMemorize
                     case "start": args.Result = infoSourceCard.startTimestamp; break;
                     case "end": args.Result = infoSourceCard.endTimestamp; break;
                     case "duration": args.Result = infoSourceCard.Duration; break;
+
+                    case "next_start":
+                      args.Result = currentCardIndex + 1 >= m_cardInfos.Count ? 1000000.0 : m_cardInfos[currentCardIndex + 1].StartTime;
+                      break;
+
+                    case "next_end":
+                      args.Result = currentCardIndex + 1 >= m_cardInfos.Count ? 1000000.0 : m_cardInfos[currentCardIndex + 1].EndTime;
+                      break;
+
+                    case "next_duration":
+                      args.Result = currentCardIndex + 1 >= m_cardInfos.Count ? 0 : m_cardInfos[currentCardIndex + 1].Duration;
+                      break;
+
+                    case "prev_start":
+                      args.Result = currentCardIndex <= 0 ? -1000000.0 : m_cardInfos[currentCardIndex - 1].StartTime;
+                      break;
+
+                    case "prev_end":
+                      args.Result = currentCardIndex <= 0 ? -1000000.0 : m_cardInfos[currentCardIndex - 1].EndTime;
+                      break;
+
+                    case "prev_duration":
+                      args.Result = currentCardIndex <= 0 ? 0 : m_cardInfos[currentCardIndex - 1].Duration;
+                      break;
+
                 }
             };
             // resolve certain functions in expression
             expr.EvaluateFunction += delegate (string name, FunctionArgs args)
             {
+                CardInfo infoSourceCard = m_cardInfos[currentCardIndex];
                 switch (name)
                 {
                     // an exmple for this function is "contains(sub1, 'some text')" that selects all lines, where sub1 contains 'some text'
@@ -352,7 +379,7 @@ namespace subtitleMemorize
 
             for(int i = 0; i < m_cardInfos.Count; i++) {
               // provide infos for expr.Evaluate()
-              infoSourceCard = m_cardInfos[i];
+              currentCardIndex = i;
               object result = expr.Evaluate();
               if(result is bool && result != null)
                 resultsList[i] = (bool)result;
