@@ -459,7 +459,15 @@ namespace subtitleMemorize
         {
           var activeCardList = GetActiveCards();
 
+          progressInfo.AddSection("Exporting text file", 1);
+          progressInfo.AddSection("Exporting snapshots", activeCardList.Count);
+          progressInfo.AddSection("Exporting audio files", activeCardList.Count);
+          if(settings.NormalizeAudio) progressInfo.AddSection("Normalize audio files", activeCardList.Count);
+          progressInfo.Update();
+
           ExportTextFile(activeCardList, settings, progressInfo);
+
+          progressInfo.ProcessedSteps(1);
 
           var cardSnapshotNameTupleList = new List<Tuple<CardInfo, String>>(activeCardList.Count);
           var cardAudioNameTupleList = new List<Tuple<CardInfo, String>>(activeCardList.Count);
@@ -468,22 +476,31 @@ namespace subtitleMemorize
             cardAudioNameTupleList.Add(new Tuple<CardInfo, String>(cardInfo, GetAudioFileName(settings, cardInfo)));
           }
 
+          if(progressInfo.Cancelled) return;
 
           // extract images
           String snapshotsPath = settings.OutputDirectoryPath + Path.DirectorySeparatorChar + settings.DeckName + "_snapshots" + Path.DirectorySeparatorChar;
           UtilsCommon.ClearDirectory(snapshotsPath);
-          WorkerSnapshot.ExtractSnaphots(settings, snapshotsPath, cardSnapshotNameTupleList);
+          WorkerSnapshot.ExtractSnaphots(settings, snapshotsPath, cardSnapshotNameTupleList, progressInfo);
+
+          if(progressInfo.Cancelled) return;
 
           // extract audio
           String audioPath = settings.OutputDirectoryPath + Path.DirectorySeparatorChar + settings.DeckName + "_audio" + Path.DirectorySeparatorChar;
           UtilsCommon.ClearDirectory(audioPath);
-          WorkerAudio.ExtractAudio(settings, audioPath, cardAudioNameTupleList);
+          WorkerAudio.ExtractAudio(settings, audioPath, cardAudioNameTupleList, progressInfo);
+
+          if(progressInfo.Cancelled) return;
 
           if(settings.NormalizeAudio) {
             // normalize all audio files
             foreach(var entry in cardAudioNameTupleList) {
+              if(progressInfo.Cancelled) return;
+              progressInfo.ProcessedSteps(1);
+
               var cardInfo = entry.Item1;
               if(!cardInfo.HasAudio()) continue;
+
               var filepath = entry.Item2;
               var audioStreamInfos = StreamInfo.ReadAllStreams(filepath);
               audioStreamInfos.RemoveAll(streamInfo => streamInfo.StreamTypeValue != StreamInfo.StreamType.ST_AUDIO);

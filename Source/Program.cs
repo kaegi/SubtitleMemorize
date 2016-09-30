@@ -472,6 +472,9 @@ namespace subtitleMemorize
 			//on_button_preview_clicked(null, null);
 
 			Application.Run ();
+
+			// close running processes
+			if(m_progressAndCancellable != null) m_progressAndCancellable.Cancel();
 		}
 
 		/// <summary>
@@ -776,7 +779,10 @@ namespace subtitleMemorize
 					try {
 						Console.WriteLine("Start computation");
 						InfoProgress progressInfo = new InfoProgress(ProgressHandler);
+						m_progressAndCancellable = progressInfo;
+						Gtk.Application.Invoke(delegate { m_previewWindow.Hide(); m_windowProgressInfo.Show(); });
 						m_previewListModel.ExportData(m_previewSettings, progressInfo);
+						Gtk.Application.Invoke(delegate {  m_windowProgressInfo.Hide(); m_previewWindow.Show(); });
 						Console.WriteLine("End computation");
 					} catch(Exception e) {
 						Console.WriteLine(e);
