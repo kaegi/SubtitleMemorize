@@ -660,7 +660,7 @@ namespace subtitleMemorize
 				else m_buttonSelectLinesBySearch.Label = "Select";
 			}
 			if(m_previewWindow_isControlPressed) {
-				m_toolbuttonMerge.Label = "Merge prev.";
+				m_toolbuttonMerge.Label = "Merge prev";
 			} else {
 				m_toolbuttonMerge.Label = "Merge next";
 			}
