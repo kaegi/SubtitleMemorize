@@ -60,12 +60,12 @@ namespace subtitleMemorize
 
 		public class SubtitleMatcherCache {
 
-			private LinkedList<ExtendedLineInfo> extendedLineInfos1;
-			private LinkedList<ExtendedLineInfo> extendedLineInfos2;
+			private List<ExtendedLineInfo> extendedLineInfos1;
+			private List<ExtendedLineInfo> extendedLineInfos2;
 
 			public SubtitleMatcherCache(object extendedLineInfos1, object extendedLineInfos2) {
-				this.extendedLineInfos1 = (LinkedList<ExtendedLineInfo>)extendedLineInfos1;
-				this.extendedLineInfos2 = (LinkedList<ExtendedLineInfo>)extendedLineInfos2;
+				this.extendedLineInfos1 = (List<ExtendedLineInfo>)extendedLineInfos1;
+				this.extendedLineInfos2 = (List<ExtendedLineInfo>)extendedLineInfos2;
 			}
 
 
@@ -96,10 +96,10 @@ namespace subtitleMemorize
 		public static SubtitleMatcherCache GetParameterCache(IEnumerable<LineInfo> lines1, IEnumerable<LineInfo> lines2) {
 
 			// LineInfo -> ExtendedLineInfo
-			var extendedLineInfos1 = new LinkedList<ExtendedLineInfo>();
-			var extendedLineInfos2 = new LinkedList<ExtendedLineInfo>();
-			foreach(var line in lines1) extendedLineInfos1.AddLast(new ExtendedLineInfo(line));
-			foreach(var line in lines2) extendedLineInfos2.AddLast(new ExtendedLineInfo(line));
+			var extendedLineInfos1 = new List<ExtendedLineInfo>();
+			var extendedLineInfos2 = new List<ExtendedLineInfo>();
+			foreach(var line in lines1) extendedLineInfos1.Add(new ExtendedLineInfo(line));
+			foreach(var line in lines2) extendedLineInfos2.Add(new ExtendedLineInfo(line));
 
 			return new SubtitleMatcherCache(extendedLineInfos1, extendedLineInfos2);
 		}
@@ -120,8 +120,8 @@ namespace subtitleMemorize
 		/// <param name="lines2">Lines2.</param>
 		public static LinkedList<BiMatchedLines> MatchSubtitles(SubtitleMatcherCache cache) {
 
-			LinkedList<ExtendedLineInfo> extendedLineInfos1 = (LinkedList<ExtendedLineInfo>)cache.ExtendedLineInfo1;
-			LinkedList<ExtendedLineInfo> extendedLineInfos2 = (LinkedList<ExtendedLineInfo>)cache.ExtendedLineInfo2;
+			List<ExtendedLineInfo> extendedLineInfos1 = (List<ExtendedLineInfo>)cache.ExtendedLineInfo1;
+			List<ExtendedLineInfo> extendedLineInfos2 = (List<ExtendedLineInfo>)cache.ExtendedLineInfo2;
 
 			// find matchings for every line in list1 to list2 and reverse
 			FindMatching (extendedLineInfos1, extendedLineInfos2);
@@ -139,44 +139,40 @@ namespace subtitleMemorize
 		/// </summary>
 		/// <param name="list1">List1.</param>
 		/// <param name="list2">List2.</param>
-		private static void FindMatching(LinkedList<ExtendedLineInfo> primaryList, LinkedList<ExtendedLineInfo> secondaryList) {
-			var node1 = primaryList.First;
-			var node2 = secondaryList.First;
+		private static void FindMatching(List<ExtendedLineInfo> list1, List<ExtendedLineInfo> list2) {
+			int i1 = 0, i2 = 0;
 
-			foreach(var line in primaryList) {
+			foreach(var line in list1) {
 				line.matchingLines.Clear();
 				line.alreadyUsedInBidirectionalSearch = false;
 			}
 
-			foreach(var line in secondaryList) {
+			foreach(var line in list2) {
 				line.matchingLines.Clear();
 				line.alreadyUsedInBidirectionalSearch = false;
 			}
 
-			// is one list empty -> then there can't be overlappings.
-			if(node1 == null || node2 == null) return;
+			while(i1 < list1.Count) {
+				int i2_reset = i2;
 
-			while(node1 != null) {
-				var startNode2 = node2;
-
-				while(node2 != null) {
+				while(i2 < list2.Count) {
 					// node2 does not overlap with node1? Then proceed with next node1.
-					if(node1.Value.EndTime < node2.Value.StartTime) break;
+					if(list1[i1].EndTime < list2[i2].StartTime) break;
 
 					// node1 and node2 overlap!
-					if (UtilsCommon.OverlappingScore(node1.Value, node2.Value) >= 0.4) {
-						node1.Value.matchingLines.AddLast (node2.Value);
-						node2.Value.matchingLines.AddLast (node1.Value);
+					if (UtilsCommon.OverlappingScore(list1[i1], list2[i2]) >= 0.4) {
+						list1[i1].matchingLines.AddLast (list2[i2]);
+						list2[i2].matchingLines.AddLast (list1[i1]);
 					}
 
 					// try combination (node1, next node2) in next inner iteration
-					node2 = node2.Next;
+					i2++;
 				}
 
 				// do node1 and next node1 overlap? Then all node2's we handled in this iteration might
 				// overlap with next node1 -> reset node2 to start of this iteration.
-				if(node1.Next != null && node1.Next.Value.StartTime <= node1.Value.EndTime) node2 = startNode2;
-				node1 = node1.Next;
+				if(i1 + 1 != list1.Count && list1[i1 + 1].StartTime <= list1[i1].EndTime) i2 = i2_reset;
+				i1++;
 			}
 /*
 			foreach(var primaryListLine in primaryList) {
@@ -208,7 +204,7 @@ namespace subtitleMemorize
 		/// We obviously only want to map the character-dialog and the announcement to its own translation.
 		///
 		/// </summary>
-		static void RemoveOverlappings (LinkedList<ExtendedLineInfo> primaryList)
+		static void RemoveOverlappings (List<ExtendedLineInfo> primaryList)
 		{
 			foreach (ExtendedLineInfo eli in primaryList) {
 
@@ -255,7 +251,7 @@ namespace subtitleMemorize
 			return leastFittingLine;
 		}
 
-		private static LinkedList<BiMatchedLines> FindBidirectionalMapping (LinkedList<ExtendedLineInfo> mappingForLines1, LinkedList<ExtendedLineInfo> mappingForLines2)
+		private static LinkedList<BiMatchedLines> FindBidirectionalMapping (List<ExtendedLineInfo> mappingForLines1, List<ExtendedLineInfo> mappingForLines2)
 		{
 			Func<ExtendedLineInfo, Boolean, BiMatchedLines> bfsSearch = delegate(ExtendedLineInfo lineInfo, Boolean isInFirstList) {
 
