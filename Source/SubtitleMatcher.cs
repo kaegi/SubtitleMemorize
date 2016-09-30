@@ -229,8 +229,8 @@ namespace subtitleMemorize
 			TimeSpanCache<ExtendedLineInfo> timeSpanCache2 = (TimeSpanCache<ExtendedLineInfo>)cache.TimeSpanCache2;
 
 			// find matchings for every line in list1 to list2 and reverse
-			FindMatching (extendedLineInfos1, timeSpanCache2);
-			FindMatching (extendedLineInfos2, timeSpanCache1);
+			FindMatching (extendedLineInfos1, extendedLineInfos2);
+			//FindMatching (extendedLineInfos2, timeSpanCache1);
 
 			RemoveOverlappings (extendedLineInfos1);
 			RemoveOverlappings (extendedLineInfos2);
@@ -241,12 +241,50 @@ namespace subtitleMemorize
 		}
 
 		/// <summary>
-		/// This creates a list of good matching subtitles from list1 to every element from list2.
+		/// This creates a list of good matching lines between primaryList and secondaryList.
 		/// </summary>
 		/// <param name="list1">List1.</param>
 		/// <param name="list2">List2.</param>
-		private static void FindMatching(LinkedList<ExtendedLineInfo> primaryList, TimeSpanCache<ExtendedLineInfo> secondaryListCache) {
+		private static void FindMatching(LinkedList<ExtendedLineInfo> primaryList, LinkedList<ExtendedLineInfo> secondaryList) {
+			var node1 = primaryList.First;
+			var node2 = secondaryList.First;
 
+			foreach(var line in primaryList) {
+				line.matchingLines.Clear();
+				line.alreadyUsedInBidirectionalSearch = false;
+			}
+
+			foreach(var line in secondaryList) {
+				line.matchingLines.Clear();
+				line.alreadyUsedInBidirectionalSearch = false;
+			}
+
+			// is one list empty -> then there can't be overlappings.
+			if(node1 == null || node2 == null) return;
+
+			while(node1 != null) {
+				var startNode2 = node2;
+
+				while(node2 != null) {
+					// node2 does not overlap with node1? Then proceed with next node1.
+					if(node1.Value.EndTime < node2.Value.StartTime) break;
+
+					// node1 and node2 overlap!
+					if (UtilsCommon.OverlappingScore(node1.Value, node2.Value) >= 0.4) {
+						node1.Value.matchingLines.AddLast (node2.Value);
+						node2.Value.matchingLines.AddLast (node1.Value);
+					}
+
+					// try combination (node1, next node2) in next inner iteration
+					node2 = node2.Next;
+				}
+
+				// do node1 and next node1 overlap? Then all node2's we handled in this iteration might
+				// overlap with next node1 -> reset node2 to start of this iteration.
+				if(node1.Next != null && node1.Next.Value.StartTime <= node1.Value.EndTime) node2 = startNode2;
+				node1 = node1.Next;
+			}
+/*
 			foreach(var primaryListLine in primaryList) {
 				primaryListLine.matchingLines.Clear();
 				primaryListLine.alreadyUsedInBidirectionalSearch = false;
@@ -258,6 +296,7 @@ namespace subtitleMemorize
 
 				secondaryListCache.DoForOverlapping(primaryListLine, matchLines);
 			}
+			*/
 		}
 
 		/// <summary>
