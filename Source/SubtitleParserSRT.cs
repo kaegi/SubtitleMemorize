@@ -102,7 +102,7 @@ namespace subtitleMemorize
 						lineText += text + " ";
 					}
 
-					continue; 
+					continue;
 
 				default:
 					// Should never get here
@@ -131,7 +131,7 @@ namespace subtitleMemorize
 			lineText = lineText.Replace ("\t", " ");
 			lineText = Regex.Replace (lineText, "</?[ibuIBU]>", "").Trim ();
 
-			LineInfo info = new LineInfo (startTime, endTime, "", lineText);
+			LineInfo info = new LineInfo (startTime, endTime, lineText, new List<String>());
 
 			return info;
 		}
@@ -144,7 +144,7 @@ namespace subtitleMemorize
 		{
 			DateTime time = new DateTime ();
 
-			// Format: 
+			// Format:
 			// "hour:min:sec,msec" (00:00:00,000)
 
 			Match match = Regex.Match (rawTime,

@@ -418,7 +418,7 @@ namespace subtitleMemorize
 		private int m_selectedPreviewIndex = -1; // selected card in card list in preview window
 		private bool m_previewWindow_isShiftPressed = false;
 		private bool m_previewWindow_isControlPressed = false;
-		private bool m_ignoreBufferChanges = false;
+		private volatile bool m_ignoreBufferChanges = false;
 		private PreviewListModel m_previewListModel = null;
 		private int m_previewImageID = 0;
 
@@ -799,13 +799,9 @@ namespace subtitleMemorize
 
 				var textview = GetTextViewByLanguageType(languageType);
 				var cardInfo = m_previewListModel.GetCardClone(m_selectedPreviewIndex);
-				var settingsSuccessful = cardInfo.SetLineInfosByMultiLineString(languageType, textview.Buffer.Text);
-				if(!settingsSuccessful) {
-					// TODO: resetting text here would crash the application -> give user a signal this input is incorrect
-				} else {
-					var changeList = m_previewListModel.SetCard(m_selectedPreviewIndex, cardInfo);
-					UpdatePreviewListViewByChangeList(changeList);
-				}
+				cardInfo.SetLineInfosByMultiLineString(languageType, textview.Buffer.Text);
+				var changeList = m_previewListModel.SetCard(m_selectedPreviewIndex, cardInfo);
+				UpdatePreviewListViewByChangeList(changeList, false);
 			};
 
 			// ----------------------------------------------------------------------
@@ -956,7 +952,7 @@ namespace subtitleMemorize
 		/// <summary>
 		/// This function sets all lines in the Gtk.TreeView to the values in m_cardInfos.
 		/// </summary>
-		private void UpdatePreviewListViewByChangeList(List<PreviewListModel.AtomicChange> list) {
+		private void UpdatePreviewListViewByChangeList(List<PreviewListModel.AtomicChange> list, bool updateTextBuffer = true) {
 			int currentLine = -1, currentChangeIndex = 0;
 			int numDeletions = 0;
 			bool isNextIter = false;
@@ -976,7 +972,7 @@ namespace subtitleMemorize
 				var change = list[currentChangeIndex];
 				switch(change.changeType) {
 					case PreviewListModel.ChangeType.DataUpdate:
-						UpdatePreviewListEntry(currentLine - numDeletions, change.cardInfo, treeIter, true);
+						UpdatePreviewListEntry(currentLine - numDeletions, change.cardInfo, treeIter, updateTextBuffer);
 						isNextIter = m_liststoreLines.IterNext(ref treeIter);
 						break;
 					case PreviewListModel.ChangeType.LineDelete:
@@ -1310,7 +1306,6 @@ namespace subtitleMemorize
 
 
 		private void UpdatePreviewImage(int selectedIndex, CardInfo cardInfo) {
-
 			// preview image does not need to be in full size (saves computation time)
 			const int maxWidth = 300;
 			const int maxHeight = 300;
@@ -1345,8 +1340,13 @@ namespace subtitleMemorize
 
 			Gtk.Application.Invoke (delegate {
 				m_ignoreBufferChanges = true;
-				m_textviewTargetLanguage.Buffer.Text = cardInfo.ToMultiLine(UtilsCommon.LanguageType.TARGET);
-				m_textviewNativeLanguage.Buffer.Text = cardInfo.ToMultiLine(UtilsCommon.LanguageType.NATIVE);
+
+				// assigning text to buffer sets cursor to end -> do not assign if text didn't change
+				if(m_textviewTargetLanguage.Buffer.Text != cardInfo.ToMultiLine(UtilsCommon.LanguageType.TARGET))
+					m_textviewTargetLanguage.Buffer.Text = cardInfo.ToMultiLine(UtilsCommon.LanguageType.TARGET);
+				if(m_textviewNativeLanguage.Buffer.Text != cardInfo.ToMultiLine(UtilsCommon.LanguageType.NATIVE))
+					m_textviewNativeLanguage.Buffer.Text = cardInfo.ToMultiLine(UtilsCommon.LanguageType.NATIVE);
+
 				m_ignoreBufferChanges = false;
 			});
 

@@ -30,7 +30,6 @@ namespace subtitleMemorize
 					videoFilename,
 					(int)(scale*3628800), // int is needed because double will create values with comma (e.g "0,1"); 3628800=10! (has many divisors)
 					outFilename);
-			Console.WriteLine(String.Format("{0}: {1} {2}", System.Reflection.MethodBase.GetCurrentMethod().Name.ToString(), InstanceSettings.systemSettings.formatConvertCommand, argumentString));
 			UtilsCommon.StartProcessAndGetOutput(InstanceSettings.systemSettings.formatConvertCommand, argumentString);
 			return true;
 		}
