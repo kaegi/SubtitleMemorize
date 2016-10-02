@@ -73,7 +73,7 @@ namespace subtitleMemorize
 		private Gtk.Entry m_entryReplaceRegexFrom;
 		private Gtk.Label m_label5;
 		private Gtk.Label m_label17;
-		private Gtk.Label m_label21;
+		private Gtk.Label m_labelNumCardsSelected;
 		private Gtk.Frame m_frame11;
 		private Gtk.Alignment m_alignment11;
 		private Gtk.Box m_box7;
@@ -202,12 +202,9 @@ namespace subtitleMemorize
 		private Gtk.SpinButton m_spinbuttonEpisodeNumber;
 		private Gtk.Entry m_entryDeckName;
 		private Gtk.Label m_label15;
-		private Gtk.Label m_label14;
-		private Gtk.Frame m_frame9;
-		private Gtk.Alignment m_alignment9;
-		private Gtk.Box m_box10;
 		private Gtk.Button m_buttonPreview;
-		private Gtk.Label m_label19;
+		private Gtk.Label m_label18;
+		private Gtk.Label m_label14;
 		private Gtk.Window m_windowProgressInfo;
 		private Gtk.Alignment m_alignment12;
 		private Gtk.Box m_box14;
@@ -258,7 +255,7 @@ namespace subtitleMemorize
 			m_entryReplaceRegexFrom = (Gtk.Entry) b.GetObject("entry_replace_regex_from");
 			m_label5 = (Gtk.Label) b.GetObject("label5");
 			m_label17 = (Gtk.Label) b.GetObject("label17");
-			m_label21 = (Gtk.Label) b.GetObject("label21");
+			m_labelNumCardsSelected = (Gtk.Label) b.GetObject("label_num_cards_selected");
 			m_frame11 = (Gtk.Frame) b.GetObject("frame11");
 			m_alignment11 = (Gtk.Alignment) b.GetObject("alignment11");
 			m_box7 = (Gtk.Box) b.GetObject("box7");
@@ -387,12 +384,9 @@ namespace subtitleMemorize
 			m_spinbuttonEpisodeNumber = (Gtk.SpinButton) b.GetObject("spinbutton_episode_number");
 			m_entryDeckName = (Gtk.Entry) b.GetObject("entry_deck_name");
 			m_label15 = (Gtk.Label) b.GetObject("label15");
-			m_label14 = (Gtk.Label) b.GetObject("label14");
-			m_frame9 = (Gtk.Frame) b.GetObject("frame9");
-			m_alignment9 = (Gtk.Alignment) b.GetObject("alignment9");
-			m_box10 = (Gtk.Box) b.GetObject("box10");
 			m_buttonPreview = (Gtk.Button) b.GetObject("button_preview");
-			m_label19 = (Gtk.Label) b.GetObject("label19");
+			m_label18 = (Gtk.Label) b.GetObject("label18");
+			m_label14 = (Gtk.Label) b.GetObject("label14");
 			m_windowProgressInfo = (Gtk.Window) b.GetObject("window_progress_info");
 			m_alignment12 = (Gtk.Alignment) b.GetObject("alignment12");
 			m_box14 = (Gtk.Box) b.GetObject("box14");
@@ -418,7 +412,7 @@ namespace subtitleMemorize
 		private int m_selectedPreviewIndex = -1; // selected card in card list in preview window
 		private bool m_previewWindow_isShiftPressed = false;
 		private bool m_previewWindow_isControlPressed = false;
-		private bool m_ignoreBufferChanges = false;
+		private volatile bool m_ignoreBufferChanges = false;
 		private PreviewListModel m_previewListModel = null;
 		private int m_previewImageID = 0;
 
@@ -705,6 +699,9 @@ namespace subtitleMemorize
 			};
 
 			m_treeviewSelectionLines.Changed += delegate(object sender, EventArgs e) {
+				var numLinesSelected = m_treeviewSelectionLines.CountSelectedRows();
+				if(numLinesSelected < 2) m_labelNumCardsSelected.Text = numLinesSelected + " Card selected";
+				else m_labelNumCardsSelected.Text = numLinesSelected + " Cards selected";
 				SelectCard();
 			};
 
@@ -799,13 +796,9 @@ namespace subtitleMemorize
 
 				var textview = GetTextViewByLanguageType(languageType);
 				var cardInfo = m_previewListModel.GetCardClone(m_selectedPreviewIndex);
-				var settingsSuccessful = cardInfo.SetLineInfosByMultiLineString(languageType, textview.Buffer.Text);
-				if(!settingsSuccessful) {
-					// TODO: resetting text here would crash the application -> give user a signal this input is incorrect
-				} else {
-					var changeList = m_previewListModel.SetCard(m_selectedPreviewIndex, cardInfo);
-					UpdatePreviewListViewByChangeList(changeList);
-				}
+				cardInfo.SetLineInfosByMultiLineString(languageType, textview.Buffer.Text);
+				var changeList = m_previewListModel.SetCard(m_selectedPreviewIndex, cardInfo);
+				UpdatePreviewListViewByChangeList(changeList, false);
 			};
 
 			// ----------------------------------------------------------------------
@@ -956,7 +949,7 @@ namespace subtitleMemorize
 		/// <summary>
 		/// This function sets all lines in the Gtk.TreeView to the values in m_cardInfos.
 		/// </summary>
-		private void UpdatePreviewListViewByChangeList(List<PreviewListModel.AtomicChange> list) {
+		private void UpdatePreviewListViewByChangeList(List<PreviewListModel.AtomicChange> list, bool updateTextBuffer = true) {
 			int currentLine = -1, currentChangeIndex = 0;
 			int numDeletions = 0;
 			bool isNextIter = false;
@@ -976,7 +969,7 @@ namespace subtitleMemorize
 				var change = list[currentChangeIndex];
 				switch(change.changeType) {
 					case PreviewListModel.ChangeType.DataUpdate:
-						UpdatePreviewListEntry(currentLine - numDeletions, change.cardInfo, treeIter, true);
+						UpdatePreviewListEntry(currentLine - numDeletions, change.cardInfo, treeIter, updateTextBuffer);
 						isNextIter = m_liststoreLines.IterNext(ref treeIter);
 						break;
 					case PreviewListModel.ChangeType.LineDelete:
@@ -1310,7 +1303,6 @@ namespace subtitleMemorize
 
 
 		private void UpdatePreviewImage(int selectedIndex, CardInfo cardInfo) {
-
 			// preview image does not need to be in full size (saves computation time)
 			const int maxWidth = 300;
 			const int maxHeight = 300;
@@ -1345,8 +1337,13 @@ namespace subtitleMemorize
 
 			Gtk.Application.Invoke (delegate {
 				m_ignoreBufferChanges = true;
-				m_textviewTargetLanguage.Buffer.Text = cardInfo.ToMultiLine(UtilsCommon.LanguageType.TARGET);
-				m_textviewNativeLanguage.Buffer.Text = cardInfo.ToMultiLine(UtilsCommon.LanguageType.NATIVE);
+
+				// assigning text to buffer sets cursor to end -> do not assign if text didn't change
+				if(m_textviewTargetLanguage.Buffer.Text != cardInfo.ToMultiLine(UtilsCommon.LanguageType.TARGET))
+					m_textviewTargetLanguage.Buffer.Text = cardInfo.ToMultiLine(UtilsCommon.LanguageType.TARGET);
+				if(m_textviewNativeLanguage.Buffer.Text != cardInfo.ToMultiLine(UtilsCommon.LanguageType.NATIVE))
+					m_textviewNativeLanguage.Buffer.Text = cardInfo.ToMultiLine(UtilsCommon.LanguageType.NATIVE);
+
 				m_ignoreBufferChanges = false;
 			});
 

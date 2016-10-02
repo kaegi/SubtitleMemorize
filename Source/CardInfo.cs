@@ -139,7 +139,7 @@ namespace subtitleMemorize
 		}
 
 		public string ToMultiLine(UtilsCommon.LanguageType languageType) {
-			return ToString(languageType, "\n");
+			return ToString(languageType, " ");
 		}
 
 		public string ToSingleLine(UtilsCommon.LanguageType languageType) {
@@ -149,8 +149,7 @@ namespace subtitleMemorize
 		private List<String> GetActors(UtilsCommon.LanguageType languageType) {
 			var result = new List<String>();
 			foreach(var line in GetListByLanguageType(languageType)) {
-				if(String.IsNullOrWhiteSpace(line.name)) continue;
-				result.Add(line.name);
+				result.AddRange(line.actors);
 			}
 			return result;
 		}
@@ -173,15 +172,43 @@ namespace subtitleMemorize
 		}
 
 		/// <summary>
+		/// Unify all LineInfos in one language into one LineInfo.
+		/// </summary>
+		public void UnifyLineInfos(UtilsCommon.LanguageType languageType) {
+			var linesList = GetListByLanguageType(languageType);
+			if(linesList.Count == 0) return;
+
+			double? newLineStart = null;
+			double? newLineEnd = null;
+			String newLineText = null;
+			var newLineActors = new List<String>();
+			foreach(var line in linesList) {
+				if(newLineStart == null) newLineStart = line.StartTime;
+				else newLineStart = Math.Min(newLineStart.Value, line.StartTime);
+				if(newLineEnd == null) newLineEnd = line.EndTime;
+				else newLineEnd = Math.Max(newLineEnd.Value, line.EndTime);
+
+				if(newLineText == null) newLineText = line.text;
+				else newLineText += line.text;
+				newLineActors.AddRange(line.actors);
+			}
+
+			newLineActors.Sort();
+			newLineActors = newLineActors.Distinct().ToList();
+			linesList.Clear();
+			linesList.Add(new LineInfo(newLineStart.Value, newLineEnd.Value, newLineText, newLineActors));
+		}
+
+		/// <summary>
 		/// Updates LineInfos. Strings for different LineInfos are separated by '\n'.
 		/// Returns false if text could not be parsed.
 		/// </summary>
-		public bool SetLineInfosByMultiLineString(UtilsCommon.LanguageType languageType, string text) {
-			var lines = GetListByLanguageType(languageType);
-			var stringsRows = text.Split('\n').ToList();
-			if(stringsRows.Count != lines.Count()) { return false; }
-			for(int i = 0; i < lines.Count(); i++) { lines[i].text = stringsRows[i]; }
-			return true;
+		public void SetLineInfosByMultiLineString(UtilsCommon.LanguageType languageType, string text) {
+			UnifyLineInfos(languageType);
+			var linesList = GetListByLanguageType(languageType);
+			if(linesList.Count == 0) return;
+			if(linesList.Count != 1) throw new Exception();
+			linesList[0].text = text;
 		}
 
 		// cards might be missing some information

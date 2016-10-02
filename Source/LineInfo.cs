@@ -16,6 +16,7 @@
 //
 
 using System;
+using System.Collections.Generic;
 
 namespace subtitleMemorize
 {
@@ -24,14 +25,14 @@ namespace subtitleMemorize
 	{
 		public double startTime;
 		public double endTime;
-		public String name;
+		public List<String> actors;
 		public String text;
 
-		public LineInfo (double startTime, double endTime, String name, String text)
+		public LineInfo (double startTime, double endTime, String text, List<String> actors)
 		{
 			this.startTime = startTime;
 			this.endTime = endTime;
-			this.name = name;
+			this.actors = actors;
 			this.text = text;
 		}
 
