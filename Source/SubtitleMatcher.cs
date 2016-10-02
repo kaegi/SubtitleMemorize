@@ -93,11 +93,11 @@ namespace subtitleMemorize
 			public object ExtendedLineInfo2 { get { return extendedLineInfos2; } }
 		}
 
-		public static SubtitleMatcherCache GetParameterCache(IEnumerable<LineInfo> lines1, IEnumerable<LineInfo> lines2) {
+		public static SubtitleMatcherCache GetParameterCache(List<LineInfo> lines1, List<LineInfo> lines2) {
 
 			// LineInfo -> ExtendedLineInfo
-			var extendedLineInfos1 = new List<ExtendedLineInfo>();
-			var extendedLineInfos2 = new List<ExtendedLineInfo>();
+			var extendedLineInfos1 = new List<ExtendedLineInfo>(lines1.Count);
+			var extendedLineInfos2 = new List<ExtendedLineInfo>(lines2.Count);
 			foreach(var line in lines1) extendedLineInfos1.Add(new ExtendedLineInfo(line));
 			foreach(var line in lines2) extendedLineInfos2.Add(new ExtendedLineInfo(line));
 
