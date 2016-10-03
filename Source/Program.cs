@@ -1141,18 +1141,24 @@ namespace subtitleMemorize
 			for(int episodeIndex = 0; episodeIndex < lineInfosPerEpisode_TargetLanguage.Count; episodeIndex++) {
 				List<LineInfo> list1 = lineInfosPerEpisode_TargetLanguage[episodeIndex];
 				List<LineInfo> list2 = lineInfosPerEpisode_NativeLanguage[episodeIndex];
+				var episodeInfo = episodeInfos[episodeIndex];
 
-				UtilsCommon.AlignSub(list1, list2, episodeInfos[episodeIndex], settings, settings.PerSubtitleSettings[0]);
-				if(episodeInfos[episodeIndex].HasSub2()) {
-					UtilsCommon.AlignSub(list2, list1, episodeInfos[episodeIndex], settings, settings.PerSubtitleSettings[1]);
+				if(episodeInfo.HasSub2()) {
+					// make sure that "other" subtitle has been shifted when aligning "this" subtitle to it
+					if(settings.PerSubtitleSettings[0].AlignMode == PerSubtitleSettings.AlignModes.ToSubtitle) {
+						UtilsCommon.AlignSub(list2, list1, episodeInfo, settings, settings.PerSubtitleSettings[1]);
+						UtilsCommon.AlignSub(list1, list2, episodeInfo, settings, settings.PerSubtitleSettings[0]);
+					} else {
+						UtilsCommon.AlignSub(list1, list2, episodeInfo, settings, settings.PerSubtitleSettings[0]);
+						UtilsCommon.AlignSub(list2, list1, episodeInfo, settings, settings.PerSubtitleSettings[1]);
+					}
 					var subtitleMatcherParameters = SubtitleMatcher.GetParameterCache (list1, list2);
 					var matchedLinesList = SubtitleMatcher.MatchSubtitles(subtitleMatcherParameters);
-					var thisEpisodeCardInfos = UtilsSubtitle.GetCardInfo(settings, episodeInfos[episodeIndex], matchedLinesList);
+					var thisEpisodeCardInfos = UtilsSubtitle.GetCardInfo(settings, episodeInfo, matchedLinesList);
 					allCardInfos.AddRange(thisEpisodeCardInfos);
 				} else {
-
-					allCardInfos.AddRange(UtilsSubtitle.GetCardInfo(settings, episodeInfos[episodeIndex], list1));
-
+					UtilsCommon.AlignSub(list1, list2, episodeInfo, settings, settings.PerSubtitleSettings[0]);
+					allCardInfos.AddRange(UtilsSubtitle.GetCardInfo(settings, episodeInfo, list1));
 				}
 
 				progressInfo.ProcessedSteps (1);
