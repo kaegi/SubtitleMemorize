@@ -45,94 +45,6 @@ namespace subtitleMemorize
 		}
 
 		/// <summary>
-		/// A class for accelarating search for overlapping time spans. This
-		/// class creates an array of uniform sized buckets (with O(1) access time).
-		/// To query all overlapping time spans we only have to check in the right
-		/// buckets.
-		///
-		/// A segment tree could replace this class but this might be slower (subtitles
-		/// have nearly uniform intervals and are are very packed).
-		/// </summary>
-		public class TimeSpanCache<T> where T : ITimeSpan {
-			/// TODO: move into own file
-			private const double ms_bucket_size = 2; // in seconds
-			private double m_startTime;
-
-			private LinkedList<T>[] m_timeSpanCache;
-
-			public TimeSpanCache(IEnumerable<T> timeSpans) {
-				// get miniumum of all times and max of all times
-				double minTime = 0, maxTime = 0;
-				foreach(var timeSpan in timeSpans) {
-					minTime = Math.Min(minTime, timeSpan.StartTime);
-					maxTime = Math.Max(maxTime, timeSpan.EndTime);
-				}
-				m_startTime = minTime - ms_bucket_size;
-
-				// TODO: use interval trees
-				// TODO: upper bound so a wrong value can't lead to allocation of all memory
-
-				// create buckets
-				int numBuckets = (int)((maxTime - minTime) / ms_bucket_size) + /* just to be safe */ 4;
-				m_timeSpanCache = new LinkedList<T>[numBuckets];
-				for(int i = 0; i < m_timeSpanCache.Length; i++) {
-					m_timeSpanCache[i] = new LinkedList<T>();
-				}
-
-				// add lines to buckets
-				foreach(var timeSpan in timeSpans) {
-					long startBucket = TimeToBucketIndex(timeSpan.StartTime);
-					long endBucket = TimeToBucketIndex(timeSpan.EndTime);
-					for(long bucket = startBucket; bucket <= endBucket; bucket++) {
-						m_timeSpanCache[bucket].AddLast(timeSpan);
-					}
-				}
-			}
-
-			private long TimeToBucketIndex(double time) {
-				return (long)((time - m_startTime) / ms_bucket_size);
-			}
-
-
-			private LinkedList<T> m_listOfHandledTimeSpans = new LinkedList<T>();
-
-			/// <summary>
-			/// Calls "doAction()" for every time span that is overlapping "timeSpan". The first
-			/// argument passed to "doAction()" is "timeSpan", the second is the overlapping one.
-			/// </summary>
-			public void DoForOverlapping(T timeSpan, Action<T, T> doAction) {
-				long startBucket = TimeToBucketIndex(timeSpan.StartTime);
-				long endBucket = TimeToBucketIndex(timeSpan.EndTime);
-
-				// if bucket index is out of bounds, there can be no overlappings
-				if(startBucket < 0) startBucket = 0;
-				if(endBucket >= m_timeSpanCache.Length) endBucket = m_timeSpanCache.Length - 1;
-
-				for(long bucket = startBucket; bucket <= endBucket; bucket++) {
-					foreach(var overlappingTimeSpan in m_timeSpanCache[bucket]) {
-						if(!UtilsCommon.IsOverlapping(timeSpan, overlappingTimeSpan)) continue;
-						if(m_listOfHandledTimeSpans.Contains(overlappingTimeSpan)) continue;
-
-						doAction(timeSpan, overlappingTimeSpan);
-						m_listOfHandledTimeSpans.AddLast(overlappingTimeSpan);
-					}
-				}
-
-				m_listOfHandledTimeSpans.Clear();
-			}
-
-			/// <summary>
-			/// This should be called after all time spans that are cached in this data structure
-			/// changed their timings by a constant.
-			///
-			/// To further use this data structure you have to adjust it. This is a O(1) operation.
-			/// </summary>
-			public void ShiftTime(double shiftTime) {
-				m_startTime += shiftTime;
-			}
-		}
-
-		/// <summary>
 		/// Indices refer to lines in two list. This represents
 		/// a many-to-many (N:M) relationship of this list.
 		/// </summary>
@@ -148,20 +60,12 @@ namespace subtitleMemorize
 
 		public class SubtitleMatcherCache {
 
-			private LinkedList<ExtendedLineInfo> extendedLineInfos1;
-			private LinkedList<ExtendedLineInfo> extendedLineInfos2;
-			private TimeSpanCache<ExtendedLineInfo> timeSpanCache1;
-			private TimeSpanCache<ExtendedLineInfo> timeSpanCache2;
+			private List<ExtendedLineInfo> extendedLineInfos1;
+			private List<ExtendedLineInfo> extendedLineInfos2;
 
-			public SubtitleMatcherCache(
-					object extendedLineInfos1,
-					object extendedLineInfos2,
-					object timeSpanCache1,
-					object timeSpanCache2) {
-				this.extendedLineInfos1 = (LinkedList<ExtendedLineInfo>)extendedLineInfos1;
-				this.extendedLineInfos2 = (LinkedList<ExtendedLineInfo>)extendedLineInfos2;
-				this.timeSpanCache1 = (TimeSpanCache<ExtendedLineInfo>)timeSpanCache1;
-				this.timeSpanCache2 = (TimeSpanCache<ExtendedLineInfo>)timeSpanCache2;
+			public SubtitleMatcherCache(object extendedLineInfos1, object extendedLineInfos2) {
+				this.extendedLineInfos1 = (List<ExtendedLineInfo>)extendedLineInfos1;
+				this.extendedLineInfos2 = (List<ExtendedLineInfo>)extendedLineInfos2;
 			}
 
 
@@ -175,7 +79,6 @@ namespace subtitleMemorize
 						line.lineInfo.startTime += shiftTime;
 						line.lineInfo.endTime += shiftTime;
 					}
-					timeSpanCache1.ShiftTime(shiftTime);
 				}
 
 				if(shiftList2) {
@@ -183,28 +86,22 @@ namespace subtitleMemorize
 						line.lineInfo.startTime += shiftTime;
 						line.lineInfo.endTime += shiftTime;
 					}
-					timeSpanCache2.ShiftTime(shiftTime);
 				}
 			}
 
 			public object ExtendedLineInfo1 { get { return extendedLineInfos1; } }
 			public object ExtendedLineInfo2 { get { return extendedLineInfos2; } }
-			public object TimeSpanCache1 { get { return timeSpanCache1; } }
-			public object TimeSpanCache2 { get { return timeSpanCache2; } }
 		}
 
-		public static SubtitleMatcherCache GetParameterCache(IEnumerable<LineInfo> lines1, IEnumerable<LineInfo> lines2) {
+		public static SubtitleMatcherCache GetParameterCache(List<LineInfo> lines1, List<LineInfo> lines2) {
 
 			// LineInfo -> ExtendedLineInfo
-			var extendedLineInfos1 = new LinkedList<ExtendedLineInfo>();
-			var extendedLineInfos2 = new LinkedList<ExtendedLineInfo>();
-			foreach(var line in lines1) extendedLineInfos1.AddLast(new ExtendedLineInfo(line));
-			foreach(var line in lines2) extendedLineInfos2.AddLast(new ExtendedLineInfo(line));
+			var extendedLineInfos1 = new List<ExtendedLineInfo>(lines1.Count);
+			var extendedLineInfos2 = new List<ExtendedLineInfo>(lines2.Count);
+			foreach(var line in lines1) extendedLineInfos1.Add(new ExtendedLineInfo(line));
+			foreach(var line in lines2) extendedLineInfos2.Add(new ExtendedLineInfo(line));
 
-			var timeSpanCache1 = new TimeSpanCache<ExtendedLineInfo>(extendedLineInfos1);
-			var timeSpanCache2 = new TimeSpanCache<ExtendedLineInfo>(extendedLineInfos2);
-
-			return new SubtitleMatcherCache(extendedLineInfos1, extendedLineInfos2, timeSpanCache1, timeSpanCache2);
+			return new SubtitleMatcherCache(extendedLineInfos1, extendedLineInfos2);
 		}
 
 		/// <summary>
@@ -223,14 +120,11 @@ namespace subtitleMemorize
 		/// <param name="lines2">Lines2.</param>
 		public static LinkedList<BiMatchedLines> MatchSubtitles(SubtitleMatcherCache cache) {
 
-			LinkedList<ExtendedLineInfo> extendedLineInfos1 = (LinkedList<ExtendedLineInfo>)cache.ExtendedLineInfo1;
-			LinkedList<ExtendedLineInfo> extendedLineInfos2 = (LinkedList<ExtendedLineInfo>)cache.ExtendedLineInfo2;
-			TimeSpanCache<ExtendedLineInfo> timeSpanCache1 = (TimeSpanCache<ExtendedLineInfo>)cache.TimeSpanCache1;
-			TimeSpanCache<ExtendedLineInfo> timeSpanCache2 = (TimeSpanCache<ExtendedLineInfo>)cache.TimeSpanCache2;
+			List<ExtendedLineInfo> extendedLineInfos1 = (List<ExtendedLineInfo>)cache.ExtendedLineInfo1;
+			List<ExtendedLineInfo> extendedLineInfos2 = (List<ExtendedLineInfo>)cache.ExtendedLineInfo2;
 
 			// find matchings for every line in list1 to list2 and reverse
-			FindMatching (extendedLineInfos1, timeSpanCache2);
-			FindMatching (extendedLineInfos2, timeSpanCache1);
+			FindMatching (extendedLineInfos1, extendedLineInfos2);
 
 			RemoveOverlappings (extendedLineInfos1);
 			RemoveOverlappings (extendedLineInfos2);
@@ -241,12 +135,46 @@ namespace subtitleMemorize
 		}
 
 		/// <summary>
-		/// This creates a list of good matching subtitles from list1 to every element from list2.
+		/// This creates a list of good matching lines between primaryList and secondaryList.
 		/// </summary>
 		/// <param name="list1">List1.</param>
 		/// <param name="list2">List2.</param>
-		private static void FindMatching(LinkedList<ExtendedLineInfo> primaryList, TimeSpanCache<ExtendedLineInfo> secondaryListCache) {
+		private static void FindMatching(List<ExtendedLineInfo> list1, List<ExtendedLineInfo> list2) {
+			int i1 = 0, i2 = 0;
 
+			foreach(var line in list1) {
+				line.matchingLines.Clear();
+				line.alreadyUsedInBidirectionalSearch = false;
+			}
+
+			foreach(var line in list2) {
+				line.matchingLines.Clear();
+				line.alreadyUsedInBidirectionalSearch = false;
+			}
+
+			while(i1 < list1.Count) {
+				int i2_reset = i2;
+
+				while(i2 < list2.Count) {
+					// node2 does not overlap with node1? Then proceed with next node1.
+					if(list1[i1].EndTime < list2[i2].StartTime) break;
+
+					// node1 and node2 overlap!
+					if (UtilsCommon.OverlappingScore(list1[i1], list2[i2]) >= 0.4) {
+						list1[i1].matchingLines.AddLast (list2[i2]);
+						list2[i2].matchingLines.AddLast (list1[i1]);
+					}
+
+					// try combination (node1, next node2) in next inner iteration
+					i2++;
+				}
+
+				// do node1 and next node1 overlap? Then all node2's we handled in this iteration might
+				// overlap with next node1 -> reset node2 to start of this iteration.
+				if(i1 + 1 != list1.Count && list1[i1 + 1].StartTime <= list1[i1].EndTime) i2 = i2_reset;
+				i1++;
+			}
+/*
 			foreach(var primaryListLine in primaryList) {
 				primaryListLine.matchingLines.Clear();
 				primaryListLine.alreadyUsedInBidirectionalSearch = false;
@@ -258,6 +186,7 @@ namespace subtitleMemorize
 
 				secondaryListCache.DoForOverlapping(primaryListLine, matchLines);
 			}
+			*/
 		}
 
 		/// <summary>
@@ -275,7 +204,7 @@ namespace subtitleMemorize
 		/// We obviously only want to map the character-dialog and the announcement to its own translation.
 		///
 		/// </summary>
-		static void RemoveOverlappings (LinkedList<ExtendedLineInfo> primaryList)
+		static void RemoveOverlappings (List<ExtendedLineInfo> primaryList)
 		{
 			foreach (ExtendedLineInfo eli in primaryList) {
 
@@ -322,7 +251,7 @@ namespace subtitleMemorize
 			return leastFittingLine;
 		}
 
-		private static LinkedList<BiMatchedLines> FindBidirectionalMapping (LinkedList<ExtendedLineInfo> mappingForLines1, LinkedList<ExtendedLineInfo> mappingForLines2)
+		private static LinkedList<BiMatchedLines> FindBidirectionalMapping (List<ExtendedLineInfo> mappingForLines1, List<ExtendedLineInfo> mappingForLines2)
 		{
 			Func<ExtendedLineInfo, Boolean, BiMatchedLines> bfsSearch = delegate(ExtendedLineInfo lineInfo, Boolean isInFirstList) {
 

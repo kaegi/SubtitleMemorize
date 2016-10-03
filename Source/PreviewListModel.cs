@@ -204,12 +204,13 @@ namespace subtitleMemorize
             }
 
 
-            CardInfo infoSourceCard = null; // entry which will be used for evaluation an expression
+            int currentCardIndex = 0; // card index which will be used for evaluation an expression in delegate
             Expression expr = new Expression(conditionExpr);
 
             // resolve certain parameters in expression
             expr.EvaluateParameter += delegate (string name, ParameterArgs args)
             {
+                CardInfo infoSourceCard = m_cardInfos[currentCardIndex];
                 switch (name)
                 {
                     case "isActive": // fallthrough
@@ -236,11 +237,37 @@ namespace subtitleMemorize
                     case "start": args.Result = infoSourceCard.startTimestamp; break;
                     case "end": args.Result = infoSourceCard.endTimestamp; break;
                     case "duration": args.Result = infoSourceCard.Duration; break;
+
+                    case "next_start":
+                      args.Result = currentCardIndex + 1 >= m_cardInfos.Count ? 1000000.0 : m_cardInfos[currentCardIndex + 1].StartTime;
+                      break;
+
+                    case "next_end":
+                      args.Result = currentCardIndex + 1 >= m_cardInfos.Count ? 1000000.0 : m_cardInfos[currentCardIndex + 1].EndTime;
+                      break;
+
+                    case "next_duration":
+                      args.Result = currentCardIndex + 1 >= m_cardInfos.Count ? 0 : m_cardInfos[currentCardIndex + 1].Duration;
+                      break;
+
+                    case "prev_start":
+                      args.Result = currentCardIndex <= 0 ? -1000000.0 : m_cardInfos[currentCardIndex - 1].StartTime;
+                      break;
+
+                    case "prev_end":
+                      args.Result = currentCardIndex <= 0 ? -1000000.0 : m_cardInfos[currentCardIndex - 1].EndTime;
+                      break;
+
+                    case "prev_duration":
+                      args.Result = currentCardIndex <= 0 ? 0 : m_cardInfos[currentCardIndex - 1].Duration;
+                      break;
+
                 }
             };
             // resolve certain functions in expression
             expr.EvaluateFunction += delegate (string name, FunctionArgs args)
             {
+                CardInfo infoSourceCard = m_cardInfos[currentCardIndex];
                 switch (name)
                 {
                     // an exmple for this function is "contains(sub1, 'some text')" that selects all lines, where sub1 contains 'some text'
@@ -352,7 +379,7 @@ namespace subtitleMemorize
 
             for(int i = 0; i < m_cardInfos.Count; i++) {
               // provide infos for expr.Evaluate()
-              infoSourceCard = m_cardInfos[i];
+              currentCardIndex = i;
               object result = expr.Evaluate();
               if(result is bool && result != null)
                 resultsList[i] = (bool)result;
@@ -459,7 +486,15 @@ namespace subtitleMemorize
         {
           var activeCardList = GetActiveCards();
 
+          progressInfo.AddSection("Exporting text file", 1);
+          progressInfo.AddSection("Exporting snapshots", activeCardList.Count);
+          progressInfo.AddSection("Exporting audio files", activeCardList.Count);
+          if(settings.NormalizeAudio) progressInfo.AddSection("Normalize audio files", activeCardList.Count);
+          progressInfo.Update();
+
           ExportTextFile(activeCardList, settings, progressInfo);
+
+          progressInfo.ProcessedSteps(1);
 
           var cardSnapshotNameTupleList = new List<Tuple<CardInfo, String>>(activeCardList.Count);
           var cardAudioNameTupleList = new List<Tuple<CardInfo, String>>(activeCardList.Count);
@@ -468,22 +503,31 @@ namespace subtitleMemorize
             cardAudioNameTupleList.Add(new Tuple<CardInfo, String>(cardInfo, GetAudioFileName(settings, cardInfo)));
           }
 
+          if(progressInfo.Cancelled) return;
 
           // extract images
           String snapshotsPath = settings.OutputDirectoryPath + Path.DirectorySeparatorChar + settings.DeckName + "_snapshots" + Path.DirectorySeparatorChar;
           UtilsCommon.ClearDirectory(snapshotsPath);
-          WorkerSnapshot.ExtractSnaphots(settings, snapshotsPath, cardSnapshotNameTupleList);
+          WorkerSnapshot.ExtractSnaphots(settings, snapshotsPath, cardSnapshotNameTupleList, progressInfo);
+
+          if(progressInfo.Cancelled) return;
 
           // extract audio
           String audioPath = settings.OutputDirectoryPath + Path.DirectorySeparatorChar + settings.DeckName + "_audio" + Path.DirectorySeparatorChar;
           UtilsCommon.ClearDirectory(audioPath);
-          WorkerAudio.ExtractAudio(settings, audioPath, cardAudioNameTupleList);
+          WorkerAudio.ExtractAudio(settings, audioPath, cardAudioNameTupleList, progressInfo);
+
+          if(progressInfo.Cancelled) return;
 
           if(settings.NormalizeAudio) {
             // normalize all audio files
             foreach(var entry in cardAudioNameTupleList) {
+              if(progressInfo.Cancelled) return;
+              progressInfo.ProcessedSteps(1);
+
               var cardInfo = entry.Item1;
               if(!cardInfo.HasAudio()) continue;
+
               var filepath = entry.Item2;
               var audioStreamInfos = StreamInfo.ReadAllStreams(filepath);
               audioStreamInfos.RemoveAll(streamInfo => streamInfo.StreamTypeValue != StreamInfo.StreamType.ST_AUDIO);

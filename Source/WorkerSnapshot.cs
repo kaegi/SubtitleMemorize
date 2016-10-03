@@ -22,8 +22,11 @@ namespace subtitleMemorize
 {
 	public static class WorkerSnapshot
 	{
-		public static void ExtractSnaphots(Settings settings, String path, List<Tuple<CardInfo, String>> allEntries) {
+		public static void ExtractSnaphots(Settings settings, String path, List<Tuple<CardInfo, String>> allEntries, InfoProgress progress) {
 			foreach(var entry in allEntries) {
+				if(progress.Cancelled) break;
+				progress.ProcessedSteps(1);
+
 				var cardInfoNameTuple = entry;
 				var cardInfo = cardInfoNameTuple.Item1;
 				if(!cardInfo.HasImage()) continue;
@@ -39,6 +42,7 @@ namespace subtitleMemorize
 				double scaling = UtilsVideo.GetMaxScalingByStreamInfo(cardInfo.episodeInfo.VideoStreamInfo, settings.RescaleWidth, settings.RescaleHeight, settings.RescaleMode);
 				double timeStamp = UtilsCommon.GetMiddleTime (cardInfo);
 				UtilsImage.GetImage (videoFileDesc.filename, timeStamp, outputSnapshotFilepath, scaling);
+
 			}
 		}
 	}

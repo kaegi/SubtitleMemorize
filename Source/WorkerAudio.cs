@@ -22,8 +22,11 @@ namespace subtitleMemorize
 {
 	public static class WorkerAudio
 	{
-		public static void ExtractAudio(Settings settings, String path, List<Tuple<CardInfo, String>> allEntries) {
+		public static void ExtractAudio(Settings settings, String path, List<Tuple<CardInfo, String>> allEntries, InfoProgress progress) {
 			foreach(var entry in allEntries) {
+				progress.ProcessedSteps(1);
+				if(progress.Cancelled) return;
+
 				CardInfo cardInfo = entry.Item1;
 				if(!cardInfo.HasAudio()) continue;
 
@@ -42,8 +45,6 @@ namespace subtitleMemorize
 				);
 				UtilsCommon.StartProcessAndGetOutput(InstanceSettings.systemSettings.formatConvertCommand, arguments);
 			}
-
-
 		}
 	}
 }

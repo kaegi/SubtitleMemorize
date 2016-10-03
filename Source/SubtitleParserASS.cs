@@ -76,7 +76,7 @@ namespace subtitleMemorize
 					continue; // ignore lines without text
 
 				// generate line info
-				LineInfo li = new LineInfo(parseTime(startTimeString), parseTime(endTimeString), nameString, textString);
+				LineInfo li = new LineInfo(parseTime(startTimeString), parseTime(endTimeString), textString, new List<String>(new String[]{ nameString }));
 				lines.Add(li);
 
 

@@ -45,10 +45,10 @@ namespace subtitleMemorize
 		/// Only lines in same slices can get matched.
 		/// </summary>
 		private class RemainingSlice {
-			public LinkedList<LineInfo> referenceListLines;
-			public LinkedList<LineInfo> listToChangeLines;
+			public List<LineInfo> referenceListLines;
+			public List<LineInfo> listToChangeLines;
 
-			public RemainingSlice(LinkedList<LineInfo> referenceListData, LinkedList<LineInfo> listToChangeData) {
+			public RemainingSlice(List<LineInfo> referenceListData, List<LineInfo> listToChangeData) {
 				referenceListLines = referenceListData;
 				listToChangeLines = listToChangeData;
 			}
@@ -61,11 +61,13 @@ namespace subtitleMemorize
 		/// By using the "noSplitting=true" option, the whole list gets shifted as one.
 		/// </summary>
 		public void Retime(bool noSplitting=false) {
+			var stopwatch = new System.Diagnostics.Stopwatch();
+			stopwatch.Start();
 
 			var queue = new Queue<RemainingSlice>();
 
 			// initilize first slice (with all lines)
-			RemainingSlice fullSlice = new RemainingSlice(new LinkedList<LineInfo>(m_referenceList), new LinkedList<LineInfo>(m_listToChange));
+			RemainingSlice fullSlice = new RemainingSlice(new List<LineInfo>(m_referenceList), new List<LineInfo>(m_listToChange));
 			queue.Enqueue(fullSlice);
 
 			// just find best offset
@@ -94,6 +96,8 @@ namespace subtitleMemorize
 				double bestOffset = FindBestOffset(slice);
 				ApplyOffset(slice, bestOffset, queue);
 			}
+
+			Console.WriteLine(stopwatch.ElapsedMilliseconds);
 		}
 
 		/// <summary>
@@ -103,14 +107,16 @@ namespace subtitleMemorize
 		/// </summary>
 		private double FindBestOffset(RemainingSlice slice) {
 
+			var subtitleMatcherParams = SubtitleMatcher.GetParameterCache(slice.referenceListLines, slice.listToChangeLines);
+
 			// the tuple is (offset, rating)
 			var firstPassList = new List<OffsetRatingTuple>(5);
-			FindGoodOffsets(slice, 0, 0.3, 1000, firstPassList);
+			FindGoodOffsets(subtitleMatcherParams, 0, 0.3, 1000, firstPassList);
 
 			// find fine grained offsets around approximated offsets
 			var secondPassList = new List<OffsetRatingTuple>(5);
 			foreach(var offsetRatingTuple in firstPassList)
-				FindGoodOffsets(slice, offsetRatingTuple.offset, 0.01, 90, secondPassList);
+				FindGoodOffsets(subtitleMatcherParams, offsetRatingTuple.offset, 0.01, 90, secondPassList);
 
 			return secondPassList[0].offset;
 		}
@@ -135,9 +141,8 @@ namespace subtitleMemorize
 		/// The returnList will be filled until "Count==Capacity". At every time, "returnList" is sorted
 		/// by rating ("returnList[0]" has the best rating of all tested offsets).
 		/// </summary>
-		private void FindGoodOffsets(RemainingSlice slice, double centerOffset, double stepSize, int iterations, List<OffsetRatingTuple> returnList) {
+		private void FindGoodOffsets(SubtitleMatcher.SubtitleMatcherCache subtitleMatcherParams, double centerOffset, double stepSize, int iterations, List<OffsetRatingTuple> returnList) {
 
-			var subtitleMatcherParams = SubtitleMatcher.GetParameterCache(slice.referenceListLines, slice.listToChangeLines);
 
 			int sign = 1; // will alternate every iteration
 			for(int iteration = 0; iteration < iterations; iteration++) {
@@ -287,12 +292,12 @@ namespace subtitleMemorize
 		private RemainingSlice GetSubSlice(List<SubtitleMatcher.BiMatchedLines> biMatchedLinesList, int start, int end) {
 
 			// everything after the "good row" has be to matched
-			var remainingSliceReferenceList = new LinkedList<LineInfo>();
-			var remainingSliceToChangeList = new LinkedList<LineInfo>();
+			var remainingSliceReferenceList = new List<LineInfo>();
+			var remainingSliceToChangeList = new List<LineInfo>();
 			for(int index = start; index < end; index++) {
 				var biMatchedLines = biMatchedLinesList[index];
-				foreach(var lineInfo in biMatchedLines.listlines[0]) remainingSliceReferenceList.AddLast(lineInfo);
-				foreach(var lineInfo in biMatchedLines.listlines[1]) remainingSliceToChangeList.AddLast(lineInfo);
+				foreach(var lineInfo in biMatchedLines.listlines[0]) remainingSliceReferenceList.Add(lineInfo);
+				foreach(var lineInfo in biMatchedLines.listlines[1]) remainingSliceToChangeList.Add(lineInfo);
 			}
 			return new RemainingSlice(remainingSliceReferenceList, remainingSliceToChangeList);
 		}

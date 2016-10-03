@@ -266,17 +266,18 @@ namespace subtitleMemorize
 		/// <summary>
 		/// Align subtitle line by constant value, to audio or to other subtitle based on settings in "perSubSettings".
 		/// </summary>
-		public static void AlignSub (List<LineInfo> lineList, List<LineInfo> referenceList, EpisodeInfo epInfo, Settings settings, PerSubtitleSettings perSubSettings)
+		public static void AlignSub (List<LineInfo> lineList, List<LineInfo> referenceList, EpisodeInfo epInfo, Settings settings, PerSubtitleSettings thisSubSettings)
 		{
-			switch(perSubSettings.AlignMode) {
+			switch(thisSubSettings.AlignMode) {
 			case PerSubtitleSettings.AlignModes.ByConstantValue:
-				UtilsSubtitle.ShiftByTime (lineList, perSubSettings.SubDelay);
+				UtilsSubtitle.ShiftByTime (lineList, thisSubSettings.SubDelay);
 				break;
 			case PerSubtitleSettings.AlignModes.ToAudio:
 				UtilsAlignSubToAudio alignToAudio = new UtilsAlignSubToAudio (lineList, epInfo.AudioFileDesc);
 				UtilsSubtitle.ShiftByTime (lineList, alignToAudio.GetBestShiftValue());
 				break;
 			case PerSubtitleSettings.AlignModes.ToSubtitle:
+				if(referenceList == null) throw new Exception("Can not align subtitle to other non-existent subtitle.");
 				UtilsAlignSubToSub alignToSub = new UtilsAlignSubToSub(lineList, referenceList);
 				alignToSub.Retime();
 				break;

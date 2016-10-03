@@ -148,6 +148,10 @@ namespace subtitleMemorize
 			UpdateHandler ();
 		}
 
+		public void Update() {
+			UpdateHandler();
+		}
+
 		private void UpdateHandler() {
 			ProgressSection currentSec = m_progressSections [m_currentSection];
 			double inSectionProgress = (double)currentSec.NumbersOfStepsProcessed / (double)currentSec.NumbersOfStepsGiven;

@@ -439,10 +439,34 @@ Of course you can press Shift and Control at the same time which will deselect a
               </object>
             </child>
             <child type="label">
-              <object class="GtkLabel" id="label21">
+              <object class="GtkBox">
                 <property name="visible">True</property>
                 <property name="can_focus">False</property>
-                <property name="label" translatable="yes">Search and Replace (advanced tools - hover mouse over fields and buttons to see tooltip info)</property>
+                <property name="spacing">12</property>
+                <child>
+                  <object class="GtkLabel">
+                    <property name="visible">True</property>
+                    <property name="can_focus">False</property>
+                    <property name="label" translatable="yes">Search and Replace (advanced tools):</property>
+                  </object>
+                  <packing>
+                    <property name="expand">False</property>
+                    <property name="fill">True</property>
+                    <property name="position">0</property>
+                  </packing>
+                </child>
+                <child>
+                  <object class="GtkLabel" id="label_num_cards_selected">
+                    <property name="visible">True</property>
+                    <property name="can_focus">False</property>
+                    <property name="label" translatable="yes">0 Cards selected</property>
+                  </object>
+                  <packing>
+                    <property name="expand">False</property>
+                    <property name="fill">True</property>
+                    <property name="position">1</property>
+                  </packing>
+                </child>
               </object>
             </child>
           </object>
@@ -1301,7 +1325,7 @@ Of course you can press Shift and Control at the same time which will deselect a
                                                 <property name="active">0</property>
                                                 <items>
                                                   <item id="align_sub1_by_offset" translatable="yes">Shift by constant time</item>
-                                                  <item id="align_sub1_to_sub2" translatable="yes">Align to Sub2</item>
+                                                  <item id="align_sub1_to_sub2" translatable="yes">Align to Sub1</item>
                                                   <item id="align_sub1_to_audio" translatable="yes">Align to Audio</item>
                                                 </items>
                                               </object>
