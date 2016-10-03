@@ -1325,7 +1325,7 @@ Of course you can press Shift and Control at the same time which will deselect a
                                                 <property name="active">0</property>
                                                 <items>
                                                   <item id="align_sub1_by_offset" translatable="yes">Shift by constant time</item>
-                                                  <item id="align_sub1_to_sub2" translatable="yes">Align to Sub2</item>
+                                                  <item id="align_sub1_to_sub2" translatable="yes">Align to Sub1</item>
                                                   <item id="align_sub1_to_audio" translatable="yes">Align to Audio</item>
                                                 </items>
                                               </object>
