@@ -24,7 +24,7 @@ By adding a comma but leaving out the filename you can create an episode that is
 The NCalc search allows you to easily query certain lines. Examples:
 
 -   type in `duration > 10` and press enter. This will select all lines that
-have a duration of more than 10 seconds. Pressing `Toggle Activation` will then decide for these lines whether they get exported or not.
+have a duration of more than 10 seconds. Pressing `Disable Line` will prevent the line from being exported.
 
 -   type in `regex(',$')` and press enter. This will select all lines that end with a comma. By clicking on `Merge next` you can simply join all sentences together at the same time. Of course you can also query more than one ending character at the same time: `regex('(→|,)$')`.
 

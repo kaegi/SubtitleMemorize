@@ -658,6 +658,13 @@ namespace subtitleMemorize
 			} else {
 				m_toolbuttonMerge.Label = "Merge next";
 			}
+			if(m_previewWindow_isControlPressed) {
+				m_toolbuttonToggleActivation.Label = "Enable Line";
+			} else if(m_previewWindow_isShiftPressed) {
+				m_toolbuttonToggleActivation.Label = "Toggle Activation";
+			} else {
+				m_toolbuttonToggleActivation.Label = "Disable Line";
+			}
 		}
 
 		private void ConnectEventsPreviewWindowOptions() {
@@ -767,7 +774,10 @@ namespace subtitleMemorize
 				}
 
 				// make internal changes visible to user
-				var changeList = m_previewListModel.UpdateCardActivation(updateItems, PreviewListModel.BinaryChangeMode.Toggle);
+				var changeMode = PreviewListModel.BinaryChangeMode.Disable;
+				if(m_previewWindow_isControlPressed) { changeMode = PreviewListModel.BinaryChangeMode.Enable; }
+				else if(m_previewWindow_isShiftPressed) { changeMode = PreviewListModel.BinaryChangeMode.Toggle; }
+				var changeList = m_previewListModel.UpdateCardActivation(updateItems, changeMode);
 				UpdatePreviewListViewByChangeList(changeList);
 			};
 

@@ -187,7 +187,7 @@
               <object class="GtkToolButton" id="toolbutton_toggle_activation">
                 <property name="visible">True</property>
                 <property name="can_focus">False</property>
-                <property name="label" translatable="yes">Toggle Activation</property>
+                <property name="label" translatable="yes">Disable Line</property>
                 <property name="use_underline">True</property>
                 <property name="stock_id">gtk-go-forward</property>
               </object>
