@@ -4,6 +4,15 @@ To get back to the introduction page and how-to-install, click [here](README.md)
 ## Step-by-step guide
 Unfortunally, this is still on the TODO list. Pull requests are greatly welcome.
 
+### How to import into anki
+-   Import `AnkiTemplate_SubtitleMemorize.apkg` into Anki. This will create the SubtitleMemorize card type - you can safely delete the dummy card.
+
+-   Now import the generated `.tsv` file. Make sure you `Allow HTML in fields`! Field 10 should be mapped to `Tags`.
+
+-   Copy the files inside the generated `*_audio` and `*_snapshots` folders into `~/Documents/Anki/Username/collection.media/`.
+
+-   That's it! You are good to go!
+
 ## Advanced features
 ### Batch processing
 You can process multiple input files at once, all you have to do is to do is to select these files after pressing an `Add XXX`-button. Wildcards are also supported: instead of having to type/add `/home/user/Videos/ep001.mkv,/home/user/Videos/ep002.mkv,/home/user/Videos/ep003.mkv` etc.. you can just type `/home/user/Videos/ep???.mkv` or even `/home/user/Videos/ep*`. `?` is a single character, `*` stands for multiple characters.
