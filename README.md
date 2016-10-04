@@ -40,7 +40,7 @@ sudo pacman -S mono ffmpeg gtk3 mpv
 
 Tutorial
 ============
-Click [here](TUTORIAL.md) for examples how to use the more advanced features.
+Click [here](TUTORIAL.md) for examples how to import files into Anki and how use the more advanced features.
 
 Building From Source
 ============
