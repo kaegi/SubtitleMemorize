@@ -4,7 +4,7 @@ To get back to the introduction page and how-to-install, click [here](README.md)
 ## Step-by-step guide
 Unfortunally, this is still on the TODO list. Pull requests are greatly welcome.
 
-### How to import into anki
+### How to import into Anki
 -   Import `AnkiTemplate.apkg` into Anki. This will create the SubtitleMemorize card type - you can safely delete the dummy card.
 
 -   Now import the generated `.tsv` file. Make sure you `Allow HTML in fields`! Field 10 should be mapped to `Tags`.
