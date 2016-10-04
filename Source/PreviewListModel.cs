@@ -528,7 +528,7 @@ namespace subtitleMemorize
               var cardInfo = entry.Item1;
               if(!cardInfo.HasAudio()) continue;
 
-              var filepath = entry.Item2;
+              var filepath = audioPath + entry.Item2;
               var audioStreamInfos = StreamInfo.ReadAllStreams(filepath);
               audioStreamInfos.RemoveAll(streamInfo => streamInfo.StreamTypeValue != StreamInfo.StreamType.ST_AUDIO);
               if(audioStreamInfos.Count != 1) {
