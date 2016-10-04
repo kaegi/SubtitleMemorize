@@ -37,8 +37,13 @@ sudo apt-get install libav-tools libavcodec-extra mono-complete mpv
 sudo pacman -S mono ffmpeg gtk3 mpv
 ```
 
+
+Tutorial
+============
+Click [here](TUTORIAL.md) for examples how to use the more advanced features.
+
 Building From Source
-------------
+============
 
 
 After installing the above mentioned dependencies for your distribution run following commands:
