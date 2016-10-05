@@ -7,9 +7,7 @@ This is especially useful for language learning, as the resulting files can be i
 [spaced repetition software](https://en.wikipedia.org/wiki/Spaced_repetition "Link to Wikipedia")
 like [Anki](http://ankisrs.net/ "Link to Anki homepage").
 
-This tool currently only runs on Linux and is a similar to
-[subs2srs](http://subs2srs.sourceforge.net/), which is Windows-only. These two projects
-share some code, but otherwise they are independent.
+This tool currently only runs on Linux.
 
 ![Image](/Images/SubtitleMemorize_In_Action.png)
 
@@ -63,6 +61,7 @@ Related Projects
 ============
 Projects that have similar goals and were updated recently:
 
+-   [subs2srs](http://subs2srs.sourceforge.net/) (SubtitleMemorize is inspired by subs2srs; they share some code)
 -   [substudy](https://github.com/emk/substudy)
 -   [movies2anki](https://github.com/kelciour/movies2anki)
 
