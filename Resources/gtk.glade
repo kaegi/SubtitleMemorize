@@ -58,7 +58,7 @@
   </object>
   <object class="GtkListStore" id="liststore_languages">
     <columns>
-      <!-- column-name Language name -->
+      <!-- column-name Language -->
       <column type="gchararray"/>
     </columns>
     <data>
@@ -1924,7 +1924,7 @@ Of course you can press Shift and Control at the same time which will deselect a
                           </packing>
                         </child>
                         <child>
-                          <object class="GtkComboBox">
+                          <object class="GtkComboBox" id="combobox_target_language">
                             <property name="visible">True</property>
                             <property name="can_focus">False</property>
                             <property name="model">liststore_languages</property>
