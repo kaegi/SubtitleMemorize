@@ -4,10 +4,10 @@ To get back to the introduction page and how-to-install, click [here](README.md)
 ## Step-by-step guide
 Unfortunally, this is still on the TODO list. Pull requests are greatly welcome.
 
-### How to import into anki
--   Import `AnkiTemplate_SubtitleMemorize.apkg` into Anki. This will create the SubtitleMemorize card type - you can safely delete the dummy card.
+### How to import into Anki
+-   Import `AnkiTemplate.apkg` into Anki. This will create the SubtitleMemorize card type - you can safely delete the dummy card and deck.
 
--   Now import the generated `.tsv` file. Make sure you `Allow HTML in fields`! Field 10 should be mapped to `Tags`.
+-   Now import the generated `.tsv` file with the SubtitleMemorize card type. Make sure you `Allow HTML in fields`! Field 10 should be mapped to `Tags`.
 
 -   Copy the files inside the generated `*_audio` and `*_snapshots` folders into `~/Documents/Anki/Username/collection.media/`.
 
@@ -24,7 +24,7 @@ By adding a comma but leaving out the filename you can create an episode that is
 The NCalc search allows you to easily query certain lines. Examples:
 
 -   type in `duration > 10` and press enter. This will select all lines that
-have a duration of more than 10 seconds. Pressing `Toggle Activation` will then decide for these lines whether they get exported or not.
+have a duration of more than 10 seconds. Pressing `Disable Line` will prevent the line from being exported.
 
 -   type in `regex(',$')` and press enter. This will select all lines that end with a comma. By clicking on `Merge next` you can simply join all sentences together at the same time. Of course you can also query more than one ending character at the same time: `regex('(→|,)$')`.
 

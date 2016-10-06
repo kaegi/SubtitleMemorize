@@ -126,6 +126,9 @@ namespace subtitleMemorize
 		private double m_audioPaddingBefore = 0;
 		private double m_audioPaddingAfter = 0;
 
+		// index in InfoLanguages.language list
+		private int m_targetLanguageIndex = 0;
+
 
 		public double AudioPaddingBefore {
 			get { return m_audioPaddingBefore;  }
@@ -216,6 +219,10 @@ namespace subtitleMemorize
 			get { return m_perSubtitleSettings; }
 		}
 
+		public int TargetLanguageIndex {
+			get { return m_targetLanguageIndex; }
+			set { m_targetLanguageIndex = value; }
+		}
 
 		public Settings ()
 		{

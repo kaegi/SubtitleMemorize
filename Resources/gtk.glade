@@ -56,6 +56,23 @@
       </row>
     </data>
   </object>
+  <object class="GtkListStore" id="liststore_languages">
+    <columns>
+      <!-- column-name Language -->
+      <column type="gchararray"/>
+    </columns>
+    <data>
+      <row>
+        <col id="0" translatable="yes">English</col>
+      </row>
+      <row>
+        <col id="0" translatable="yes">Japanese</col>
+      </row>
+      <row>
+        <col id="0" translatable="yes">Spanish</col>
+      </row>
+    </data>
+  </object>
   <object class="GtkListStore" id="liststore_lines">
     <columns>
       <!-- column-name Target -->
@@ -187,7 +204,7 @@
               <object class="GtkToolButton" id="toolbutton_toggle_activation">
                 <property name="visible">True</property>
                 <property name="can_focus">False</property>
-                <property name="label" translatable="yes">Toggle Activation</property>
+                <property name="label" translatable="yes">Disable Line</property>
                 <property name="use_underline">True</property>
                 <property name="stock_id">gtk-go-forward</property>
               </object>
@@ -1828,7 +1845,7 @@ Of course you can press Shift and Control at the same time which will deselect a
                           </object>
                           <packing>
                             <property name="left_attach">0</property>
-                            <property name="top_attach">1</property>
+                            <property name="top_attach">2</property>
                           </packing>
                         </child>
                         <child>
@@ -1842,7 +1859,7 @@ Of course you can press Shift and Control at the same time which will deselect a
                           </object>
                           <packing>
                             <property name="left_attach">1</property>
-                            <property name="top_attach">1</property>
+                            <property name="top_attach">2</property>
                           </packing>
                         </child>
                         <child>
@@ -1879,7 +1896,7 @@ Of course you can press Shift and Control at the same time which will deselect a
                           </object>
                           <packing>
                             <property name="left_attach">1</property>
-                            <property name="top_attach">2</property>
+                            <property name="top_attach">3</property>
                           </packing>
                         </child>
                         <child>
@@ -1891,7 +1908,38 @@ Of course you can press Shift and Control at the same time which will deselect a
                           </object>
                           <packing>
                             <property name="left_attach">0</property>
-                            <property name="top_attach">2</property>
+                            <property name="top_attach">3</property>
+                          </packing>
+                        </child>
+                        <child>
+                          <object class="GtkLabel" id="label19">
+                            <property name="visible">True</property>
+                            <property name="can_focus">False</property>
+                            <property name="label" translatable="yes">&lt;small&gt;Target language:&lt;/small&gt;</property>
+                            <property name="use_markup">True</property>
+                          </object>
+                          <packing>
+                            <property name="left_attach">0</property>
+                            <property name="top_attach">1</property>
+                          </packing>
+                        </child>
+                        <child>
+                          <object class="GtkComboBox" id="combobox_target_language">
+                            <property name="visible">True</property>
+                            <property name="can_focus">False</property>
+                            <property name="model">liststore_languages</property>
+                            <property name="active">0</property>
+                            <property name="id_column">0</property>
+                            <child>
+                              <object class="GtkCellRendererText"/>
+                              <attributes>
+                                <attribute name="text">0</attribute>
+                              </attributes>
+                            </child>
+                          </object>
+                          <packing>
+                            <property name="left_attach">1</property>
+                            <property name="top_attach">1</property>
                           </packing>
                         </child>
                       </object>

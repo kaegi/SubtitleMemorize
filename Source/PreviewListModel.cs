@@ -465,7 +465,7 @@ namespace subtitleMemorize
                     String keyField = cardInfo.GetKey();
                     String audioField = audioFields[i];
                     String imageField = snapshotFields[i];
-                    String tags = String.Format("SubtitleMemorize {0} ep{1:000}", settings.DeckNameModified, cardInfo.episodeInfo.Number);
+                    String tags = String.Format("SubtitleMemorize {0} ep{1:000} {2}", settings.DeckNameModified, cardInfo.episodeInfo.Number, InfoLanguages.languages[settings.TargetLanguageIndex].tag);
                     outputStream.WriteLine(UtilsCommon.HTMLify(keyField) + "\t" +
                                            UtilsCommon.HTMLify(imageField) + "\t"+
                                            UtilsCommon.HTMLify(audioField) + "\t" +

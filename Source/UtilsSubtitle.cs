@@ -335,7 +335,7 @@ restartLoop:
 				str.Append(cards[0].ToSingleLine(languageType));
 			}
 			foreach(var card in cards.Skip(1)) {
-				str.Append("\n");
+				str.Append(" --- ");
 				str.Append(card.ToSingleLine(languageType));
 			}
 			return str.ToString();
