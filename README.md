@@ -4,8 +4,8 @@
 `SubtitleMemorize` is a tool that generates a list of images, audio files, lines and
 translations of these lines by using video and subtitle files.
 This is especially useful for language learning, as the resulting files can be imported into
-[spaced repetition software](https://en.wikipedia.org/wiki/Spaced_repetition "Link to Wikipedia")
-like [Anki](http://ankisrs.net/ "Link to Anki homepage").
+spaced repetition software
+like [Anki](http://ankisrs.net/ "Link to Anki homepage"). To make it even more effective, all generated cards can be used directly in the Anki plugin [MorphMan](https://github.com/ChangSpivey/MorphMan), which sort the massive amounts of cards based on the cards difficulty and the words you know.
 
 This tool currently only runs on Linux, but is deliberately built solely on top of portable technologies.
 
@@ -35,12 +35,16 @@ sudo pacman -S mono ffmpeg gtk3 mpv
 ```
 
 ###### Windows and macOS
-Your know-how is needed! If you managed to install the dependencies on these platforms and successfully created a SubtitleMemorize deck, please create an issue on the GitHub page, so I can create an installation tutorial.
+Your know-how is needed! If you managed to install the dependencies on these platforms and successfully created a SubtitleMemorize deck, please create an issue on the GitHub page, so I can add an installation tutorial.
 
 
 Tutorial
 ============
 Click [here](TUTORIAL.md) for examples how to import files into Anki and how use the more advanced features.
+
+MorphMan integration
+============
+The generated cards are ready to be used in the Anki plugin [MorphMan](https://github.com/ChangSpivey/MorphMan). This will make your learing-with-movies much more effective. No additional configuration is needed.
 
 Building From Source
 ============
