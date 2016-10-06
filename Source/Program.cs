@@ -801,6 +801,7 @@ namespace subtitleMemorize
 					} catch(Exception e) {
 						Console.WriteLine(e);
 						SetErrorMessage(e.Message);
+						Gtk.Application.Invoke(delegate {  m_windowProgressInfo.Hide(); m_previewWindow.Show(); });
 					}
 				})).Start();
 
