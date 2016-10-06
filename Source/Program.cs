@@ -506,11 +506,11 @@ namespace subtitleMemorize
 		private void ConnectEventsMainWindow() {
 
 			// ----------------------------------------------------------------------------------------------------
-			m_imagemenuitemNew.ButtonReleaseEvent += delegate(object o, ButtonReleaseEventArgs args) {
+			m_imagemenuitemNew.Activated += delegate(object o, EventArgs args) {
 				UpdateGui (m_defaultSettings);
 			};
 
-			m_imagemenuitemOpen.ButtonReleaseEvent += delegate(object o, ButtonReleaseEventArgs args) {
+			m_imagemenuitemOpen.Activated += delegate(object o, EventArgs args) {
 				Gtk.Application.Invoke(delegate {
 					Gtk.FileChooserDialog fcd = new Gtk.FileChooserDialog ("Load configuration", m_mainWindow, FileChooserAction.Open,
 						"_Cancel", ResponseType.Cancel,
@@ -525,7 +525,7 @@ namespace subtitleMemorize
 			};
 
 			// ----------------------------------------------------------------------------------------------------
-			Gtk.ButtonReleaseEventHandler imagemenuItemSave = delegate(object o, ButtonReleaseEventArgs arg) {
+			EventHandler imagemenuItemSave = delegate(object o, EventArgs arg) {
 				Gtk.Application.Invoke(delegate {
 					Gtk.FileChooserDialog fcd = new Gtk.FileChooserDialog ("Save configuration to file", m_mainWindow, FileChooserAction.Save,
 						"_Cancel", ResponseType.Cancel,
@@ -541,11 +541,11 @@ namespace subtitleMemorize
 			};
 
 			// ----------------------------------------------------------------------------------------------------
-			m_imagemenuitemSave.ButtonReleaseEvent += imagemenuItemSave;
-			m_imagemenuitemSaveAs.ButtonReleaseEvent += imagemenuItemSave;
+			m_imagemenuitemSave.Activated += imagemenuItemSave;
+			m_imagemenuitemSaveAs.Activated += imagemenuItemSave;
 
 			// ----------------------------------------------------------------------------------------------------
-			m_imagemenuitemClose.ButtonReleaseEvent += delegate(object obj, ButtonReleaseEventArgs args) {
+			m_imagemenuitemClose.Activated += delegate(object obj, EventArgs args) {
 				Application.Quit ();
 			};
 
