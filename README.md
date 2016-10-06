@@ -7,20 +7,19 @@ This is especially useful for language learning, as the resulting files can be i
 [spaced repetition software](https://en.wikipedia.org/wiki/Spaced_repetition "Link to Wikipedia")
 like [Anki](http://ankisrs.net/ "Link to Anki homepage").
 
-This tool currently only runs on Linux.
+This tool currently only runs on Linux, but is deliberately built solely on top of portable technologies.
 
 ![Image](/Images/SubtitleMemorize_In_Action.png)
 
 Installation
 ============
-To make `SubtitleMemorize` work, following dependencies are needed:
+To make `SubtitleMemorize` work, you have to install its dependencies first. Scroll down to find the necessary installation commands for your distribution. These are in detail:
 
 -   `mono` to run .NET executable
 -   `ffmpeg` for do media-related work (splitting video, extracting images/audio from video, rescaling images, normalizing audio, etc.)
 -   `GTK+ 3` for the GUI
--   `mpv` for live audio preview
+-   `mpv` for live audio preview (optional)
 
-Scroll down to find the necessary installation commands for your distribution.
 
 After that, download and extract the latest version of SubtitleMemorize from [here](https://github.com/ChangSpivey/SubtitleMemorize/releases). To start the program, execute the file `SubtitleMemorize.sh` or `bin/SubtitleMemorize.exe` in the extracted directory.
 
@@ -34,6 +33,9 @@ sudo apt-get install libav-tools libavcodec-extra mono-complete mpv
 ```bash
 sudo pacman -S mono ffmpeg gtk3 mpv
 ```
+
+###### Windows and macOS
+Your know-how is needed! If you managed to install the dependencies on these platforms and successfully created a SubtitleMemorize deck, please create an issue on the GitHub page, so I can create an installation tutorial.
 
 
 Tutorial
