@@ -119,6 +119,7 @@ namespace subtitleMemorize
 		private string m_outputDirectoryPath;
 		private string m_nativeFilePath;
 		private string m_videoFilePath;
+		private string m_audioFilePath;
 
 		private string m_deckName;
 		private int m_firstEpisodeNumber;
@@ -203,6 +204,11 @@ namespace subtitleMemorize
 		public string VideoFilePath {
 			get { return m_videoFilePath; }
 			set { m_videoFilePath = value; }
+		}
+
+		public string AudioFilePath {
+			get { return m_audioFilePath; }
+			set { m_audioFilePath = value; }
 		}
 
 		public string DeckName {
