@@ -17,4 +17,4 @@ See the official [SubtitleMemorize wiki](https://github.com/ChangSpivey/Subtitle
 
 Status
 ============
-This software has been successfully used to create multiple high-quality Anki deck. Because it is still in beta, some rough edges and unfinished features are nonetheless remaining. Any help, especially on documentation, would be greatly appreciated!
+This software has been successfully used to create multiple high-quality Anki decks. Because it is still in beta, some rough edges and unfinished features are nonetheless remaining. Any help, especially on documentation, would be greatly appreciated!

@@ -21,16 +21,31 @@ using System.Runtime.Serialization.Formatters.Binary;
 
 namespace subtitleMemorize
 {
+
 	/// <summary>
 	/// Settings for one program instance.
 	/// </summary>
 	public static class InstanceSettings {
-		public static String temporaryFilesPath = System.IO.Path.GetTempPath() + "subtitleMemorize/";
+		public static String temporaryFilesPath = System.IO.Path.GetTempPath() + "subtitleMemorize" + Path.DirectorySeparatorChar;
 
-		public static String settingsFolder = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "SubtitileMemorize");
+		public static String settingsFolder = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "SubtitleMemorize");
 		public static String systemSettingFilePath = Path.Combine(settingsFolder, "settings.smem");
 
 		public static SystemSettings systemSettings = new SystemSettings();
+
+		public static PlatformID platform = Environment.OSVersion.Platform;
+
+		public static bool IsWindowsPlatform() {
+			switch(platform) {
+				case PlatformID.Win32NT:
+				case PlatformID.Win32S:
+				case PlatformID.Win32Windows:
+				case PlatformID.WinCE:
+					return true;
+				default:
+					return false;
+			}
+		}
 	}
 
 	/// <summary>
@@ -104,6 +119,7 @@ namespace subtitleMemorize
 		private string m_outputDirectoryPath;
 		private string m_nativeFilePath;
 		private string m_videoFilePath;
+		private string m_audioFilePath;
 
 		private string m_deckName;
 		private int m_firstEpisodeNumber;
@@ -188,6 +204,11 @@ namespace subtitleMemorize
 		public string VideoFilePath {
 			get { return m_videoFilePath; }
 			set { m_videoFilePath = value; }
+		}
+
+		public string AudioFilePath {
+			get { return m_audioFilePath; }
+			set { m_audioFilePath = value; }
 		}
 
 		public string DeckName {

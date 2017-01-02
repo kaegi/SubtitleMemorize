@@ -762,7 +762,7 @@ namespace subtitleMemorize
 				String arguments = String.Format("--really-quiet --no-video --start={0} --end={1} \"{2}\"",
 						UtilsCommon.ToTimeArg(cardInfo.audioStartTimestamp),
 						UtilsCommon.ToTimeArg(cardInfo.audioEndTimestamp),
-						episodeInfo.VideoFileDesc.filename);
+						episodeInfo.AudioFileDesc.filename);
 				// TODO: normalize audio for live audio play
 
 
@@ -1007,33 +1007,37 @@ namespace subtitleMemorize
 			UtilsInputFiles sub1Files = new UtilsInputFiles (settings.TargetFilePath);
 			UtilsInputFiles sub2Files = new UtilsInputFiles (settings.NativeFilePath);
 			UtilsInputFiles videoFiles = new UtilsInputFiles (settings.VideoFilePath);
+			UtilsInputFiles audioFiles = new UtilsInputFiles (settings.AudioFilePath);
 
 			List<UtilsInputFiles.FileDesc> sub1FileDescs = sub1Files.GetFileDescriptions();
 			List<UtilsInputFiles.FileDesc> sub2FileDescs = sub2Files.GetFileDescriptions();
 			List<UtilsInputFiles.FileDesc> videoFileDescs = videoFiles.GetFileDescriptions();
+			List<UtilsInputFiles.FileDesc> audioFileDescs = audioFiles.GetFileDescriptions();
 
 			bool noSub2 = sub2FileDescs.Count == 0; // no subtitles in native language available
 			bool noVideos = videoFileDescs.Count == 0; // no video files available
-			bool noAudio = noVideos; // TODO
+			bool noAudio = audioFileDescs.Count == 0;
 
 			int numberOfEpisodes = sub1FileDescs.Count;
 			if(numberOfEpisodes != sub2FileDescs.Count && !noSub2)
 				throw new Exception("Number of files in target languages and number of files in native language does not match.");
 			if(numberOfEpisodes != videoFileDescs.Count && !noVideos)
-				throw new Exception("Number of files in target languages and number of video files does not match.");
+				throw new Exception("Number of files in sub2FileDesc == null target languages and number of video files does not match.");
+			if(numberOfEpisodes != audioFileDescs.Count && !noAudio)
+				throw new Exception("Number of files in target languages and number of audio files does not match.");
 
 			// fill episode info
 			List<EpisodeInfo> episodeFiles = new List<EpisodeInfo>();
 			for(int episodeIndex = 0; episodeIndex < numberOfEpisodes; episodeIndex++) {
 				int episodeNumber = episodeIndex + settings.FirstEpisodeNumber;
 				var videoFileDesc = noVideos ? null : videoFileDescs[episodeIndex];
-				var audioFileDesc = noAudio ? null : videoFileDescs[episodeIndex];
+				var audioFileDesc = noAudio ? videoFileDesc : audioFileDescs[episodeIndex];
 				var sub1FileDesc = sub1FileDescs[episodeIndex];
 				var sub2FileDesc = noSub2 ? null : sub2FileDescs[episodeIndex];
-				var videoStreamInfo = noVideos ? null : UtilsVideo.ChooseStreamInfo(videoFileDesc.filename, videoFileDesc.properties, StreamInfo.StreamType.ST_VIDEO);
-				var audioStreamInfo = noAudio ? null : UtilsVideo.ChooseStreamInfo(audioFileDesc.filename, audioFileDesc.properties, StreamInfo.StreamType.ST_AUDIO);
+				var videoStreamInfo = videoFileDesc == null ? null : UtilsVideo.ChooseStreamInfo(videoFileDesc.filename, videoFileDesc.properties, StreamInfo.StreamType.ST_VIDEO);
+				var audioStreamInfo = audioFileDesc == null ? null : UtilsVideo.ChooseStreamInfo(audioFileDesc.filename, audioFileDesc.properties, StreamInfo.StreamType.ST_AUDIO);
 				var sub1StreamInfo = UtilsVideo.ChooseStreamInfo(sub1FileDesc.filename, sub1FileDesc.properties, StreamInfo.StreamType.ST_SUBTITLE);
-				var sub2StreamInfo = noSub2 ? null : UtilsVideo.ChooseStreamInfo(sub2FileDesc.filename, sub2FileDesc.properties, StreamInfo.StreamType.ST_SUBTITLE);
+				var sub2StreamInfo = sub2FileDesc == null ? null : UtilsVideo.ChooseStreamInfo(sub2FileDesc.filename, sub2FileDesc.properties, StreamInfo.StreamType.ST_SUBTITLE);
 				episodeFiles.Add(new EpisodeInfo(episodeIndex, episodeNumber, videoFileDesc, audioFileDesc, sub1FileDesc, sub2FileDesc, videoStreamInfo, audioStreamInfo, sub1StreamInfo, sub2StreamInfo));
 			}
 
@@ -1097,7 +1101,10 @@ namespace subtitleMemorize
 			if(this.m_pendingOperation != PendingOperation.NOTHING)
 				return;
 			this.m_pendingOperation = PendingOperation.GENERATE_PREVIEW;
+      m_progressbarProgressInfo.Text = "0% - Initializing";
+      m_progressbarProgressInfo.Fraction = 0;
 			m_windowProgressInfo.Show();
+
 
 			// read settings while handling errors
 			Settings settings = new Settings ();
@@ -1186,23 +1193,6 @@ namespace subtitleMemorize
 			}
 
 			return allCardInfos;
-		}
-
-		/// <summary>
-		/// Opens the progress window and sets the current pending operation.
-		/// </summary>
-		/// <returns><c>true</c>, if progress window was opened, <c>false</c>, if there already is an operation pending.</returns>
-		/// <param name="thisOperation">This operation.</param>
-		private bool OpenProgressWindow(PendingOperation thisOperation) {
-			// do not start another operation when there is already one
-			if (m_pendingOperation != PendingOperation.NOTHING)
-				return false;
-
-
-			m_pendingOperation = thisOperation;
-
-			m_windowProgressInfo.Show ();
-			return true;
 		}
 
 		private void ProgressHandler(String name, double percentage) {
@@ -1480,6 +1470,7 @@ namespace subtitleMemorize
 			setEntryPath (m_entryOutputDirectory, settings.OutputDirectoryPath);
 			setEntryPath (m_entryNativeLanguage, settings.NativeFilePath);
 			setEntryPath (m_entryVideoFile, settings.VideoFilePath);
+			setEntryPath (m_entryAudioFile, settings.AudioFilePath);
 
 			m_adjustmentAudioPaddingBefore.Value = (int)(settings.AudioPaddingBefore * 1000);
 			m_adjustmentAudioPaddingAfter.Value = (int)(settings.AudioPaddingAfter * 1000);
@@ -1506,6 +1497,7 @@ namespace subtitleMemorize
 			settings.OutputDirectoryPath = m_entryOutputDirectory.Text;
 			settings.NativeFilePath = m_entryNativeLanguage.Text;
 			settings.VideoFilePath = m_entryVideoFile.Text;
+			settings.AudioFilePath = m_entryAudioFile.Text;
 			settings.DeckName = m_entryDeckName.Text;
 
 			settings.NormalizeAudio = m_checkbuttonNormalizeAudio.Active;

@@ -668,6 +668,9 @@ Of course you can press Shift and Control at the same time which will deselect a
         </child>
       </object>
     </child>
+    <child type="titlebar">
+      <placeholder/>
+    </child>
   </object>
   <object class="GtkListStore" id="liststore_sub_encoding">
     <columns>
@@ -783,6 +786,9 @@ Of course you can press Shift and Control at the same time which will deselect a
           </packing>
         </child>
       </object>
+    </child>
+    <child type="titlebar">
+      <placeholder/>
     </child>
   </object>
   <object class="GtkAdjustment" id="numerical_adjustment_sub1">
@@ -1969,9 +1975,13 @@ Of course you can press Shift and Control at the same time which will deselect a
         </child>
       </object>
     </child>
+    <child type="titlebar">
+      <placeholder/>
+    </child>
   </object>
   <object class="GtkWindow" id="window_progress_info">
     <property name="can_focus">False</property>
+    <property name="resizable">False</property>
     <property name="window_position">center-on-parent</property>
     <property name="default_width">400</property>
     <property name="type_hint">dialog</property>
@@ -2022,6 +2032,9 @@ Of course you can press Shift and Control at the same time which will deselect a
           </object>
         </child>
       </object>
+    </child>
+    <child type="titlebar">
+      <placeholder/>
     </child>
   </object>
 </interface>

@@ -4,7 +4,11 @@
         <CreateItem Include="$(MSBuildThisFileDirectory)\net40\*.config">
             <Output TaskParameter="Include" ItemName="Gtk3ConfigFiles" />
         </CreateItem>
+        <CreateItem Include="$(MSBuildThisFileDirectory)\x64\*">
+            <Output TaskParameter="Include" ItemName="Gtk3Nativex64" />
+        </CreateItem>
         
         <Copy SourceFiles="@(Gtk3ConfigFiles)" DestinationFiles="@(Gtk3ConfigFiles->'$(OutDir)\%(Filename)%(Extension)')" />
+        <Copy SourceFiles="@(Gtk3Nativex64)" DestinationFiles="@(Gtk3Nativex64->'$(OutDir)\%(Filename)%(Extension)')" />
     </Target>
 </Project>

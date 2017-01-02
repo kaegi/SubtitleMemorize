@@ -314,7 +314,7 @@ restartLoop:
 			Comparison<CardInfo> comparer = delegate (CardInfo a, CardInfo b) {
 				double aDistance = UtilsCommon.GetMinTimeSpanDistance(a, timeSpan);
 				double bDistance = UtilsCommon.GetMinTimeSpanDistance(b, timeSpan);
-				return aDistance < bDistance ? 1 : -1;
+				return aDistance < bDistance ? -1 : 1;
 			};
 			previousLines.Sort(comparer);
 			previousLines = previousLines.Take(maxNumberCards).ToList();
