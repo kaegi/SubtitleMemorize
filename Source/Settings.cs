@@ -21,6 +21,7 @@ using System.Runtime.Serialization.Formatters.Binary;
 
 namespace subtitleMemorize
 {
+
 	/// <summary>
 	/// Settings for one program instance.
 	/// </summary>
@@ -31,6 +32,20 @@ namespace subtitleMemorize
 		public static String systemSettingFilePath = Path.Combine(settingsFolder, "settings.smem");
 
 		public static SystemSettings systemSettings = new SystemSettings();
+
+		public static PlatformID platform = Environment.OSVersion.Platform;
+
+		public static bool IsWindowsPlatform() {
+			switch(platform) {
+				case PlatformID.Win32NT:
+				case PlatformID.Win32S:
+				case PlatformID.Win32Windows:
+				case PlatformID.WinCE:
+					return true;
+				default:
+					return false;
+			}
+		}
 	}
 
 	/// <summary>

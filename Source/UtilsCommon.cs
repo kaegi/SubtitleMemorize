@@ -46,7 +46,7 @@ namespace subtitleMemorize
 		/// Calls a executable file by path by usings C# "Process" class. All errors of executable
 		/// will be ignored (the function just returns "null" in this case).
 		/// </summary>
-		private static string CallExeAndGetOutput(string exePath, string args, bool stderrInsteadOfStdout=false) {
+		private static string CallExeAndGetOutput(string exePath, string args, bool stderrInsteadOfStdout, bool printError) {
 			Process process = new Process();
 
 			try {
@@ -58,13 +58,16 @@ namespace subtitleMemorize
 				process.StartInfo.RedirectStandardError = true;
 				process.Start();
 
-				if(stderrInsteadOfStdout) return process.StandardError.ReadToEnd();
-				else return process.StandardOutput.ReadToEnd();
-			} catch {
+				if(stderrInsteadOfStdout) return process.StandardError.ReadToEnd() ?? "";
+				else return process.StandardOutput.ReadToEnd() ?? "";
+			} catch(Exception e1) {
+				if(printError) Console.Write("\"" + exePath + " " + args + "\" failed\n" + e1);
+
 				try {
 					process.Kill();
-				} catch(Exception) {
+				} catch(Exception e2) {
 					// can't do anything about it at this point -> just ignore it
+					if(printError) Console.Write(e2);
 				}
 			}
 
@@ -74,8 +77,20 @@ namespace subtitleMemorize
 		/// <summary>
 		/// Executes a command with arguments.
 		/// </summary>
-		public static string StartProcessAndGetOutput(String exeName, String args, bool stderrInsteadOfStdout=false) {
-			return CallExeAndGetOutput (exeName, args, stderrInsteadOfStdout);
+		public static string StartProcessAndGetOutput(String exeName, String args, bool stderrInsteadOfStdout=false, bool printError=true) {
+
+			if(InstanceSettings.IsWindowsPlatform()) {
+				// The windows package ships the binary files in subdirectories (./dependencies/....). To find these files, links have to be used. Because the
+				// Windows-native .lnk file is hard to generate, a "[exeName].binptr" file is used which only contains the path of the binary file.
+				try
+				{
+					String path = File.ReadAllLines(exeName + ".binptr")[0].Trim();
+					String r = CallExeAndGetOutput(path, args, stderrInsteadOfStdout, printError);
+					if (r != null) return r;
+				} catch { /* ignore errors -> proceed normally */ }
+			}
+
+			return CallExeAndGetOutput(exeName, args, stderrInsteadOfStdout, printError);
 		}
 
 		/// <summary>
@@ -412,14 +427,14 @@ namespace subtitleMemorize
 		}
 
 		public static bool IsFfmpegAvailable() {
-			var output = UtilsCommon.StartProcessAndGetOutput("ffmpeg", "-version");
+			var output = UtilsCommon.StartProcessAndGetOutput("ffmpeg", "-version", false, false);
 			Console.WriteLine(output);
 			if(output == null) return false;
 			return output.StartsWith("ffmpeg version");
 		}
 
 		public static bool IsAvconvAvailable() {
-			var output = UtilsCommon.StartProcessAndGetOutput("avconv", "-version");
+			var output = UtilsCommon.StartProcessAndGetOutput("avconv", "-version", false, false);
 			if(output == null) return false;
 			return output.StartsWith("avconv version");
 		}
