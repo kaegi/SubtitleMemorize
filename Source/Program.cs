@@ -1188,23 +1188,6 @@ namespace subtitleMemorize
 			return allCardInfos;
 		}
 
-		/// <summary>
-		/// Opens the progress window and sets the current pending operation.
-		/// </summary>
-		/// <returns><c>true</c>, if progress window was opened, <c>false</c>, if there already is an operation pending.</returns>
-		/// <param name="thisOperation">This operation.</param>
-		private bool OpenProgressWindow(PendingOperation thisOperation) {
-			// do not start another operation when there is already one
-			if (m_pendingOperation != PendingOperation.NOTHING)
-				return false;
-
-
-			m_pendingOperation = thisOperation;
-
-			m_windowProgressInfo.Show ();
-			return true;
-		}
-
 		private void ProgressHandler(String name, double percentage) {
 			Gtk.Application.Invoke (delegate {
 				m_progressbarProgressInfo.Text = name ?? "No name";
