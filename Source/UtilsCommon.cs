@@ -58,8 +58,14 @@ namespace subtitleMemorize
 				process.StartInfo.RedirectStandardError = true;
 				process.Start();
 
-				if(stderrInsteadOfStdout) return process.StandardError.ReadToEnd() ?? "";
-				else return process.StandardOutput.ReadToEnd() ?? "";
+				if(stderrInsteadOfStdout) {
+					process.BeginOutputReadLine(); // avoids deadlock (see https://msdn.microsoft.com/de-de/library/system.diagnostics.processstartinfo.redirectstandardoutput(v=vs.110).aspx)
+					return process.StandardError.ReadToEnd() ?? "";
+				}
+				else {
+					process.BeginErrorReadLine(); // avoids deadlock (see https://msdn.microsoft.com/de-de/library/system.diagnostics.processstartinfo.redirectstandardoutput(v=vs.110).aspx)
+					return process.StandardOutput.ReadToEnd() ?? "";
+				}
 			} catch(Exception e1) {
 				if(printError) Console.Write("\"" + exePath + " " + args + "\" failed\n" + e1);
 
