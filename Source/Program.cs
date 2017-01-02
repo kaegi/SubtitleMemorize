@@ -1097,7 +1097,10 @@ namespace subtitleMemorize
 			if(this.m_pendingOperation != PendingOperation.NOTHING)
 				return;
 			this.m_pendingOperation = PendingOperation.GENERATE_PREVIEW;
+      m_progressbarProgressInfo.Text = "0% - Initializing";
+      m_progressbarProgressInfo.Fraction = 0;
 			m_windowProgressInfo.Show();
+
 
 			// read settings while handling errors
 			Settings settings = new Settings ();
