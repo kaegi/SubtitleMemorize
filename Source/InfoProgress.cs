@@ -159,7 +159,9 @@ namespace subtitleMemorize
 			double sectionPercents = 1.0 / (double) m_progressSections.Count;
 			double totalPercent = sectionPercents * (m_currentSection + inSectionProgress);
 
-			m_setProgressHandler ((int)(totalPercent * 100) + "% - " + currentSec.Name, totalPercent);
+			String stepInfo = currentSec.NumbersOfStepsGiven <= 1 ? "" : " " + currentSec.NumbersOfStepsProcessed + "/" + currentSec.NumbersOfStepsGiven;
+
+			m_setProgressHandler ((int)(totalPercent * 100) + "% - " + currentSec.Name + stepInfo, totalPercent);
 		}
 
 		public void Cancel() {
