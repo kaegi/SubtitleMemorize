@@ -1601,7 +1601,7 @@ namespace subtitleMemorize
 
 		private void SetErrorMessage(string msg) {
 			Console.WriteLine (msg);
-			SetMarkupOfLabelInInfo("<span foreground=\"red\"><b>" + msg + "</b></span>\nIf any questions arise or if you want to file a bug, please visit <span foreground=\"white\"><a href=\"https://www.github.com/\">https://www.github.com/</a></span>.");
+			SetMarkupOfLabelInInfo("<span foreground=\"red\"><b>" + msg + "</b></span>\nIf any questions arise or if you want to file a bug, please visit <span foreground=\"white\"><a href=\"https://www.github.com/ChangSpivey/SubtitleMemorize\">https://www.github.com/ChangSpivey/SubtitleMemorize</a></span>.");
 			m_infobar1.ShowAll ();
 
 			int currentChangeNumber = m_numberOfInfobarLabelMarkupChanges;
