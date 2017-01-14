@@ -132,6 +132,7 @@ namespace subtitleMemorize
 
 			// use ffprobe/avprobe(?) to get nice XML-description of contents
 			String stdout = UtilsCommon.StartProcessAndGetOutput(InstanceSettings.systemSettings.formatProberCommand, @"-v quiet -print_format xml -show_streams """ + filename + @"""");
+			if(stdout == null) { throw new IOException("Calling ffprobe/avprobe failed! Is it installed?"); }
 
 			List<StreamInfo> allStreamInfos = new List<StreamInfo> ();
 			StreamInfo lastStreamInfo = null;

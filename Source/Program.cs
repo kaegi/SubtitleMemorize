@@ -464,8 +464,12 @@ namespace subtitleMemorize
 			m_subtitleOptionsWindow.HideOnDelete ();
 
 
-			if (!String.IsNullOrWhiteSpace(InstanceSettings.systemSettings.preLoadedSettings))
-				LoadSaveStateFromFile (InstanceSettings.systemSettings.preLoadedSettings);
+      try {
+        if (!String.IsNullOrWhiteSpace(InstanceSettings.systemSettings.preLoadedSettings))
+          LoadSaveStateFromFile (InstanceSettings.systemSettings.preLoadedSettings);
+      } catch {
+        // ignore all errors -> if we can't load the configuration (file gone missing, wrong/old format), just let it be
+      }
 
 			// this has to be after "mainWindow.Show()", because otherwise the width of the window
 			// is determined by the width of this text
@@ -1601,7 +1605,7 @@ namespace subtitleMemorize
 
 		private void SetErrorMessage(string msg) {
 			Console.WriteLine (msg);
-			SetMarkupOfLabelInInfo("<span foreground=\"red\"><b>" + msg + "</b></span>\nIf any questions arise or if you want to file a bug, please visit <span foreground=\"white\"><a href=\"https://www.github.com/\">https://www.github.com/</a></span>.");
+			SetMarkupOfLabelInInfo("<span foreground=\"red\"><b>" + msg + "</b></span>\nIf any questions arise or if you want to file a bug, please visit <span foreground=\"white\"><a href=\"https://www.github.com/ChangSpivey/SubtitleMemorize\">https://www.github.com/ChangSpivey/SubtitleMemorize</a></span>.");
 			m_infobar1.ShowAll ();
 
 			int currentChangeNumber = m_numberOfInfobarLabelMarkupChanges;
@@ -1646,7 +1650,7 @@ namespace subtitleMemorize
 					InstanceSettings.systemSettings = (SystemSettings) ser.Deserialize(writer);
 				}
 			} catch {
-				Console.WriteLine ("WARNING: failed to read \"{0}\" so default settings are used", InstanceSettings.systemSettingFilePath);
+				Console.WriteLine ("WARNING: could not read \"{0}\" so default settings are used... is this your first time running SubtitleMemorize?", InstanceSettings.systemSettingFilePath);
 				InstanceSettings.systemSettings.AdjustFirstTimeSettings();
 			}
 
