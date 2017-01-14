@@ -1646,7 +1646,7 @@ namespace subtitleMemorize
 					InstanceSettings.systemSettings = (SystemSettings) ser.Deserialize(writer);
 				}
 			} catch {
-				Console.WriteLine ("WARNING: failed to read \"{0}\" so default settings are used", InstanceSettings.systemSettingFilePath);
+				Console.WriteLine ("WARNING: could not read \"{0}\" so default settings are used... is this your first time running SubtitleMemorize?", InstanceSettings.systemSettingFilePath);
 				InstanceSettings.systemSettings.AdjustFirstTimeSettings();
 			}
 
