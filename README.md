@@ -16,6 +16,10 @@ The software is optimized to generate cards from full series fast and painlessly
 -   search & replace
 -   ...
 
+__Development Status: With the release of [aligner](https://github.com/kaegi/aligner), which provides a much better algorithm for fixing subtitles, the main reason for developing SubtitleMemorize is gone. The project has lost its momentum for me and it is now in "maintenance only" mode, meaning I will only fix trivial bugs. I will also continue to accept (clean) pull requests. [substudy](https://github.com/emk/substudy), [subs2srs](http://subs2srs.sourceforge.net/) and [movies2anki](https://github.com/kelciour/movies2anki) cover a wide range of SubtitleMemorize's features, so be sure to check these out if the current features of SubtitleMemorize are not sufficient for your needs.__
+
+__If there is anyone who wants to take (co-)maintenance of this project, feel free to ask.__
+
 ![Image](/Images/SubtitleMemorize_In_Action.png)
 
 Tutorial
